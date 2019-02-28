@@ -12,66 +12,17 @@ import org.opencv.core.CvType;
  * Created by adamw on 13.11.2018.
  */
 
-public class Filtr {
+public abstract class Filtr {
 
-    private int mBlurParam = 9;
-    private int gBlurMSize = 3;
-    private int threshBinaryParam = 140;
     private cannyParams cannyParam = new cannyParams(50,3,3);
-    private threshRGBParams threshRGBParam = new threshRGBParams(30,50,30,50,30,50);
-
-    public enum filters {GRAY,MBLUR,GAUSS,SHARPEN,THRESHBINARY,THRESHRGB,CANNY};
 
 
-    public void filtr(filters which, Mat src)
-    {
-        switch(which)
-        {
-            case GRAY:
-                gray(src);
-                break;
-            case MBLUR:
-                mBlur(src);
-                break;
-            case THRESHBINARY:
-                thresh(src);
-                break;
-            case GAUSS:
-                gBlur(src);
-                break;
-            case SHARPEN:
-                sharp(src);
-                break;
-            case THRESHRGB:
-                threshColor(src);
-                break;
-        }
-    }
+    public abstract void filtr(Mat src);
+    public abstract void filtr(Mat src, Mat dst);
 
-    void filtr(filters which, Mat src, Mat dst)
-    {
-        switch(which)
-        {
-            case GRAY:
-                gray(src,dst);
-                break;
-            case MBLUR:
-                mBlur(src,dst);
-                break;
-            case THRESHBINARY:
-                thresh(src,dst);
-                break;
-            case GAUSS:
-                gBlur(src,dst);
-                break;
-            case SHARPEN:
-                sharp(src,dst);
-                break;
-            case THRESHRGB:
-                threshColor(src,dst);
-                break;
-        }
-    }
+
+
+
 
     void sobel(Mat src, Mat dst)
     {
@@ -87,6 +38,8 @@ public class Filtr {
         Core.convertScaleAbs(grad_y, abs_grad_y);
         Core.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0, dst);
     }
+
+
 
     void sobel(sobelParams params, Mat src, Mat dst)
     {
@@ -110,18 +63,8 @@ public class Filtr {
         Imgproc.Canny(src, dst, params.cannyThresh, params.cannyThresh*params.cannyRatio, params.cannyKernel);
     }
 
-    void setmBlurParam(int newParam)
-    {
-        mBlurParam = newParam;
-    }
-    void setgBlurParam(int newParam)
-    {
-        gBlurMSize = newParam;
-    }
-    void setThreshBinaryParam(int newParam)
-    {
-        threshBinaryParam = newParam;
-    }
+
+
 
     public class cannyParams
     {
@@ -137,24 +80,7 @@ public class Filtr {
             cannyKernel = cKernel;
         }
     }
-    public class threshRGBParams
-    {
-        public int low_b;
-        public int low_r;
-        public int low_g;
-        public int high_b;
-        public int high_r;
-        public int high_g;
-        threshRGBParams(int lb, int lg, int lr, int hb, int hg, int hr)
-        {
-            low_b = lb;
-            low_r = lr;
-            low_g = lg;
-            high_b = hb;
-            high_r = hr;
-            high_g = hg;
-        }
-    }
+
     public class sobelParams
     {
         int ddepth; //głębia obrazu
@@ -179,31 +105,8 @@ public class Filtr {
     {
         Imgproc.cvtColor(src, dst, Imgproc.COLOR_BGR2GRAY);
     }
-    private void thresh(Mat src)
-    {
-        Imgproc.threshold(src, src, threshBinaryParam, 255, 0);
-    }
-    private void thresh(Mat src, Mat dst)
-    {
-        Imgproc.threshold(src, dst, threshBinaryParam, 255, 0);
-    }
-    private void mBlur(Mat src)
-    {
-        Imgproc.medianBlur(src, src, mBlurParam);
-    }
-    private void mBlur(Mat src, Mat dst)
-    {
-        Imgproc.medianBlur(src, dst, mBlurParam);
-    }
-    private void gBlur(Mat src)
-    {
-        Imgproc.GaussianBlur(src, src, new Size((double)gBlurMSize, (double)gBlurMSize), 0);
-    }
-    private void gBlur(Mat src, Mat dst)
-    {
-        Log.i("dupa", "robiem blura:" + gBlurMSize);
-        Imgproc.GaussianBlur(src, dst, new Size((double)gBlurMSize, (double)gBlurMSize), 0 );
-    }
+
+
     private void sharp(Mat src)
     {
         Mat kernel = new Mat();
@@ -226,16 +129,8 @@ public class Filtr {
         Point anchor = new Point( -1, -1);
         Imgproc.filter2D(src, dst, ddepth , kernel, anchor, delta, Core.BORDER_DEFAULT );
     }
-    private void threshColor(Mat src)
-    {
-        Core.inRange(src, new Scalar(threshRGBParam.low_b, threshRGBParam.low_g, threshRGBParam.low_r)
-                , new Scalar(threshRGBParam.high_b, threshRGBParam.high_g, threshRGBParam.high_r), src);
-    }
-    private void threshColor(Mat src, Mat dst)
-    {
-        Core.inRange(src, new Scalar(threshRGBParam.low_b, threshRGBParam.low_g, threshRGBParam.low_r)
-                , new Scalar(threshRGBParam.high_b, threshRGBParam.high_g, threshRGBParam.high_r), dst);
-    }
+
+
     static String determineType(Mat src)
     {
         /*

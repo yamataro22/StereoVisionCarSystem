@@ -32,7 +32,7 @@ public class CameraScreenActivity extends CameraBasicActivity {
 
     public static final String PARAMETERS = "messageBlur";
     private boolean[] filters;
-    Filtr f = new Filtr();
+    Filtr f;
 
 
     @Override
@@ -41,20 +41,17 @@ public class CameraScreenActivity extends CameraBasicActivity {
         setContentView(R.layout.activity_camera_screen);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
-        int orientation = getResources().getConfiguration().orientation;
+
+        /*int orientation = getResources().getConfiguration().orientation;
         if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
             Intent intent = getIntent();
+
             VisionParameters visionParams = intent.getParcelableExtra(PARAMETERS);
             filters = new boolean[VisionParameters.FILTERS_QUANTITY];
 
-            int i = 0;
-            for(Enum key:visionParams.filtersMap.keySet()) {
-                filters[i] = visionParams.get(key);
-                i++;
-            }
-            f.setThreshBinaryParam(visionParams.getThreshValue());
-            f.setgBlurParam(visionParams.getGaussValue());
-        }
+
+        }*/
+
 
         mOpenCvCameraView = findViewById(R.id.HelloOpenCvView);
         mOpenCvCameraView.enableView();
@@ -63,15 +60,6 @@ public class CameraScreenActivity extends CameraBasicActivity {
         mOpenCvCameraView.setCvCameraViewListener(this);
     }
 
-
-
-    public void putMatInImageView(Mat m, ImageView view)
-    {
-        Imgproc.putText(m, "hi there ;)", new Point(30,80), Core.FONT_HERSHEY_SCRIPT_SIMPLEX, 2.2, new Scalar(200,200,0),2);
-        Bitmap bm = Bitmap.createBitmap(m.cols(), m.rows(),Bitmap.Config.ARGB_8888);
-        Utils.matToBitmap(m, bm);
-        view.setImageBitmap(bm);
-    }
 
     @Override
     public void onCameraViewStarted(int width, int height) {
@@ -85,18 +73,11 @@ public class CameraScreenActivity extends CameraBasicActivity {
 
     @Override
     public Mat onCameraFrame(Mat inputFrame) {
-        Mat dst = new Mat();
 
-        for(int i = 0; i < filters.length-1; i++)
-        {
-            if(filters[i]) f.filtr(Filtr.filters.values()[i],inputFrame);
-        }
-        if(filters[filters.length-1])
-        {
-            f.canny(inputFrame, dst);
-            return dst;
-        }
+        Filtr filtr = new BinaryThreshFiltr(120);
+        filtr.filtr(inputFrame);
         return inputFrame;
+
     }
 
     @Override
