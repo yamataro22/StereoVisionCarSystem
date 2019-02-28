@@ -7,6 +7,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.hardware.Camera;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceView;
@@ -52,11 +53,13 @@ public class CameraScreenActivity extends CameraBasicActivity {
 
         }*/
 
+        CameraInfo.getCameraInfo("cameraInfo");
 
         mOpenCvCameraView = findViewById(R.id.HelloOpenCvView);
         mOpenCvCameraView.enableView();
         mOpenCvCameraView.enableFpsMeter();
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
+        mOpenCvCameraView.setCameraIndex(0);
         mOpenCvCameraView.setCvCameraViewListener(this);
     }
 
