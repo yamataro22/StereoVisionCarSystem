@@ -1,29 +1,13 @@
 package com.example.stereovisioncarsystem;
 
-import android.Manifest;
-import android.app.Activity;
-import android.content.Intent;
+
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
-import android.content.res.Configuration;
-import android.graphics.Bitmap;
-import android.hardware.Camera;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceView;
-import android.view.WindowManager;
-import android.widget.ImageView;
-
-import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.OpenCVLoader;
-import org.opencv.android.Utils;
-import org.opencv.core.Core;
 import org.opencv.core.Mat;
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
-import org.opencv.imgproc.Imgproc;
-
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class CameraScreenActivity extends CameraBasicActivity {
@@ -76,10 +60,19 @@ public class CameraScreenActivity extends CameraBasicActivity {
 
     @Override
     public Mat onCameraFrame(Mat inputFrame) {
+        Mat dst = new Mat();
 
-        Filtr filtr = new BinaryThreshFiltr(120);
-        filtr.filtr(inputFrame);
-        return inputFrame;
+        List<Filtr> filtrs = new ArrayList<>();
+        filtrs.add(new GrayFiltr());
+        filtrs.add(new BinaryThreshFiltr(120));
+        filtrs.add(new CannyFiltr());
+
+        for(Filtr filtr : filtrs)
+        {
+            filtr.filtr(inputFrame, dst);
+        }
+
+        return dst;
 
     }
 
