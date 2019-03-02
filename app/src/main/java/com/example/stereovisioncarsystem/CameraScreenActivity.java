@@ -1,28 +1,13 @@
 package com.example.stereovisioncarsystem;
 
-import android.Manifest;
-import android.app.Activity;
-import android.content.Intent;
+
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
-import android.content.res.Configuration;
-import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceView;
-import android.view.WindowManager;
-import android.widget.ImageView;
-
-import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.OpenCVLoader;
-import org.opencv.android.Utils;
-import org.opencv.core.Core;
 import org.opencv.core.Mat;
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
-import org.opencv.imgproc.Imgproc;
-
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class CameraScreenActivity extends CameraBasicActivity {
@@ -32,7 +17,7 @@ public class CameraScreenActivity extends CameraBasicActivity {
 
     public static final String PARAMETERS = "messageBlur";
     private boolean[] filters;
-    Filtr f = new Filtr();
+    Filtr f;
 
 
     @Override
@@ -41,37 +26,27 @@ public class CameraScreenActivity extends CameraBasicActivity {
         setContentView(R.layout.activity_camera_screen);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
-        int orientation = getResources().getConfiguration().orientation;
+
+        /*int orientation = getResources().getConfiguration().orientation;
         if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
             Intent intent = getIntent();
+
             VisionParameters visionParams = intent.getParcelableExtra(PARAMETERS);
             filters = new boolean[VisionParameters.FILTERS_QUANTITY];
 
-            int i = 0;
-            for(Enum key:visionParams.filtersMap.keySet()) {
-                filters[i] = visionParams.get(key);
-                i++;
-            }
-            f.setThreshBinaryParam(visionParams.getThreshValue());
-            f.setgBlurParam(visionParams.getGaussValue());
-        }
+
+        }*/
+
+        CameraInfo.getCameraInfo("cameraInfo");
 
         mOpenCvCameraView = findViewById(R.id.HelloOpenCvView);
         mOpenCvCameraView.enableView();
         mOpenCvCameraView.enableFpsMeter();
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
+        mOpenCvCameraView.setCameraIndex(0);
         mOpenCvCameraView.setCvCameraViewListener(this);
     }
 
-
-
-    public void putMatInImageView(Mat m, ImageView view)
-    {
-        Imgproc.putText(m, "hi there ;)", new Point(30,80), Core.FONT_HERSHEY_SCRIPT_SIMPLEX, 2.2, new Scalar(200,200,0),2);
-        Bitmap bm = Bitmap.createBitmap(m.cols(), m.rows(),Bitmap.Config.ARGB_8888);
-        Utils.matToBitmap(m, bm);
-        view.setImageBitmap(bm);
-    }
 
     @Override
     public void onCameraViewStarted(int width, int height) {
@@ -87,16 +62,18 @@ public class CameraScreenActivity extends CameraBasicActivity {
     public Mat onCameraFrame(Mat inputFrame) {
         Mat dst = new Mat();
 
-        for(int i = 0; i < filters.length-1; i++)
+        List<Filtr> filtrs = new ArrayList<>();
+        filtrs.add(new GrayFiltr());
+        filtrs.add(new BinaryThreshFiltr(120));
+        filtrs.add(new CannyFiltr());
+
+        for(Filtr filtr : filtrs)
         {
-            if(filters[i]) f.filtr(Filtr.filters.values()[i],inputFrame);
+            filtr.filtr(inputFrame, dst);
         }
-        if(filters[filters.length-1])
-        {
-            f.canny(inputFrame, dst);
-            return dst;
-        }
-        return inputFrame;
+
+        return dst;
+
     }
 
     @Override

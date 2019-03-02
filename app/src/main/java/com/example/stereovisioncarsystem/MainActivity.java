@@ -55,4 +55,11 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+    public void onStartCapturingButton(View view)
+    {
+        Intent intent = new Intent(this, CameraScreenActivity.class);
+        startActivity(intent);
+
+    }
 }
