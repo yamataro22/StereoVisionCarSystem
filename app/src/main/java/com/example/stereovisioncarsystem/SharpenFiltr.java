@@ -11,18 +11,16 @@ public class SharpenFiltr extends Filtr{
 
     private int ddepth = -1;
     private double delta = 0.0;
-    private Point anchor;
+    private Point anchor = new Point( -1, -1);
 
 
     public SharpenFiltr()
     {
-        anchor = new Point( -1, -1);
     }
 
     @Override
     public void filtr(Mat src)
     {
-        Point anchor = new Point( -1, -1);
         Imgproc.filter2D(src, src, ddepth , createKerner(), anchor, delta, Core.BORDER_DEFAULT );
     }
 

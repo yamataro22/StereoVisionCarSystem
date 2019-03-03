@@ -64,15 +64,16 @@ public class CameraScreenActivity extends CameraBasicActivity {
 
         List<Filtr> filtrs = new ArrayList<>();
         filtrs.add(new GrayFiltr());
-        filtrs.add(new BinaryThreshFiltr(120));
-        filtrs.add(new CannyFiltr());
+        filtrs.add(new GBlurFiltr(27));
+        //filtrs.add(new BinaryThreshFiltr(120));
+        //filtrs.add(new CannyFiltr());
 
         for(Filtr filtr : filtrs)
         {
-            filtr.filtr(inputFrame, dst);
+            filtr.filtr(inputFrame);
         }
 
-        return dst;
+        return inputFrame;
 
     }
 

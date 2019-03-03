@@ -46,16 +46,20 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            Intent intent = new Intent(this,SettingsActivity.class);
-            startActivity(intent);
+            createAndStartIntent(SettingsActivity.class);
         }
         else if(id == R.id.action_text_communication) {
-
+            createAndStartIntent(CommunicationTestActivity.class);
         }
 
         return super.onOptionsItemSelected(item);
     }
 
+    private void createAndStartIntent(Class<?> cls)
+    {
+        Intent intent = new Intent(this,cls);
+        startActivity(intent);
+    }
     public void onStartCapturingButton(View view)
     {
         Intent intent = new Intent(this, CameraScreenActivity.class);

@@ -1,9 +1,135 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".CommunicationTestActivity">
 
-</android.support.constraint.ConstraintLayout>
+    <android.support.design.widget.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/AppTheme.AppBarOverlay"
+        android:id="@+id/app_bar_layout">
+
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            app:popupTheme="@style/AppTheme.PopupOverlay" />
+
+    </android.support.design.widget.AppBarLayout>
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/port_linear_layout"
+        android:padding="10dp"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/app_bar_layout">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Wprowadź port"
+            android:layout_weight="5"/>
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="88888"
+            android:layout_weight="3"
+            />
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/is_connected_text_view"
+        android:text="Status połączenia"
+        android:textSize="18sp"
+        android:textStyle="italic"
+        android:layout_below="@id/port_linear_layout"
+        />
+
+    <Button
+        android:id="@id/wifi_on_button"
+        android:text="WiFi on"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_margin="30dp"
+        android:layout_below="@+id/is_connected_text_view"
+        />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/discover_button"
+        android:text="Znajdź urządzenia"
+        android:layout_alignBaseline="@+id/wifi_on_button"
+        android:layout_toRightOf="@+id/wifi_on_button"
+        android:layout_marginLeft="30dp"
+        />
+
+    <ListView
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:id="@+id/peer_list_view"
+        android:layout_below="@id/wifi_on_button"
+        android:layout_centerHorizontal="true"
+        android:background="@android:color/holo_blue_bright"
+
+
+        />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:hint="Otrzymana wiadomość"
+        android:layout_below="@id/peer_list_view"
+        android:id="@+id/received_message_text_view"
+        android:layout_margin="20dp"
+        android:layout_centerHorizontal="true"
+        android:textAlignment="center"
+        android:textStyle="italic"
+
+        />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:id="@+id/send_message_layout"
+        android:layout_below="@id/received_message_text_view"
+        android:layout_margin="20dp"
+        >
+        <EditText
+            style="@style/Widget.AppCompat.EditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Wprowadź wiadomość"
+            android:inputType="textMultiLine"
+            android:lines="3"
+            android:minLines="2"
+            android:scrollbars="vertical"
+            android:selectAllOnFocus="false"
+            android:singleLine="false"
+            android:layout_weight="5"
+            android:id="@+id/send_message_edit_text"/>
+
+        <Button
+            android:layout_weight="1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Wyślij"
+            android:id="@+id/send_button"
+            />
+
+
+
+    </LinearLayout>
+
+
+</RelativeLayout>
