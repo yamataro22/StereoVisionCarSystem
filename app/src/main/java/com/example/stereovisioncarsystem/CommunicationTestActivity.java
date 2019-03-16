@@ -1,18 +1,23 @@
 package com.example.stereovisioncarsystem;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -23,7 +28,13 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,6 +57,15 @@ public class CommunicationTestActivity extends AppCompatActivity {
     String[] deviceNameArray;
     WifiP2pDevice[] deviceArray;
 
+    static final int MESSAGE_READ = 1;
+
+    ServerClass serverClass;
+    ClientClass clientClass;
+    SendReceive sendReceive;
+
+    protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,11 +79,96 @@ public class CommunicationTestActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
+
+        /*checkPermissions(Manifest.permission.ACCESS_WIFI_STATE, 0);
+        checkPermissions(Manifest.permission.CHANGE_NETWORK_STATE, 1);
+        checkPermissions(Manifest.permission.CHANGE_WIFI_STATE, 2);
+        checkPermissions(Manifest.permission.INTERNET, 3);
+        checkPermissions(Manifest.permission.ACCESS_NETWORK_STATE, 4);
+        checkPermissions(Manifest.permission.ACCESS_COARSE_LOCATION,5);
+        checkPermissions(Manifest.permission.ACCESS_FINE_LOCATION,6);
+        checkPermissions(Manifest.permission.WRITE_EXTERNAL_STORAGE,7);
+        checkPermissions(Manifest.permission.WRITE_SETTINGS,8);*/
+
+
         initialWork();
         exqListener();
 
 
     }
+
+    void checkPermissions(String perm, int code)
+    {
+        if (checkSelfPermission(perm)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            if (shouldShowRequestPermissionRationale(perm)) {
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+            } else {
+                // No explanation needed; request the permission
+
+                requestPermissions(new String[]{perm},
+                        code);
+
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+            }
+        }
+    }
+
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_CAMERA: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                } else {
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+            default:
+            {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                } else {
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request.
+        }
+    }
+
+    Handler handler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message msg) {
+            switch (msg.what)
+            {
+                case MESSAGE_READ:
+                    byte[] readBuffer = (byte[]) msg.obj;
+                    String tempMsg = new String(readBuffer, 0, msg.arg1);
+                    readMsgBox.setText(tempMsg);
+                    break;
+            }
+            return true;
+        }
+    });
 
     private void exqListener() {
         btnOnOff.setOnClickListener(new View.OnClickListener() {
@@ -120,6 +225,21 @@ public class CommunicationTestActivity extends AppCompatActivity {
                 });
             }
         });
+
+        btnSend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String msg = writeMsg.getText().toString();
+                if(sendReceive != null)
+                {
+                    sendReceive.write(msg.getBytes());
+                }
+                else
+                {
+                    Toast.makeText(getApplicationContext(),"Najpierw połącz się z odbiornikiem", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 
     WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
@@ -130,10 +250,14 @@ public class CommunicationTestActivity extends AppCompatActivity {
             if(wifiP2pInfo.groupFormed && wifiP2pInfo.isGroupOwner)
             {
                 connectionStatus.setText("host");
+                serverClass = new ServerClass();
+                serverClass.start();
             }
             else if(wifiP2pInfo.groupFormed)
             {
                 connectionStatus.setText("client");
+                clientClass = new ClientClass(groupOwnerAdress);
+                clientClass.start();
             }
         }
     };
@@ -218,5 +342,90 @@ public class CommunicationTestActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    private class SendReceive extends Thread
+    {
+        private Socket socket;
+        private InputStream inputStream;
+        private OutputStream outputStream;
+
+        public SendReceive(Socket socket) {
+            this.socket = socket;
+            try {
+                inputStream = socket.getInputStream();
+                outputStream = socket.getOutputStream();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void run() {
+            byte[] buffer = new byte[1024];
+            int bytes;
+
+            while(socket!=null)
+            {
+                try {
+                    bytes = inputStream.read(buffer);
+                    if(bytes > 0)
+                    {
+                        handler.obtainMessage(MESSAGE_READ, bytes, -1, buffer);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
+
+        public void write(byte[] bytes)
+        {
+            try {
+                outputStream.write(bytes);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    public class ServerClass extends Thread
+    {
+        Socket socket;
+        ServerSocket serverSocket;
+
+        @Override
+        public void run() {
+            try {
+                serverSocket = new ServerSocket(8888);
+                socket = serverSocket.accept();
+                sendReceive = new SendReceive(socket);
+                sendReceive.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public class ClientClass extends Thread
+    {
+        Socket socket;
+        String hostAddress;
+
+        public ClientClass(InetAddress hostAddr) {
+
+            hostAddress = hostAddr.getHostAddress();
+            socket = new Socket();
+        }
+
+        @Override
+        public void run() {
+            try {
+                socket.connect(new InetSocketAddress(hostAddress, 88888),500);
+                sendReceive = new SendReceive(socket);
+                sendReceive.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
 }
