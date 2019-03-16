@@ -3,10 +3,6 @@
     package="com.example.stereovisioncarsystem">
 
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="com.huawei.android.launcher.permission.CHANGE_BADGE" />
-    <uses-permission android:name="com.huawei.android.launcher.permission.READ_SETTINGS" />
-    <uses-permission android:name="com.huawei.android.launcher.permission.WRITE_SETTINGS" />
-    <permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL" android:protectionLevel="signature"/>
 
     <uses-feature
         android:name="android.hardware.camera"

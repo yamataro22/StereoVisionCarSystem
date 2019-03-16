@@ -395,7 +395,7 @@ public class CommunicationTestActivity extends AppCompatActivity {
         @Override
         public void run() {
             try {
-                serverSocket = new ServerSocket(8888);
+                serverSocket = new ServerSocket(3333);
                 socket = serverSocket.accept();
                 sendReceive = new SendReceive(socket);
                 sendReceive.start();
@@ -419,7 +419,7 @@ public class CommunicationTestActivity extends AppCompatActivity {
         @Override
         public void run() {
             try {
-                socket.connect(new InetSocketAddress(hostAddress, 88888),500);
+                socket.connect(InetSocketAddress.createUnresolved(hostAddress, 3333),500);
                 sendReceive = new SendReceive(socket);
                 sendReceive.start();
             } catch (IOException e) {
