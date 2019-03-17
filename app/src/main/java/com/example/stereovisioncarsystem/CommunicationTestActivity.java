@@ -155,6 +155,8 @@ public class CommunicationTestActivity extends AppCompatActivity {
         }
     }
 
+    //służy do obsługi otrzymania wiadomości
+
     Handler handler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(Message msg) {
@@ -230,14 +232,9 @@ public class CommunicationTestActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 String msg = writeMsg.getText().toString();
-                if(sendReceive != null)
-                {
-                    sendReceive.write(msg.getBytes());
-                }
-                else
-                {
-                    Toast.makeText(getApplicationContext(),"Najpierw połącz się z odbiornikiem", Toast.LENGTH_SHORT).show();
-                }
+                Log.i("serverLogs", "Próbuję wysłać wiadomość. Status sendreceive: " + sendReceive.isAlive());
+                sendReceive.write(msg.getBytes());
+
             }
         });
     }
@@ -249,15 +246,19 @@ public class CommunicationTestActivity extends AppCompatActivity {
 
             if(wifiP2pInfo.groupFormed && wifiP2pInfo.isGroupOwner)
             {
+                Log.i("serverLogs", "Połaczony jako host, rozpoczynam wątek serwera");
                 connectionStatus.setText("host");
                 serverClass = new ServerClass();
                 serverClass.start();
+                Log.i("serverLogs", "Stworzyłem obiekt servera; status: "+ serverClass.isAlive());
             }
             else if(wifiP2pInfo.groupFormed)
             {
                 connectionStatus.setText("client");
+                Log.i("serverLogs", "Połaczony jako klient, rozpoczynam wątek klienta");
                 clientClass = new ClientClass(groupOwnerAdress);
                 clientClass.start();
+                Log.i("serverLogs", "Stworzyłem obiekt klienta; status: "+ clientClass.isAlive());
             }
         }
     };
@@ -350,6 +351,7 @@ public class CommunicationTestActivity extends AppCompatActivity {
 
         public SendReceive(Socket socket) {
             this.socket = socket;
+            Log.i("serverLogs", "Konstruktor klasy sendReceive");
             try {
                 inputStream = socket.getInputStream();
                 outputStream = socket.getOutputStream();
@@ -360,6 +362,7 @@ public class CommunicationTestActivity extends AppCompatActivity {
 
         @Override
         public void run() {
+            Log.i("serverLogs", "Jestem w SendReceive, metoda run.");
             byte[] buffer = new byte[1024];
             int bytes;
 
@@ -397,8 +400,10 @@ public class CommunicationTestActivity extends AppCompatActivity {
             try {
                 serverSocket = new ServerSocket(3333);
                 socket = serverSocket.accept();
+                Log.i("serverLogs", "Jestem w serverClass. tworzę sendReceive");
                 sendReceive = new SendReceive(socket);
                 sendReceive.start();
+                Log.i("serverLogs", "Jestem w serverClass. status SendReceive"+sendReceive.isAlive());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -420,8 +425,11 @@ public class CommunicationTestActivity extends AppCompatActivity {
         public void run() {
             try {
                 socket.connect(InetSocketAddress.createUnresolved(hostAddress, 3333),500);
+
+                Log.i("serverLogs", "Jestem w clientClass. tworzę sendReceive");
                 sendReceive = new SendReceive(socket);
                 sendReceive.start();
+                Log.i("serverLogs", "Jestem w serverClass. status SendReceive"+sendReceive.isAlive());
             } catch (IOException e) {
                 e.printStackTrace();
             }
