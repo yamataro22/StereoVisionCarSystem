@@ -1,6 +1,5 @@
 package com.example.stereovisioncarsystem;
 
-import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
@@ -10,10 +9,9 @@ import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
-import android.os.AsyncTask;
+
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -28,10 +26,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.IOException;
 import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,7 +52,7 @@ public class CommunicationTestActivity extends AppCompatActivity {
 
     public static final int MESSAGE_READ = 1;
 
-    ServerClass serverClass;
+    ServerReceiver serverClass;
 
     ClientSender clientClass;
 
@@ -87,7 +83,7 @@ public class CommunicationTestActivity extends AppCompatActivity {
 
     }
 
-    //służy do obsługi otrzymania wiadomości
+
 
     Handler handler = new Handler(new Handler.Callback() {
         @Override
@@ -105,6 +101,8 @@ public class CommunicationTestActivity extends AppCompatActivity {
             return true;
         }
     });
+
+
 
     private void exqListener() {
         btnOnOff.setOnClickListener(new View.OnClickListener() {
@@ -176,13 +174,6 @@ public class CommunicationTestActivity extends AppCompatActivity {
         {
             sendMessageToServer(message);
         }
-        else
-        {
-            clientClass.clear();
-            clientClass = new ClientSender(groupOwnerAdress);
-            clientClass.start();
-            sendMessageToServer(message);
-        }
     }
 
     private void sendMessageToServer(String message)
@@ -205,7 +196,7 @@ public class CommunicationTestActivity extends AppCompatActivity {
                 Log.i("serverLogs", "ConnectionListener; Połaczony jako host, tworzę nowy serwer");
 
                 connectionStatus.setText("host");
-                serverClass = new ServerClass();
+                serverClass = new ServerReceiver(handler);
                 peerEstablished = true;
                 serverClass.start();
 
@@ -264,6 +255,8 @@ public class CommunicationTestActivity extends AppCompatActivity {
         writeMsg = findViewById(R.id.send_message_edit_text);
 
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        updateWiFiButton();
+
         wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         p2pChannel = wifiP2pManager.initialize(this, getMainLooper(), null);
 
@@ -277,6 +270,14 @@ public class CommunicationTestActivity extends AppCompatActivity {
 
 
     }
+
+    private void updateWiFiButton()
+    {
+        String status = wifiManager.isWifiEnabled() ? "OFF" : "ON";
+        btnOnOff.setText(status);
+
+    }
+
 
     @Override
     protected void onResume() {
@@ -308,49 +309,5 @@ public class CommunicationTestActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
-
-
-    public class ServerClass extends Thread
-    {
-        Socket socket;
-        ServerSocket serverSocket;
-
-        @Override
-        public void run() {
-            byte[] buffer = new byte[1024];
-            int bytes;
-
-            Log.d("serverLogs", "SerwerClass; Początek run'a");
-            try {
-
-                    serverSocket = new ServerSocket(3333);
-
-                    while(true)
-                    {
-                        Log.d("serverLogs", "SerwerClass; Czekam na akceptację socketa!");
-                        socket = serverSocket.accept();
-                        //inputStream = socket.getInputStream();
-                        Log.d("serverLogs", "SerwerClass; Zaakceptowano socketa!");
-
-
-                        while ((bytes = socket.getInputStream().read(buffer)) > 0)
-                        {
-                            Log.d("serverLogs", "SerwerClass; Ilość bajtów różna od zera");
-                            Message m = Message.obtain(handler, MESSAGE_READ, bytes, -1, buffer);
-                            handler.sendMessage(m);
-                        }
-                        Log.d("serverLogs", "SerwerClass; zamykam socketa");
-                        socket.close();
-
-                    }
-
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-
 
 }
