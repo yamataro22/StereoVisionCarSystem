@@ -29,10 +29,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -57,13 +54,16 @@ public class CommunicationTestActivity extends AppCompatActivity {
     String[] deviceNameArray;
     WifiP2pDevice[] deviceArray;
 
-    static final int MESSAGE_READ = 1;
+    public static final int MESSAGE_READ = 1;
 
     ServerClass serverClass;
-    ClientClass clientClass;
-    SendReceive sendReceive;
+
+    ClientSender clientClass;
+
     InetAddress groupOwnerAdress;
 
+    boolean peerEstablished = false;
+    boolean isClient = false;
 
     protected static final int MY_PERMISSIONS_REQUEST_CAMERA = 1;
 
@@ -162,19 +162,36 @@ public class CommunicationTestActivity extends AppCompatActivity {
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
                 //String msg = writeMsg.getText().toString();
                 Log.d("serverLogs", "Próbuję wysłać wiadomość. Status sendreceive: ");
-                //sendReceive.write(msg.getBytes());
-                //Object[] objArray = new Object[1];
-                //objArray[0] = groupOwnerAdress;
-                //new SendingClient().execute(objArray);
-                if (clientClass.clientMsgHandler != null) {
-                    Message msg = clientClass.clientMsgHandler.obtainMessage(0);
-                    Log.d("serverLogs", "Wysyłam wiadomość");
-                    clientClass.clientMsgHandler.sendMessage(msg);
-                }
+                checkClientStatusAndSendMessage("xD");
             }
         });
+    }
+
+    private void checkClientStatusAndSendMessage(String message)
+    {
+        if(clientClass.isSocketAlive())
+        {
+            sendMessageToServer(message);
+        }
+        else
+        {
+            clientClass.clear();
+            clientClass = new ClientSender(groupOwnerAdress);
+            clientClass.start();
+            sendMessageToServer(message);
+        }
+    }
+
+    private void sendMessageToServer(String message)
+    {
+        if (clientClass.clientMsgHandler != null) {
+            Message msg = clientClass.clientMsgHandler.obtainMessage(0);
+            Log.d("serverLogs", "Wysyłam wiadomość");
+            clientClass.clientMsgHandler.sendMessage(msg);
+        }
     }
 
     WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
@@ -185,18 +202,24 @@ public class CommunicationTestActivity extends AppCompatActivity {
 
 
             if (wifiP2pInfo.groupFormed && wifiP2pInfo.isGroupOwner) {
-                Log.i("serverLogs", "Połaczony jako host, rozpoczynam wątek serwera");
+                Log.i("serverLogs", "ConnectionListener; Połaczony jako host, tworzę nowy serwer");
+
                 connectionStatus.setText("host");
                 serverClass = new ServerClass();
+                peerEstablished = true;
                 serverClass.start();
-                Log.i("serverLogs", "Stworzyłem obiekt servera; status: " + serverClass.isAlive());
+
+                Log.i("serverLogs", "ConnectionListener; Nowy serwer stworzony " + serverClass.isAlive());
             } else if (wifiP2pInfo.groupFormed) {
                   connectionStatus.setText("client");
-                    Log.i("serverLogs", "Połaczony jako klient, rozpoczynam wątek klienta");
-                    clientClass = new ClientClass(groupOwnerAdress);
-                    //clientClass.run();
+                    Log.i("serverLogs", "ConnectionListener; Połaczony jako klient, tworzę nowy wątek klienta");
+
+                    clientClass = new ClientSender(groupOwnerAdress);
                     clientClass.start();
-                    Log.i("serverLogs", "Stworzyłem obiekt klienta; status: ");
+                    peerEstablished = true;
+                    isClient = true;
+
+                    Log.i("serverLogs", "ConnectionListener; Stworzyłem obiekt klienta; status: ");
             }
         }
     };
@@ -263,9 +286,18 @@ public class CommunicationTestActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
+
         super.onPause();
+        if(isClient && peerEstablished) {
+            Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
+            clientClass.clear();
+            clientClass.interrupt();
+            clientClass = null;
+        }
         unregisterReceiver(broadcastReceiver);
     }
+
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -277,224 +309,48 @@ public class CommunicationTestActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public static class FileServerAsyncTask extends AsyncTask<Void, Void, String> {
-
-        private Context context;
-        private TextView statusText;
-        private Handler handler;
-
-        public FileServerAsyncTask(Context context, View statusText, Handler handler) {
-            this.context = context;
-            this.statusText = (TextView) statusText;
-            this.handler = handler;
-        }
-
-        @Override
-        protected String doInBackground(Void... params) {
-            try {
-
-                /**
-                 * Create a server socket and wait for client connections. This
-                 * call blocks until a connection is accepted from a client
-                 */
-                ServerSocket serverSocket = new ServerSocket(3333);
-                Socket client = serverSocket.accept();
-
-                /**
-                 * If this code is reached, a client has connected and transferred data
-                 * Save the input stream from the client as a JPEG file
-                 */
-                byte[] buffer = new byte[1024];
-                int bytes;
-                InputStream inputStream = client.getInputStream();
-
-
-                while (client != null) {
-                    try {
-                        bytes = inputStream.read(buffer);
-                        if (bytes > 0) {
-                            handler.obtainMessage(MESSAGE_READ, bytes, -1, buffer);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-
-                serverSocket.close();
-                return "dziala";
-            } catch (IOException e) {
-                Log.i("serverLogs", "exception w fileAsyncTasku");
-                return null;
-            }
-        }
-
-        /**
-         * Start activity that can handle the JPEG image
-         */
-        @Override
-        protected void onPostExecute(String result) {
-            if (result != null) {
-                Log.i("serverLogs", "jestem w postexecute");
-            }
-        }
-    }
-
-
-
-    private class SendReceive extends Thread {
-        private Socket socket;
-        private InputStream inputStream;
-        private OutputStream outputStream;
-
-        public SendReceive(Socket socket) {
-            this.socket = socket;
-            Log.i("serverLogs", "Konstruktor klasy sendReceive");
-            try {
-                inputStream = socket.getInputStream();
-                outputStream = socket.getOutputStream();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public void run() {
-            Log.i("serverLogs", "Jestem w SendReceive, metoda run.");
-            byte[] buffer = new byte[1024];
-            int bytes;
-
-            while (socket != null) {
-                try {
-                    bytes = inputStream.read(buffer);
-                    if (bytes > 0) {
-                        handler.obtainMessage(MESSAGE_READ, bytes, -1, buffer);
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-            }
-        }
-
-        public void write(byte[] bytes) {
-            try {
-                outputStream.write(bytes);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-
 
     public class ServerClass extends Thread
     {
         Socket socket;
         ServerSocket serverSocket;
-        InputStream inputStream;
 
         @Override
         public void run() {
             byte[] buffer = new byte[1024];
             int bytes;
 
-            Log.d("serverLogs", "klasa ServerClass wystartowała");
+            Log.d("serverLogs", "SerwerClass; Początek run'a");
             try {
-                serverSocket = new ServerSocket(3333);
 
+                    serverSocket = new ServerSocket(3333);
 
-                    Log.d("serverLogs", "Czekam na akceptację socketa!");
-                    socket = serverSocket.accept();
-                    Log.d("serverLogs", "Zaakceptowano socketa!");
-                    inputStream = socket.getInputStream();
-
-                    while(socket!=null && !socket.isClosed())
+                    while(true)
                     {
-                        Log.d("serverLogs", "Socket różny od nulla!");
-                        try{
-                            bytes = inputStream.read(buffer);
-                            if (bytes > 0) {
-                                Log.d("serverLogs", "Ilość bajtów różna od zera");
-                                Message m = Message.obtain(handler, MESSAGE_READ, bytes, -1, buffer);
-                                handler.sendMessage(m);
-                            }
-                        }   catch(IOException e)
+                        Log.d("serverLogs", "SerwerClass; Czekam na akceptację socketa!");
+                        socket = serverSocket.accept();
+                        //inputStream = socket.getInputStream();
+                        Log.d("serverLogs", "SerwerClass; Zaakceptowano socketa!");
+
+
+                        while ((bytes = socket.getInputStream().read(buffer)) > 0)
                         {
-                            e.printStackTrace();
+                            Log.d("serverLogs", "SerwerClass; Ilość bajtów różna od zera");
+                            Message m = Message.obtain(handler, MESSAGE_READ, bytes, -1, buffer);
+                            handler.sendMessage(m);
                         }
+                        Log.d("serverLogs", "SerwerClass; zamykam socketa");
+                        socket.close();
+
                     }
-                    Log.d("serverLogs", "No i socket null");
-                    Log.i("serverLogs", "Jestem w serverClass. tworzę sendReceive");
 
 
-
-//                sendReceive = new SendReceive(socket);
-//                sendReceive.start();
-//                Log.i("serverLogs", "Jestem w serverClass. status SendReceive"+sendReceive.isAlive());
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public class ClientClass extends Thread
-    {
-        Socket socket;
-        String hostAddress;
-        public Handler clientMsgHandler;
-        OutputStream outputStream;
-        private int i = 0;
 
-        public ClientClass(InetAddress hostAddr) {
-
-            hostAddress = hostAddr.getHostAddress();
-            socket = new Socket();
-        }
-
-        @SuppressLint("HandlerLeak")
-        @Override
-        public void run() {
-
-
-
-            try {
-                socket.connect(new InetSocketAddress(hostAddress, 3333),500);
-                outputStream = socket.getOutputStream();
-                Log.d("serverLogs", "Jestem w clientClass. tworzę looperka");
-
-                Looper.prepare();
-
-                clientMsgHandler = new Handler()
-                {
-                    public void handleMessage(Message msg)
-                    {
-                        Log.d("serverLogs", "Jestem w handlerze, zaraz będę wysyłał wiadomość!");
-                        if(msg.what == 0)
-                        {
-                            try {
-                                outputStream.write((""+i).getBytes());
-                                i++;
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-
-                        }
-                    }
-                };
-
-                Looper.loop();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-
-
-
-
-
-
-        }
-    }
 
 }
