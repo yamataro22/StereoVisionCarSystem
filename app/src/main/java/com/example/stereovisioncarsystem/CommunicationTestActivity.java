@@ -1,5 +1,6 @@
 package com.example.stereovisioncarsystem;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
@@ -12,6 +13,7 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -160,13 +162,17 @@ public class CommunicationTestActivity extends AppCompatActivity {
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String msg = writeMsg.getText().toString();
-                Log.i("serverLogs", "Próbuję wysłać wiadomość. Status sendreceive: ");
+                //String msg = writeMsg.getText().toString();
+                Log.d("serverLogs", "Próbuję wysłać wiadomość. Status sendreceive: ");
                 //sendReceive.write(msg.getBytes());
-                Object[] objArray = new Object[1];
-                objArray[0] = groupOwnerAdress;
-                new SendingClient().execute(objArray);
-
+                //Object[] objArray = new Object[1];
+                //objArray[0] = groupOwnerAdress;
+                //new SendingClient().execute(objArray);
+                if (clientClass.clientMsgHandler != null) {
+                    Message msg = clientClass.clientMsgHandler.obtainMessage(0);
+                    Log.d("serverLogs", "Wysyłam wiadomość");
+                    clientClass.clientMsgHandler.sendMessage(msg);
+                }
             }
         });
     }
@@ -186,9 +192,10 @@ public class CommunicationTestActivity extends AppCompatActivity {
                 Log.i("serverLogs", "Stworzyłem obiekt servera; status: " + serverClass.isAlive());
             } else if (wifiP2pInfo.groupFormed) {
                   connectionStatus.setText("client");
-//                Log.i("serverLogs", "Połaczony jako klient, rozpoczynam wątek klienta");
-//                clientClass = new ClientClass(groupOwnerAdress);
-//                clientClass.start();
+                    Log.i("serverLogs", "Połaczony jako klient, rozpoczynam wątek klienta");
+                    clientClass = new ClientClass(groupOwnerAdress);
+                    //clientClass.run();
+                    clientClass.start();
                     Log.i("serverLogs", "Stworzyłem obiekt klienta; status: ");
             }
         }
@@ -380,32 +387,6 @@ public class CommunicationTestActivity extends AppCompatActivity {
     }
 
 
-    public class SendingClient extends AsyncTask<Object, Void, Void>
-    {
-        String hostAddress;
-        private OutputStream outputStream;
-
-        @Override
-        protected Void doInBackground(Object... objects) {
-            try
-            {
-                Log.d("serverLogs", "Jestem w wątku wysyłającym wiadomość");
-                InetAddress adress = (InetAddress)(objects[0]);
-                hostAddress = adress.getHostAddress();
-                Log.d("serverLogs", "Adres hosta: " + hostAddress);
-                Socket socket = new Socket();
-                socket.connect(new InetSocketAddress(hostAddress, 3333),500);
-                Log.d("serverLogs", "Czy udało się połaczyc: : " +  socket.isConnected());
-                outputStream = socket.getOutputStream();
-                outputStream.write("Jakieś gówno".getBytes());
-                outputStream.close();
-                socket.close();
-            }catch (IOException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-    }
 
     public class ServerClass extends Thread
     {
@@ -422,8 +403,7 @@ public class CommunicationTestActivity extends AppCompatActivity {
             try {
                 serverSocket = new ServerSocket(3333);
 
-                while(true)
-                {
+
                     Log.d("serverLogs", "Czekam na akceptację socketa!");
                     socket = serverSocket.accept();
                     Log.d("serverLogs", "Zaakceptowano socketa!");
@@ -436,24 +416,17 @@ public class CommunicationTestActivity extends AppCompatActivity {
                             bytes = inputStream.read(buffer);
                             if (bytes > 0) {
                                 Log.d("serverLogs", "Ilość bajtów różna od zera");
-                                //handler.sendMessage(buffer);
                                 Message m = Message.obtain(handler, MESSAGE_READ, bytes, -1, buffer);
                                 handler.sendMessage(m);
-                                //handler.obtainMessage(MESSAGE_READ, bytes, -1, buffer);
-                            }
-                            else
-                            {
-                                socket.close();
                             }
                         }   catch(IOException e)
                         {
                             e.printStackTrace();
-                            socket.close();
                         }
                     }
                     Log.d("serverLogs", "No i socket null");
                     Log.i("serverLogs", "Jestem w serverClass. tworzę sendReceive");
-                }
+
 
 
 //                sendReceive = new SendReceive(socket);
@@ -469,6 +442,9 @@ public class CommunicationTestActivity extends AppCompatActivity {
     {
         Socket socket;
         String hostAddress;
+        public Handler clientMsgHandler;
+        OutputStream outputStream;
+        private int i = 0;
 
         public ClientClass(InetAddress hostAddr) {
 
@@ -476,18 +452,48 @@ public class CommunicationTestActivity extends AppCompatActivity {
             socket = new Socket();
         }
 
+        @SuppressLint("HandlerLeak")
         @Override
         public void run() {
-            try {
-                socket.connect(InetSocketAddress.createUnresolved(hostAddress, 3333),500);
 
-                Log.i("serverLogs", "Jestem w clientClass. tworzę sendReceive");
-                sendReceive = new SendReceive(socket);
-                sendReceive.start();
-                Log.i("serverLogs", "Jestem w serverClass. status SendReceive"+sendReceive.isAlive());
+
+
+            try {
+                socket.connect(new InetSocketAddress(hostAddress, 3333),500);
+                outputStream = socket.getOutputStream();
+                Log.d("serverLogs", "Jestem w clientClass. tworzę looperka");
+
+                Looper.prepare();
+
+                clientMsgHandler = new Handler()
+                {
+                    public void handleMessage(Message msg)
+                    {
+                        Log.d("serverLogs", "Jestem w handlerze, zaraz będę wysyłał wiadomość!");
+                        if(msg.what == 0)
+                        {
+                            try {
+                                outputStream.write((""+i).getBytes());
+                                i++;
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+
+                        }
+                    }
+                };
+
+                Looper.loop();
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
+
+
+
+
+
+
         }
     }
 
