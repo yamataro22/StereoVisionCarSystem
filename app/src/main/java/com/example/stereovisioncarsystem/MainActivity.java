@@ -51,6 +51,9 @@ public class MainActivity extends AppCompatActivity {
         else if(id == R.id.action_text_communication) {
             createAndStartIntent(CommunicationTestActivity.class);
         }
+        else if(id == R.id.action_photo_communication) {
+            createAndStartIntent(ReceiveFramesActivity.class);
+        }
 
         return super.onOptionsItemSelected(item);
     }

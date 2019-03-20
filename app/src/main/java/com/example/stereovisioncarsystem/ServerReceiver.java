@@ -5,6 +5,7 @@ import android.os.Message;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -53,7 +54,24 @@ public class ServerReceiver extends Thread {
         }
     }
 
+    public void clear()
+    {
+        if(socket.isConnected())
+        {
+            try {
+                Log.d("serverLogs", "ClientSender; staram się wszystko pozamykać");
+                Log.d("serverLogs", "ClientSender; socket: " + socket.isClosed());
 
+                socket.close();
+                handler.getLooper().quit();
+                this.interrupt();
+
+                Log.d("serverLogs", "ClientSender; socket: " + socket.isClosed());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
 
 }

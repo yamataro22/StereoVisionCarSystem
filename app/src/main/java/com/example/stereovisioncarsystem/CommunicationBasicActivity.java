@@ -44,11 +44,11 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
     WifiP2pManager.ActionListener discoverPeersActionListener;
     WifiP2pManager.ActionListener connectedActionListener;
 
-    WifiP2pManager.ActionListener connectionFailListener;
-
-
-
     Handler messageHandler;
+
+    List<WifiP2pDevice> peers = new ArrayList<>();
+    String[] deviceNameArray;
+    WifiP2pDevice[] deviceArray;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,7 +57,6 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
         initialWork();
 
     }
-
 
     protected abstract Handler createMessageReceivedHandler();
 
@@ -87,7 +86,6 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
         discoverPeersActionListener = createDiscoverPeersActionListener();
         connectedActionListener = createConnectActionListener();
 
-
         intentFilter = new IntentFilter();
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
@@ -96,18 +94,43 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
     }
 
 
-
-
     public void discoverPeers()
     {
         wifiP2pManager.discoverPeers(p2pChannel, discoverPeersActionListener);
     }
 
+    public void updatePeersArray(WifiP2pDeviceList peerList) {
+            peers.clear();
+            peers.addAll(peerList.getDeviceList());
+
+
+            deviceNameArray = new String[peerList.getDeviceList().size()];
+            deviceArray = new WifiP2pDevice[peerList.getDeviceList().size()];
+
+            int index = 0;
+
+            for (WifiP2pDevice device : peers) {
+                deviceNameArray[index] = device.deviceName;
+                deviceArray[index] = device;
+                index++;
+
+            }
+    }
+
+    public boolean arePeersUpdate(WifiP2pDeviceList peerList)
+    {
+        return peerList.getDeviceList().equals(peers) ? true : false;
+    }
+
+    public boolean isPeerListEmpty()
+    {
+        return peers.size() == 0 ? true : false;
+    }
+
     public void connectToPeer(WifiP2pDevice which)
     {
-        final WifiP2pDevice device = which;
         WifiP2pConfig config = new WifiP2pConfig();
-        config.deviceAddress = device.deviceAddress;
+        config.deviceAddress = which.deviceAddress;
 
         wifiP2pManager.connect(p2pChannel, config, connectedActionListener);
     }
