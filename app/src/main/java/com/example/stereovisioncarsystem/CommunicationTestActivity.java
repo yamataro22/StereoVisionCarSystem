@@ -61,7 +61,7 @@ public class CommunicationTestActivity extends AppCompatActivity {
     boolean peerEstablished = false;
     boolean isClient = false;
 
-    protected static final int MY_PERMISSIONS_REQUEST_CAMERA = 1;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

@@ -13,9 +13,9 @@ public class WiFiBroadcastReceiver extends BroadcastReceiver {
 
     private WifiP2pManager manager;
     private WifiP2pManager.Channel channel;
-    private CommunicationTestActivity activity;
+    private CommunicationBasicActivity activity;
 
-    public WiFiBroadcastReceiver(WifiP2pManager manager, WifiP2pManager.Channel channel, CommunicationTestActivity activity) {
+    public WiFiBroadcastReceiver(WifiP2pManager manager, WifiP2pManager.Channel channel, CommunicationBasicActivity activity) {
         this.manager = manager;
         this.channel = channel;
         this.activity = activity;
@@ -59,7 +59,8 @@ public class WiFiBroadcastReceiver extends BroadcastReceiver {
             }
             else
             {
-                activity.connectionStatus.setText("Rozłączono");
+                //activity.connectionStatus.setText("Rozłączono");
+                activity.onConnectionFail();
             }
         } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
             // Respond to this device's wifi state changing
