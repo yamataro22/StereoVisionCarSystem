@@ -2,12 +2,15 @@ package com.example.stereovisioncarsystem;
 
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.content.res.TypedArrayUtils;
 import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class ServerReceiver extends Thread {
 
@@ -21,7 +24,10 @@ public class ServerReceiver extends Thread {
 
     @Override
     public void run() {
-        byte[] buffer = new byte[1024];
+        byte[] buffer = new byte[76800];
+        byte[] buffImg = new byte[76800];
+        int byteBuffSize = 0;
+        ArrayList<Byte> buff = new ArrayList<>();
         int bytes;
 
         Log.d("serverLogs", "SerwerClass; Początek run'a");
@@ -39,9 +45,25 @@ public class ServerReceiver extends Thread {
 
                 while ((bytes = socket.getInputStream().read(buffer)) > 0)
                 {
-                    Log.d("serverLogs", "SerwerClass; Ilość bajtów różna od zera");
-                    Message m = Message.obtain(handler, CommunicationTestActivity.MESSAGE_READ, bytes, -1, buffer);
-                    handler.sendMessage(m);
+                    byte[] temp = Arrays.copyOfRange(buffer,0,bytes);
+                    for(int i = 0; i < bytes; i++)
+                    {
+                        buffImg[byteBuffSize+i]=temp[i];
+                    }
+                    byteBuffSize += bytes;
+
+
+                    if(byteBuffSize == 76800)
+                    {
+
+                        //Message m = Message.obtain(handler, CommunicationTestActivity.MESSAGE_READ, bytes, -1, buffer);
+                        Message m = Message.obtain(handler, CommunicationTestActivity.MESSAGE_READ, byteBuffSize, -1, buffImg);
+                        byteBuffSize = 0;
+                        handler.sendMessage(m);
+                    }
+                    Log.d("serverLogs", "Otrzymano " + bytes + " bajtów");
+
+
                 }
                 Log.d("serverLogs", "SerwerClass; zamykam socketa");
                 socket.close();

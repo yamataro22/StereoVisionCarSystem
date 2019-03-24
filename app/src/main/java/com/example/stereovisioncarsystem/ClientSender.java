@@ -53,7 +53,7 @@ public class ClientSender extends Thread {
                 Log.d("serverLogs", "ClientSender; Jestem w handlerze, zaraz będę wysyłał wiadomość!");
                 if (msg.what == 0) {
                     try {
-                        outputStream.write(("" + i).getBytes());
+                        outputStream.write((byte[])msg.obj);
                         outputStream.flush();
                         i++;
                     } catch (IOException e) {

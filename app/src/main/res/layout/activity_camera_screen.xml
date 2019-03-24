@@ -7,7 +7,6 @@
     tools:context="com.example.adamw.visoncarsystem.CameraScreenActivity"
     android:orientation="vertical">
 
-
     <org.opencv.android.JavaCameraView
 
         android:layout_width="fill_parent"

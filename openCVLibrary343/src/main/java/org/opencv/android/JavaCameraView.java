@@ -213,6 +213,7 @@ public class JavaCameraView extends CameraBridgeViewBase implements PreviewCallb
 
                     /* Finally we are ready to start the preview */
                     Log.d(TAG, "startPreview");
+                    //mCamera.setDisplayOrientation(90);
                     mCamera.startPreview();
                 }
                 else
@@ -321,10 +322,10 @@ public class JavaCameraView extends CameraBridgeViewBase implements PreviewCallb
             if (mPreviewFormat == ImageFormat.NV21)
                 Imgproc.cvtColor(mYuvFrameData, mRgba, Imgproc.COLOR_YUV2RGBA_NV21, 4);
             else if (mPreviewFormat == ImageFormat.YV12)
-                Imgproc.cvtColor(mYuvFrameData, mRgba, Imgproc.COLOR_YUV2RGB_I420, 4);  // COLOR_YUV2RGBA_YV12 produces inverted colors
+                Imgproc.cvtColor(mYuvFrameData, mRgba, Imgproc.COLOR_YUV2RGBA_YV12, 4);  // COLOR_YUV2RGB_I420 produces inverted colors
             else
                 throw new IllegalArgumentException("Preview Format can be NV21 or YV12");
-
+            //Imgproc.cvtColor(mYuvFrameData, mRgba, Imgproc.COLOR_YUV2RGBA_YV12, 4);
             return mRgba;
         }
 

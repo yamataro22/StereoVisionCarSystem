@@ -1,10 +1,5 @@
 package com.example.stereovisioncarsystem;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.IntentFilter;
-import android.net.wifi.WifiManager;
-import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
@@ -28,7 +23,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.net.InetAddress;
-
 
 
 public class CommunicationTestActivity extends CommunicationBasicActivity {
@@ -143,7 +137,6 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
         return new WifiP2pManager.PeerListListener() {
             @Override
             public void onPeersAvailable(WifiP2pDeviceList peerList) {
-
                 if (!arePeersUpdate(peerList)) {
 
                     updatePeersArray(peerList);
@@ -195,9 +188,13 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
 
         if(isClient && peerEstablished) {
             Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
-            clientClass.clear();
-            clientClass.interrupt();
-            clientClass = null;
+            if(clientClass!=null)
+            {
+                clientClass.clear();
+                clientClass.interrupt();
+                clientClass = null;
+            }
+
         }
 
     }
@@ -237,7 +234,7 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
             public void onClick(View view) {
                 //String msg = writeMsg.getText().toString();
                 Log.d("serverLogs", "Próbuję wysłać wiadomość. Status sendreceive: ");
-                checkClientStatusAndSendMessage("xD");
+                checkClientStatusAndSendMessage(writeMsg.getText().toString());
             }
         });
     }
@@ -253,7 +250,7 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
     private void sendMessageToServer(String message)
     {
         if (clientClass.clientMsgHandler != null) {
-            Message msg = clientClass.clientMsgHandler.obtainMessage(0);
+            Message msg = clientClass.clientMsgHandler.obtainMessage(0, message);
             Log.d("serverLogs", "Wysyłam wiadomość");
             clientClass.clientMsgHandler.sendMessage(msg);
         }

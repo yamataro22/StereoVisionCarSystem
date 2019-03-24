@@ -1,6 +1,13 @@
 package com.example.stereovisioncarsystem;
 
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
@@ -9,35 +16,78 @@ import android.os.Message;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.SurfaceView;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.android.CameraRenderer;
+import org.opencv.android.JavaCameraView;
+import org.opencv.android.Utils;
+import org.opencv.core.Mat;
+
 import java.net.InetAddress;
 
 
-public class ReceiveFramesActivity extends CommunicationBasicActivity {
+public class ReceiveFramesActivity extends CommunicationBasicActivity implements CameraFramesCapturer.CameraFrameConnector {
 
-
-
+    protected static final String  TAG = "ReceiveFramesActivity";
+    protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
+    protected CameraBridgeViewBase mOpenCvCameraView;
     Button btnDiscoverPeers, btnConnect, btnStartCapturing;
     TextView twConnectionStatus;
     Spinner spinnerPeers;
-
+    boolean flag = false;
 
 
     ServerReceiver serverClass;
     ClientSender clientClass;
     InetAddress groupOwnerAdress;
-
+    WifiP2pDevice device;
 
     private boolean peerEstablished = false;
     private boolean isClient = false;
-    
-    
+    CameraFramesCapturer capturer;
+
+    @Override
+    public void sendFrame(Mat frame) {
+        Log.d("serverLogs", "Otrzymano klatkę");
+        checkClientStatusAndSendMessage(mat2Byte(frame));
+    }
+
+    public byte[] mat2Byte(Mat img)
+    {
+        int total_bytes = img.cols()*img.rows();
+        Log.d("serverLogs", "Wysyłam wiadomość długości: " + total_bytes);
+        Log.d("serverLogs", "rows: " + img.rows());
+        Log.d("serverLogs", "cols: " + img.cols());
+        Log.d("serverLogs", "typ: " + img.type());
+        byte[] returnByte = new byte[total_bytes];
+        img.get(0,0,returnByte);
+        return returnByte;
+
+    }
+    private void checkClientStatusAndSendMessage(Object message)
+    {
+        if(clientClass.isSocketAlive())
+        {
+            sendMessageToServer(message);
+        }
+    }
+
+    private void sendMessageToServer(Object message)
+    {
+        if (clientClass.clientMsgHandler != null) {
+            Message msg = clientClass.clientMsgHandler.obtainMessage(0, message);
+            Log.d("serverLogs", "Wysyłam wiadomość");
+            clientClass.clientMsgHandler.sendMessage(msg);
+        }
+    }
     
     public static final int MESSAGE_READ = 1;
     
@@ -49,20 +99,58 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity {
         initialWork();
         exqListener();
 
+        Log.d("serverLogs", "ReceiveFramesActivity, sprawdzam permissiony");
+
+        if (checkSelfPermission(Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
+                // Show an explanation to the user *asynchronously* -- don't block
+            } else {
+                requestPermissions(new String[]{Manifest.permission.CAMERA},
+                        MY_PERMISSIONS_REQUEST_CAMERA);
+            }
+        }
+        capturer = new CameraFramesCapturer(this);
+
+
+
     }
+
 
     @Override
     protected Handler createMessageReceivedHandler() {
         return new Handler(new Handler.Callback() {
             @Override
             public boolean handleMessage(Message msg) {
-                Log.d("serverLogs", "Jestem w handlerze"+msg.toString());
+                //Log.d("serverLogs", "Jestem w handlerze"+msg.toString());
                 switch (msg.what) {
                     case MESSAGE_READ:
-                        Log.d("serverLogs", "Jestem w handlerze, spróbuję nadpisac wiadomość");
+
                         byte[] readBuffer = (byte[]) msg.obj;
-                        String tempMsg = new String(readBuffer, 0, msg.arg1);
-                        Log.d("serverLogs", "otrzymano: " + tempMsg);
+
+                        Log.d("serverLogs", "Jestem w handlerze, otrzymano wiadomość długości:" +readBuffer.length);
+                        Log.d("serverLogs", "klika pierwszych bajtów:" +readBuffer[0]+" "+readBuffer[1]+" "+readBuffer[100]+" "+readBuffer[1000]+" "+readBuffer[2000]);
+                        Mat mat = new Mat(240,320,0);
+                        mat.put(0,0,readBuffer);
+                        Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(),Bitmap.Config.ARGB_8888);
+                        Utils.matToBitmap(mat,btm);
+
+                        //SurfaceView jcv = findViewById(R.id.hostSurface);
+                        //jcv.setZOrderOnTop(true);
+                        //Canvas canvas = new Canvas(btm);
+                        if(!flag)
+                        {
+                            ImageView im = findViewById(R.id.hostSurface);
+                            im.setImageBitmap(btm);
+                            flag = true;
+                        }
+
+                        //canvas.drawBitmap(btm,0, 0,new Paint());
+                        //canvas.drawColor(Color.BLUE);
+                        //jcv.draw(canvas);
+                        //String tempMsg = new String(readBuffer, 0, msg.arg1);
+                        //Log.d("serverLogs", "otrzymano: " + tempMsg);
                         //readMsgBox.setText(tempMsg);
                         break;
                 }
@@ -104,8 +192,6 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity {
         };
     }
 
-
-
     @Override
     protected WifiP2pManager.PeerListListener createPeerListListener() {
         return new WifiP2pManager.PeerListListener() {
@@ -115,7 +201,7 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity {
                 if (!arePeersUpdate(peerList)) {
 
                     updatePeersArray(peerList);
-                    ArrayAdapter<String> adapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_spinner_item, deviceNameArray);
+                    ArrayAdapter<String> adapter = new ArrayAdapter<>(getBaseContext(), android.R.layout.simple_spinner_item, deviceNameArray);
                     spinnerPeers.setAdapter(adapter);
                 }
                 if (isPeerListEmpty()) {
@@ -169,7 +255,7 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity {
         btnStartCapturing = findViewById(R.id.start_capturing_button);
         twConnectionStatus = findViewById(R.id.connection_status_text_view);
         spinnerPeers = findViewById(R.id.spinner);
-
+        mOpenCvCameraView = findViewById(R.id.InvisibleOpenCvView);
     }
 
 
@@ -186,7 +272,33 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity {
             }
         });
 
+        btnConnect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                device = deviceArray[(int)spinnerPeers.getSelectedItemId()];
+                connectToPeer(device);
+            }
+        });
+
+        btnStartCapturing.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d("serverLogs", "ReceiveFramesActivity, kliknąłem przycisk");
+
+                mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
+                mOpenCvCameraView.setCameraIndex(1);
+                mOpenCvCameraView.setCvCameraViewListener(capturer);
+                //mOpenCvCameraView.setAlpha(0);
+                mOpenCvCameraView.setMaxFrameSize(320,640);
+                mOpenCvCameraView.enableView();
+            }
+        });
+
+
     }
+
+
+
 
 
     private void wifiOn()
@@ -201,4 +313,41 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity {
     {
         return wifiManager.isWifiEnabled() ? false : true;
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        Log.i("filtry", "wchodzę do requestpermissionresult");
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_CAMERA: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    Log.d("serverLogs", "ReceiveFramesActivity, przyznano prawa!");
+
+
+                } else {
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request.
+        }
+    }
+
 }
+
+/*
+    <SurfaceView
+        android:layout_below="@id/start_capturing_button"
+        android:id="@+id/surfaceView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="25dp" />
+
+
+ */
