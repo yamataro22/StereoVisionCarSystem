@@ -5,6 +5,10 @@ import android.os.Message;
 import android.support.v4.content.res.TypedArrayUtils;
 import android.util.Log;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
@@ -24,8 +28,8 @@ public class ServerReceiver extends Thread {
 
     @Override
     public void run() {
-        byte[] buffer = new byte[76800];
-        byte[] buffImg = new byte[76800];
+        byte[] buffer = new byte[2048];
+        //byte[] buffImg = new byte[76800];
         int byteBuffSize = 0;
         ArrayList<Byte> buff = new ArrayList<>();
         int bytes;
@@ -39,35 +43,21 @@ public class ServerReceiver extends Thread {
             {
                 Log.d("serverLogs", "SerwerClass; Czekam na akceptację socketa!");
                 socket = serverSocket.accept();
-                //inputStream = socket.getInputStream();
-                Log.d("serverLogs", "SerwerClass; Zaakceptowano socketa!");
+
+                DataInputStream dis = new DataInputStream(socket.getInputStream());
 
 
-                while ((bytes = socket.getInputStream().read(buffer)) > 0)
+                while(true)
                 {
-                    byte[] temp = Arrays.copyOfRange(buffer,0,bytes);
-                    for(int i = 0; i < bytes; i++)
-                    {
-                        buffImg[byteBuffSize+i]=temp[i];
-                    }
-                    byteBuffSize += bytes;
-
-
-                    if(byteBuffSize == 76800)
-                    {
-
-                        //Message m = Message.obtain(handler, CommunicationTestActivity.MESSAGE_READ, bytes, -1, buffer);
-                        Message m = Message.obtain(handler, CommunicationTestActivity.MESSAGE_READ, byteBuffSize, -1, buffImg);
-                        byteBuffSize = 0;
-                        handler.sendMessage(m);
-                    }
-                    Log.d("serverLogs", "Otrzymano " + bytes + " bajtów");
-
-
+                    int length = dis.readInt();
+                    if(length == 0)
+                        break;
+                    Log.d("serverLogs", "SerwerClass; Length: "+ length);
+                    byte[] buffImg = new byte[length];
+                    dis.readFully(buffImg,0,length);
+                    Message m = Message.obtain(handler, CommunicationTestActivity.MESSAGE_READ, length, -1, buffImg);
+                    handler.sendMessage(m);
                 }
-                Log.d("serverLogs", "SerwerClass; zamykam socketa");
-                socket.close();
-
             }
 
 

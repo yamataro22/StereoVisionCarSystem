@@ -6,6 +6,8 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
@@ -47,14 +49,18 @@ public class ClientSender extends Thread {
             Log.d("serverLogs", "ClientSender, Przerywam!");
             interrupt();
         }
+        final DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(outputStream));
 
         clientMsgHandler = new Handler() {
             public void handleMessage(Message msg) {
                 Log.d("serverLogs", "ClientSender; Jestem w handlerze, zaraz będę wysyłał wiadomość!");
                 if (msg.what == 0) {
                     try {
-                        outputStream.write((byte[])msg.obj);
-                        outputStream.flush();
+                        dos.writeInt(76800);
+                        dos.write((byte[])msg.obj);
+                        dos.flush();
+                        //outputStream.write((byte[])msg.obj);
+                        //outputStream.flush();
                         i++;
                     } catch (IOException e) {
                         e.printStackTrace();

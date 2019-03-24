@@ -129,8 +129,6 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
 
                         byte[] readBuffer = (byte[]) msg.obj;
 
-                        Log.d("serverLogs", "Jestem w handlerze, otrzymano wiadomość długości:" +readBuffer.length);
-                        Log.d("serverLogs", "klika pierwszych bajtów:" +readBuffer[0]+" "+readBuffer[1]+" "+readBuffer[100]+" "+readBuffer[1000]+" "+readBuffer[2000]);
                         Mat mat = new Mat(240,320,0);
                         mat.put(0,0,readBuffer);
                         Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(),Bitmap.Config.ARGB_8888);
@@ -139,12 +137,9 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
                         //SurfaceView jcv = findViewById(R.id.hostSurface);
                         //jcv.setZOrderOnTop(true);
                         //Canvas canvas = new Canvas(btm);
-                        if(!flag)
-                        {
-                            ImageView im = findViewById(R.id.hostSurface);
-                            im.setImageBitmap(btm);
-                            flag = true;
-                        }
+                        ImageView im = findViewById(R.id.hostSurface);
+                        im.setImageBitmap(btm);
+
 
                         //canvas.drawBitmap(btm,0, 0,new Paint());
                         //canvas.drawColor(Color.BLUE);
