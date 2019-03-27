@@ -4,14 +4,6 @@ package com.example.stereovisioncarsystem;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.net.wifi.p2p.WifiP2pDevice;
-import android.net.wifi.p2p.WifiP2pDeviceList;
-import android.net.wifi.p2p.WifiP2pInfo;
-import android.net.wifi.p2p.WifiP2pManager;
-import android.os.Handler;
 import android.os.Message;
 
 import android.os.Bundle;
@@ -29,13 +21,11 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
-import java.net.InetAddress;
-
 
 public class ReceiveFramesActivity extends CommunicationBasicActivity implements CameraFramesCapturer.CameraFrameConnector {
 
-    protected static final String  TAG = "ReceiveFramesActivity";
     protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
+    public static final int MESSAGE_READ = 1;
     protected CameraBridgeViewBase mOpenCvCameraView;
     Button btnDiscoverPeers, btnConnect, btnStartCapturing;
     TextView twConnectionStatus;
@@ -45,12 +35,12 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
     ServerReceiver serverClass;
     ClientSender clientClass;
 
-    WifiP2pDevice device;
 
     private boolean peerEstablished = false;
     private boolean isClient = false;
 
     CameraFramesCapturer capturer;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,12 +67,12 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
 
 
     }
-
     @Override
     public void sendFrame(Mat frame) {
         Log.d("serverLogs", "Otrzymano klatkę");
         checkClientStatusAndSendMessage(mat2Byte(frame));
     }
+
     public byte[] mat2Byte(Mat img)
     {
         int total_bytes = img.cols()*img.rows();
@@ -98,11 +88,29 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
 
     private void checkClientStatusAndSendMessage(Object message)
     {
-        if(clientClass.isSocketAlive())
+        if(isClientLegit())
         {
             sendMessageToServer(message);
         }
     }
+
+    private boolean isClientLegit() {
+        if(!isClient)
+        {
+            Toast.makeText(this,"Host nie może wysyłać widomości",Toast.LENGTH_SHORT).show();
+        }
+        else
+        {
+            if(clientClass!=null)
+            {
+                if(clientClass.isSocketAlive())
+                    return true;
+            }
+        }
+        return false;
+    }
+
+
 
     private void sendMessageToServer(Object message)
     {
@@ -113,9 +121,6 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
         }
     }
 
-
-
-    public static final int MESSAGE_READ = 1;
 
 
     @Override
@@ -225,8 +230,8 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
         btnConnect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                device = getDeviceArray()[(int)spinnerPeers.getSelectedItemId()];
-                connectToPeer(device);
+                int id = (int)spinnerPeers.getSelectedItemId();
+                connectToPeer(getDeviceByIndexAndUpdate(id));
             }
         });
 

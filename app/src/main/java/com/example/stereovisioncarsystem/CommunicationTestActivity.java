@@ -1,14 +1,7 @@
 package com.example.stereovisioncarsystem;
 
-import android.net.wifi.p2p.WifiP2pDevice;
-import android.net.wifi.p2p.WifiP2pDeviceList;
-import android.net.wifi.p2p.WifiP2pInfo;
-import android.net.wifi.p2p.WifiP2pManager;
-
 import android.os.Bundle;
 import android.os.Message;
-
-
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
@@ -21,28 +14,20 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.net.InetAddress;
-
-
 public class CommunicationTestActivity extends CommunicationBasicActivity {
+
+    public static final int MESSAGE_READ = 1;
 
     Button btnOnOff, btnDiscover, btnSend;
     ListView listView;
     TextView readMsgBox, connectionStatus;
     EditText writeMsg;
 
-
-    public static final int MESSAGE_READ = 1;
-
     ServerReceiver serverClass;
     ClientSender clientClass;
-    InetAddress groupOwnerAdress;
-    WifiP2pDevice device;
-
 
     boolean peerEstablished = false;
     boolean isClient = false;
-
 
     @Override
     protected void onClientConnected() {
@@ -97,7 +82,7 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
 
     @Override
     protected void onConnectionSuccess() {
-        Toast.makeText(getApplicationContext(), "Connected to " + device.deviceName, Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), "Connected to " + getConnectedDevice().deviceName, Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -148,6 +133,45 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
         updateWiFiButton();
     }
 
+    private void exqListener() {
+
+        btnOnOff.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (isWiFiEnabled()) {
+                    disableWiFi();
+                    btnOnOff.setText("ON");
+                } else {
+                    enableWiFi();
+                    btnOnOff.setText("OFF");
+                }
+            }
+        });
+
+        btnDiscover.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                discoverPeers();
+            }
+        });
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                connectToPeer(getDeviceByIndexAndUpdate(i));
+            }
+        });
+
+        btnSend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //String msg = writeMsg.getText().toString();
+                Log.d("serverLogs", "Próbuję wysłać wiadomość. Status sendreceive: ");
+                checkClientStatusAndSendMessage(writeMsg.getText().toString());
+            }
+        });
+    }
+
 
 
     @Override
@@ -165,46 +189,6 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
 
         }
 
-    }
-
-    private void exqListener() {
-
-        btnOnOff.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (wifiManager.isWifiEnabled()) {
-                    wifiManager.setWifiEnabled(false);
-                    btnOnOff.setText("ON");
-                } else {
-                    wifiManager.setWifiEnabled(true);
-                    btnOnOff.setText("OFF");
-                }
-            }
-        });
-
-        btnDiscover.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                discoverPeers();
-            }
-        });
-
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                device = getDeviceArray()[i];
-                connectToPeer(device);
-            }
-        });
-
-        btnSend.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                //String msg = writeMsg.getText().toString();
-                Log.d("serverLogs", "Próbuję wysłać wiadomość. Status sendreceive: ");
-                checkClientStatusAndSendMessage(writeMsg.getText().toString());
-            }
-        });
     }
 
     private void checkClientStatusAndSendMessage(String message)
@@ -226,7 +210,7 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
 
     private void updateWiFiButton()
     {
-        String status = wifiManager.isWifiEnabled() ? "OFF" : "ON";
+        String status = isWiFiEnabled() ? "OFF" : "ON";
         btnOnOff.setText(status);
 
     }

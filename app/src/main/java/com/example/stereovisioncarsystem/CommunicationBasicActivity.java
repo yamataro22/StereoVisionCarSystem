@@ -19,18 +19,24 @@ import java.util.List;
 
 public abstract class CommunicationBasicActivity extends AppCompatActivity {
 
-    protected WifiManager wifiManager;
-    protected WifiP2pManager wifiP2pManager;
-    protected WifiP2pManager.Channel p2pChannel;
+    private WifiManager wifiManager;
+    private WifiP2pManager wifiP2pManager;
+    private WifiP2pManager.Channel p2pChannel;
 
-    protected BroadcastReceiver broadcastReceiver;
-    protected IntentFilter intentFilter;
+    private BroadcastReceiver broadcastReceiver;
+    private IntentFilter intentFilter;
     protected InetAddress groupOwnerAdress;
 
     private List<WifiP2pDevice> peers = new ArrayList<>();
     private String[] deviceNameArray;
 
     private WifiP2pDevice[] deviceArray;
+
+    public WifiP2pDevice getConnectedDevice() {
+        return connectedDevice;
+    }
+
+    private WifiP2pDevice connectedDevice = null;
 
     WifiP2pManager.ConnectionInfoListener connectionInfoListener;
 
@@ -215,12 +221,17 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
             wifiManager.setWifiEnabled(false);
         }
     }
-    private boolean isWiFiEnabled() {
+
+    public boolean isWiFiEnabled() {
         return wifiManager.isWifiEnabled() ? true : false;
     }
 
 
-
+    public WifiP2pDevice getDeviceByIndexAndUpdate(int id)
+    {
+        connectedDevice = deviceArray[id];
+        return connectedDevice;
+    }
 
 
 
