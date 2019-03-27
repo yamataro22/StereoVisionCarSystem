@@ -148,10 +148,6 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
         Log.i("serverLogs", "ConnectionListener; Nowy serwer stworzony " + serverClass.isAlive());
     }
 
-    @Override
-    protected void onPeersListEmpty() {
-        Toast.makeText(getApplicationContext(), "Nie ma żadnych peerów", Toast.LENGTH_SHORT).show();
-    }
 
     @Override
     protected void onPeersListUpdate(String[] deviceNameArray) {
@@ -169,15 +165,7 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
         twConnectionStatus.setText("Wykrywanie rozpoczęte");
     }
 
-    @Override
-    protected void onConnectionFailure() {
-        Toast.makeText(getApplicationContext(), "Not connected", Toast.LENGTH_SHORT).show();
-    }
 
-    @Override
-    protected void onConnectionSuccess() {
-        Toast.makeText(getApplicationContext(), "Connected", Toast.LENGTH_SHORT).show();
-    }
 
     @Override
     protected boolean processMessage(Message msg) {
@@ -273,5 +261,17 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
         }
     }
 
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if(clientClass == null) return;
+        if(isClient && peerEstablished) {
+            Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
+            clientClass.clear();
+            clientClass.interrupt();
+            clientClass = null;
+        }
+    }
 }
 

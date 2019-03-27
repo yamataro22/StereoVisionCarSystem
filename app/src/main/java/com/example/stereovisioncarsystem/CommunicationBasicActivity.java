@@ -13,6 +13,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.widget.Toast;
+
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,12 +52,21 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
     protected abstract void onClientConnected();
 
     protected abstract void onServerConnected();
-    protected abstract void onPeersListEmpty();
+    protected void onPeersListEmpty()
+    {
+        Toast.makeText(getApplicationContext(), "Nie ma żadnych peerów", Toast.LENGTH_SHORT).show();
+    }
     protected abstract void onPeersListUpdate(String[] deviceNameArray);
     protected abstract void onDiscoverPeersInitiationFailure();
     protected abstract void onDiscoverPeersInitiationSuccess();
-    protected abstract void onConnectionFailure();
-    protected abstract void onConnectionSuccess();
+    protected void onConnectionFailure()
+    {
+        Toast.makeText(getApplicationContext(), "Not connected", Toast.LENGTH_SHORT).show();
+    }
+    protected void onConnectionSuccess()
+    {
+        Toast.makeText(getApplicationContext(), "Connected to " + getConnectedDevice().deviceName, Toast.LENGTH_SHORT).show();
+    }
     protected abstract void onConnectionFail();
     protected abstract boolean processMessage(Message msg);
 
@@ -234,7 +245,9 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
     }
 
 
-
-
-
+    @Override
+    protected void onStop() {
+        super.onStop();
+        disableWiFi();
+    }
 }

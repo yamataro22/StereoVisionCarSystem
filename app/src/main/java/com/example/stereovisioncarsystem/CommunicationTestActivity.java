@@ -32,31 +32,26 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
     @Override
     protected void onClientConnected() {
         connectionStatus.setText("client");
-        Log.i("serverLogs", "ConnectionListener; Połaczony jako klient, tworzę nowy wątek klienta");
+        Log.d("serverLogs", "ConnectionListener; Połaczony jako klient, tworzę nowy wątek klienta");
 
         clientClass = new ClientSender(groupOwnerAdress);
         clientClass.start();
         peerEstablished = true;
         isClient = true;
 
-        Log.i("serverLogs", "ConnectionListener; Stworzyłem obiekt klienta; status: ");
+        Log.d("serverLogs", "ConnectionListener; Stworzyłem obiekt klienta; status: ");
     }
 
     @Override
     protected void onServerConnected() {
-        Log.i("serverLogs", "ConnectionListener; Połaczony jako host, tworzę nowy serwer");
+        Log.d("serverLogs", "ConnectionListener; Połaczony jako host, tworzę nowy serwer");
 
         connectionStatus.setText("host");
         serverClass = new ServerReceiver(messageHandler);
         peerEstablished = true;
         serverClass.start();
 
-        Log.i("serverLogs", "ConnectionListener; Nowy serwer stworzony " + serverClass.isAlive());
-    }
-
-    @Override
-    protected void onPeersListEmpty() {
-        Toast.makeText(getApplicationContext(), "Nie ma żadnych peerów", Toast.LENGTH_SHORT).show();
+        Log.d("serverLogs", "ConnectionListener; Nowy serwer stworzony " + serverClass.isAlive());
     }
 
     @Override
@@ -75,15 +70,6 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
         connectionStatus.setText("Wykrywanie rozpoczęte");
     }
 
-    @Override
-    protected void onConnectionFailure() {
-        Toast.makeText(getApplicationContext(), "Not connected", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    protected void onConnectionSuccess() {
-        Toast.makeText(getApplicationContext(), "Connected to " + getConnectedDevice().deviceName, Toast.LENGTH_SHORT).show();
-    }
 
     @Override
     protected boolean processMessage(Message msg) {
@@ -165,8 +151,7 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //String msg = writeMsg.getText().toString();
-                Log.d("serverLogs", "Próbuję wysłać wiadomość. Status sendreceive: ");
+                Log.d("serverLogs", "Próbuję wysłać wiadomość: " + writeMsg.getText().toString());
                 checkClientStatusAndSendMessage(writeMsg.getText().toString());
             }
         });
@@ -195,6 +180,7 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
     {
         if(clientClass.isSocketAlive())
         {
+            Log.d("serverLogs", "Sprawdzam status, żyje");
             sendMessageToServer(message);
         }
     }
@@ -202,8 +188,9 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
     private void sendMessageToServer(String message)
     {
         if (clientClass.clientMsgHandler != null) {
-            Message msg = clientClass.clientMsgHandler.obtainMessage(0, message);
-            Log.d("serverLogs", "Wysyłam wiadomość");
+            Log.d("serverLogs", "Handler różny od nulla");
+            Message msg = clientClass.clientMsgHandler.obtainMessage(1, message);
+            Log.d("serverLogs", "Wysyłam wiadomość" + message);
             clientClass.clientMsgHandler.sendMessage(msg);
         }
     }
@@ -220,7 +207,7 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
     @Override
     protected void onPause() {
         super.onPause();
-
+        if(clientClass == null) return;
         if(isClient && peerEstablished) {
             Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
             clientClass.clear();

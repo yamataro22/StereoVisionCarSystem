@@ -28,13 +28,8 @@ public class ServerReceiver extends Thread {
 
     @Override
     public void run() {
-        byte[] buffer = new byte[2048];
-        //byte[] buffImg = new byte[76800];
-        int byteBuffSize = 0;
-        ArrayList<Byte> buff = new ArrayList<>();
-        int bytes;
-
         Log.d("serverLogs", "SerwerClass; Początek run'a");
+
         try {
 
             serverSocket = new ServerSocket(3333);

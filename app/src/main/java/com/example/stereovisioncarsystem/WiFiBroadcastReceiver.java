@@ -58,7 +58,6 @@ public class WiFiBroadcastReceiver extends BroadcastReceiver {
             }
             else
             {
-                //activity.connectionStatus.setText("Rozłączono");
                 activity.onConnectionFail();
             }
         } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {

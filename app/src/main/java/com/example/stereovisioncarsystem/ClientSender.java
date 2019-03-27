@@ -59,13 +59,25 @@ public class ClientSender extends Thread {
                         dos.writeInt(76800);
                         dos.write((byte[])msg.obj);
                         dos.flush();
-                        //outputStream.write((byte[])msg.obj);
-                        //outputStream.flush();
-                        i++;
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                }
+                else if(msg.what == 1)
+                {
+                    Log.d("serverLogs", "ClientSender; Jestem w handlerze, what jest równe 0!");
+                    try {
+                        String message = (String)msg.obj;
+                        Log.d("serverLogs", "Wysyłam wiadomośc "+ message);
+                        byte[] byteArray = message.getBytes();
+                        Log.d("serverLogs", "Wysyłam wiadomośc długości "+ byteArray.length);
+                        dos.writeInt(byteArray.length);
 
+                        dos.write(message.getBytes());
+                        dos.flush();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         };
