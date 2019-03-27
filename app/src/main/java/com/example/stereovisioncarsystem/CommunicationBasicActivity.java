@@ -13,63 +13,53 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
-import android.util.Log;
-import android.view.MenuItem;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
-
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class CommunicationBasicActivity extends AppCompatActivity {
 
-    WifiManager wifiManager;
-    WifiP2pManager wifiP2pManager;
-    WifiP2pManager.Channel p2pChannel;
+    protected WifiManager wifiManager;
+    protected WifiP2pManager wifiP2pManager;
+    protected WifiP2pManager.Channel p2pChannel;
 
-    BroadcastReceiver broadcastReceiver;
-    IntentFilter intentFilter;
+    protected BroadcastReceiver broadcastReceiver;
+    protected IntentFilter intentFilter;
+    protected InetAddress groupOwnerAdress;
 
+    private List<WifiP2pDevice> peers = new ArrayList<>();
+    private String[] deviceNameArray;
+
+    private WifiP2pDevice[] deviceArray;
 
     WifiP2pManager.ConnectionInfoListener connectionInfoListener;
+
     WifiP2pManager.PeerListListener peerListListener;
     WifiP2pManager.ActionListener discoverPeersActionListener;
     WifiP2pManager.ActionListener connectedActionListener;
-
     Handler messageHandler;
 
-    List<WifiP2pDevice> peers = new ArrayList<>();
-    String[] deviceNameArray;
-    WifiP2pDevice[] deviceArray;
+
+
+    protected abstract void onClientConnected();
+
+    protected abstract void onServerConnected();
+    protected abstract void onPeersListEmpty();
+    protected abstract void onPeersListUpdate(String[] deviceNameArray);
+    protected abstract void onDiscoverPeersInitiationFailure();
+    protected abstract void onDiscoverPeersInitiationSuccess();
+    protected abstract void onConnectionFailure();
+    protected abstract void onConnectionSuccess();
+    protected abstract void onConnectionFail();
+    protected abstract boolean processMessage(Message msg);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         initialWork();
-
+        initListeners();
     }
-
-    protected abstract Handler createMessageReceivedHandler();
-
-    protected abstract WifiP2pManager.ConnectionInfoListener createConnectionInfoListener();
-
-    protected abstract WifiP2pManager.PeerListListener createPeerListListener();
-
-    protected abstract WifiP2pManager.ActionListener createDiscoverPeersActionListener();
-
-    protected abstract WifiP2pManager.ActionListener createConnectActionListener();
-
-    protected abstract void onConnectionFail();
-
 
     private void initialWork() {
 
@@ -80,12 +70,6 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
 
         broadcastReceiver = new WiFiBroadcastReceiver(wifiP2pManager, p2pChannel, this);
 
-        messageHandler = createMessageReceivedHandler();
-        connectionInfoListener = createConnectionInfoListener();
-        peerListListener = createPeerListListener();
-        discoverPeersActionListener = createDiscoverPeersActionListener();
-        connectedActionListener = createConnectActionListener();
-
         intentFilter = new IntentFilter();
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
@@ -93,41 +77,104 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
     }
 
+    private void initListeners() {
+        connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
+            @Override
+            public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
+
+                groupOwnerAdress = wifiP2pInfo.groupOwnerAddress;
+
+
+                if (wifiP2pInfo.groupFormed && wifiP2pInfo.isGroupOwner) {
+                    onServerConnected();
+
+                } else if (wifiP2pInfo.groupFormed) {
+                    onClientConnected();
+                }
+            }
+        };
+
+        peerListListener = new WifiP2pManager.PeerListListener() {
+            @Override
+            public void onPeersAvailable(WifiP2pDeviceList peerList) {
+
+                if (!arePeersUpdate(peerList)) {
+
+                    updatePeersArray(peerList);
+                    onPeersListUpdate(deviceNameArray);
+                }
+                if (isPeerListEmpty()) {
+                    onPeersListEmpty();
+                }
+            }
+        };
+
+        discoverPeersActionListener = new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                onDiscoverPeersInitiationSuccess();
+            }
+
+            @Override
+            public void onFailure(int i) {
+                onDiscoverPeersInitiationFailure();
+            }
+        };
+
+        connectedActionListener = new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                onConnectionSuccess();
+            }
+
+            @Override
+            public void onFailure(int i) {
+                onConnectionFailure();
+            }
+        };
+
+        messageHandler = new Handler(new Handler.Callback() {
+            @Override
+            public boolean handleMessage(Message msg) {
+                return processMessage(msg);
+            }
+        });
+    }
 
     public void discoverPeers()
     {
         wifiP2pManager.discoverPeers(p2pChannel, discoverPeersActionListener);
     }
 
-    public void updatePeersArray(WifiP2pDeviceList peerList) {
-            peers.clear();
-            peers.addAll(peerList.getDeviceList());
+    private void updatePeersArray(WifiP2pDeviceList peerList) {
+        peers.clear();
+        peers.addAll(peerList.getDeviceList());
 
 
-            deviceNameArray = new String[peerList.getDeviceList().size()];
-            deviceArray = new WifiP2pDevice[peerList.getDeviceList().size()];
+        deviceNameArray = new String[peerList.getDeviceList().size()];
+        deviceArray = new WifiP2pDevice[peerList.getDeviceList().size()];
 
-            int index = 0;
+        int index = 0;
 
-            for (WifiP2pDevice device : peers) {
-                deviceNameArray[index] = device.deviceName;
-                deviceArray[index] = device;
-                index++;
+        for (WifiP2pDevice device : peers) {
+            deviceNameArray[index] = device.deviceName;
+            deviceArray[index] = device;
+            index++;
 
-            }
+        }
     }
 
-    public boolean arePeersUpdate(WifiP2pDeviceList peerList)
+    private boolean arePeersUpdate(WifiP2pDeviceList peerList)
     {
         return peerList.getDeviceList().equals(peers) ? true : false;
     }
 
-    public boolean isPeerListEmpty()
+    private boolean isPeerListEmpty()
     {
         return peers.size() == 0 ? true : false;
     }
 
-    public void connectToPeer(WifiP2pDevice which)
+    protected void connectToPeer(WifiP2pDevice which)
     {
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = which.deviceAddress;
@@ -135,7 +182,9 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
         wifiP2pManager.connect(p2pChannel, config, connectedActionListener);
     }
 
-
+    public WifiP2pDevice[] getDeviceArray() {
+        return deviceArray;
+    }
 
     @Override
     protected void onResume() {
@@ -144,12 +193,37 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
 
     }
 
-
     @Override
     protected void onPause() {
         super.onPause();
         unregisterReceiver(broadcastReceiver);
 
     }
+
+    public void enableWiFi()
+    {
+        if(!isWiFiEnabled())
+        {
+            wifiManager.setWifiEnabled(true);
+        }
+    }
+
+    public void disableWiFi()
+    {
+        if(isWiFiEnabled())
+        {
+            wifiManager.setWifiEnabled(false);
+        }
+    }
+    private boolean isWiFiEnabled() {
+        return wifiManager.isWifiEnabled() ? true : false;
+    }
+
+
+
+
+
+
+
 
 }

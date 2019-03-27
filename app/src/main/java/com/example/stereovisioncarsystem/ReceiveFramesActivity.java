@@ -26,8 +26,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.CameraRenderer;
-import org.opencv.android.JavaCameraView;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
@@ -42,55 +40,18 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
     Button btnDiscoverPeers, btnConnect, btnStartCapturing;
     TextView twConnectionStatus;
     Spinner spinnerPeers;
-    boolean flag = false;
 
 
     ServerReceiver serverClass;
     ClientSender clientClass;
-    InetAddress groupOwnerAdress;
+
     WifiP2pDevice device;
 
     private boolean peerEstablished = false;
     private boolean isClient = false;
+
     CameraFramesCapturer capturer;
 
-    @Override
-    public void sendFrame(Mat frame) {
-        Log.d("serverLogs", "Otrzymano klatkę");
-        checkClientStatusAndSendMessage(mat2Byte(frame));
-    }
-
-    public byte[] mat2Byte(Mat img)
-    {
-        int total_bytes = img.cols()*img.rows();
-        Log.d("serverLogs", "Wysyłam wiadomość długości: " + total_bytes);
-        Log.d("serverLogs", "rows: " + img.rows());
-        Log.d("serverLogs", "cols: " + img.cols());
-        Log.d("serverLogs", "typ: " + img.type());
-        byte[] returnByte = new byte[total_bytes];
-        img.get(0,0,returnByte);
-        return returnByte;
-
-    }
-    private void checkClientStatusAndSendMessage(Object message)
-    {
-        if(clientClass.isSocketAlive())
-        {
-            sendMessageToServer(message);
-        }
-    }
-
-    private void sendMessageToServer(Object message)
-    {
-        if (clientClass.clientMsgHandler != null) {
-            Message msg = clientClass.clientMsgHandler.obtainMessage(0, message);
-            Log.d("serverLogs", "Wysyłam wiadomość");
-            clientClass.clientMsgHandler.sendMessage(msg);
-        }
-    }
-    
-    public static final int MESSAGE_READ = 1;
-    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -117,126 +78,120 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
 
     }
 
+    @Override
+    public void sendFrame(Mat frame) {
+        Log.d("serverLogs", "Otrzymano klatkę");
+        checkClientStatusAndSendMessage(mat2Byte(frame));
+    }
+    public byte[] mat2Byte(Mat img)
+    {
+        int total_bytes = img.cols()*img.rows();
+        Log.d("serverLogs", "Wysyłam wiadomość długości: " + total_bytes);
+        Log.d("serverLogs", "rows: " + img.rows());
+        Log.d("serverLogs", "cols: " + img.cols());
+        Log.d("serverLogs", "typ: " + img.type());
+        byte[] returnByte = new byte[total_bytes];
+        img.get(0,0,returnByte);
+        return returnByte;
+
+    }
+
+    private void checkClientStatusAndSendMessage(Object message)
+    {
+        if(clientClass.isSocketAlive())
+        {
+            sendMessageToServer(message);
+        }
+    }
+
+    private void sendMessageToServer(Object message)
+    {
+        if (clientClass.clientMsgHandler != null) {
+            Message msg = clientClass.clientMsgHandler.obtainMessage(0, message);
+            Log.d("serverLogs", "Wysyłam wiadomość");
+            clientClass.clientMsgHandler.sendMessage(msg);
+        }
+    }
+
+
+
+    public static final int MESSAGE_READ = 1;
+
 
     @Override
-    protected Handler createMessageReceivedHandler() {
-        return new Handler(new Handler.Callback() {
-            @Override
-            public boolean handleMessage(Message msg) {
-                //Log.d("serverLogs", "Jestem w handlerze"+msg.toString());
-                switch (msg.what) {
-                    case MESSAGE_READ:
+    protected void onClientConnected() {
+        twConnectionStatus.setText("client");
+        Log.i("serverLogs", "ConnectionListener; Połaczony jako klient, tworzę nowy wątek klienta");
 
-                        byte[] readBuffer = (byte[]) msg.obj;
+        clientClass = new ClientSender(groupOwnerAdress);
+        clientClass.start();
+        peerEstablished = true;
+        isClient = true;
 
-                        Mat mat = new Mat(240,320,0);
-                        mat.put(0,0,readBuffer);
-                        Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(),Bitmap.Config.ARGB_8888);
-                        Utils.matToBitmap(mat,btm);
-
-                        //SurfaceView jcv = findViewById(R.id.hostSurface);
-                        //jcv.setZOrderOnTop(true);
-                        //Canvas canvas = new Canvas(btm);
-                        ImageView im = findViewById(R.id.hostSurface);
-                        im.setImageBitmap(btm);
-
-
-                        //canvas.drawBitmap(btm,0, 0,new Paint());
-                        //canvas.drawColor(Color.BLUE);
-                        //jcv.draw(canvas);
-                        //String tempMsg = new String(readBuffer, 0, msg.arg1);
-                        //Log.d("serverLogs", "otrzymano: " + tempMsg);
-                        //readMsgBox.setText(tempMsg);
-                        break;
-                }
-                return true;
-            }
-        });
+        Log.i("serverLogs", "ConnectionListener; Stworzyłem obiekt klienta; status: ");
     }
 
     @Override
-    protected WifiP2pManager.ConnectionInfoListener createConnectionInfoListener() {
-        return new WifiP2pManager.ConnectionInfoListener() {
-            @Override
-            public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
-                //final InetAddress groupOwnerAdress = wifiP2pInfo.groupOwnerAddress;
-                groupOwnerAdress = wifiP2pInfo.groupOwnerAddress;
+    protected void onServerConnected() {
+        Log.i("serverLogs", "ConnectionListener; Połaczony jako host, tworzę nowy serwer");
 
+        twConnectionStatus.setText("host");
+        serverClass = new ServerReceiver(messageHandler);
+        peerEstablished = true;
+        serverClass.start();
 
-                if (wifiP2pInfo.groupFormed && wifiP2pInfo.isGroupOwner) {
-                    Log.i("serverLogs", "ConnectionListener; Połaczony jako host, tworzę nowy serwer");
-
-                    twConnectionStatus.setText("host");
-                    serverClass = new ServerReceiver(messageHandler);
-                    peerEstablished = true;
-                    serverClass.start();
-
-                    Log.i("serverLogs", "ConnectionListener; Nowy serwer stworzony " + serverClass.isAlive());
-                } else if (wifiP2pInfo.groupFormed) {
-                    twConnectionStatus.setText("client");
-                    Log.i("serverLogs", "ConnectionListener; Połaczony jako klient, tworzę nowy wątek klienta");
-
-                    clientClass = new ClientSender(groupOwnerAdress);
-                    clientClass.start();
-                    peerEstablished = true;
-                    isClient = true;
-
-                    Log.i("serverLogs", "ConnectionListener; Stworzyłem obiekt klienta; status: ");
-                }
-            }
-        };
+        Log.i("serverLogs", "ConnectionListener; Nowy serwer stworzony " + serverClass.isAlive());
     }
 
     @Override
-    protected WifiP2pManager.PeerListListener createPeerListListener() {
-        return new WifiP2pManager.PeerListListener() {
-            @Override
-            public void onPeersAvailable(WifiP2pDeviceList peerList) {
-
-                if (!arePeersUpdate(peerList)) {
-
-                    updatePeersArray(peerList);
-                    ArrayAdapter<String> adapter = new ArrayAdapter<>(getBaseContext(), android.R.layout.simple_spinner_item, deviceNameArray);
-                    spinnerPeers.setAdapter(adapter);
-                }
-                if (isPeerListEmpty()) {
-                    Toast.makeText(getApplicationContext(), "Nie ma żadnych peerów", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-            }
-        };
+    protected void onPeersListEmpty() {
+        Toast.makeText(getApplicationContext(), "Nie ma żadnych peerów", Toast.LENGTH_SHORT).show();
     }
 
     @Override
-    protected WifiP2pManager.ActionListener createDiscoverPeersActionListener() {
-        return new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                twConnectionStatus.setText("Wykrywanie rozpoczęte");
-            }
-
-            @Override
-            public void onFailure(int i) {
-                twConnectionStatus.setText("Wykrywanie nieudane");
-            }
-        };
+    protected void onPeersListUpdate(String[] deviceNameArray) {
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(getBaseContext(), android.R.layout.simple_spinner_item, deviceNameArray);
+        spinnerPeers.setAdapter(adapter);
     }
 
     @Override
-    protected WifiP2pManager.ActionListener createConnectActionListener() {
-        return new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                Toast.makeText(getApplicationContext(), "Connected", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onFailure(int i) {
-                Toast.makeText(getApplicationContext(), "Not connected", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        };
+    protected void onDiscoverPeersInitiationFailure() {
+        twConnectionStatus.setText("Wykrywanie nieudane");
     }
+
+    @Override
+    protected void onDiscoverPeersInitiationSuccess() {
+        twConnectionStatus.setText("Wykrywanie rozpoczęte");
+    }
+
+    @Override
+    protected void onConnectionFailure() {
+        Toast.makeText(getApplicationContext(), "Not connected", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    protected void onConnectionSuccess() {
+        Toast.makeText(getApplicationContext(), "Connected", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    protected boolean processMessage(Message msg) {
+        switch (msg.what) {
+            case MESSAGE_READ:
+
+                byte[] readBuffer = (byte[]) msg.obj;
+
+                Mat mat = new Mat(240,320,0);
+                mat.put(0,0,readBuffer);
+                Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(),Bitmap.Config.ARGB_8888);
+                Utils.matToBitmap(mat,btm);
+
+                ImageView im = findViewById(R.id.hostSurface);
+                im.setImageBitmap(btm);
+        }
+        return true;
+    }
+
 
     @Override
     protected void onConnectionFail() {
@@ -262,7 +217,7 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
         btnDiscoverPeers.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                wifiOn();
+                enableWiFi();
                 discoverPeers();
             }
         });
@@ -270,7 +225,7 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
         btnConnect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                device = deviceArray[(int)spinnerPeers.getSelectedItemId()];
+                device = getDeviceArray()[(int)spinnerPeers.getSelectedItemId()];
                 connectToPeer(device);
             }
         });
@@ -283,30 +238,12 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
                 mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
                 mOpenCvCameraView.setCameraIndex(1);
                 mOpenCvCameraView.setCvCameraViewListener(capturer);
-                //mOpenCvCameraView.setAlpha(0);
                 mOpenCvCameraView.setMaxFrameSize(320,640);
                 mOpenCvCameraView.enableView();
             }
         });
 
 
-    }
-
-
-
-
-
-    private void wifiOn()
-    {
-        if(wifiNotEnabled())
-        {
-            wifiManager.setWifiEnabled(true);
-        }
-    }
-
-    boolean wifiNotEnabled()
-    {
-        return wifiManager.isWifiEnabled() ? false : true;
     }
 
     @Override
@@ -328,21 +265,8 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
                 }
                 return;
             }
-
-            // other 'case' lines to check for other
-            // permissions this app might request.
         }
     }
 
 }
 
-/*
-    <SurfaceView
-        android:layout_below="@id/start_capturing_button"
-        android:id="@+id/surfaceView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_margin="25dp" />
-
-
- */
