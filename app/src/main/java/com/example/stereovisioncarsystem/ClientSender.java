@@ -9,7 +9,6 @@ import android.util.Log;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -20,8 +19,6 @@ public class ClientSender extends Thread {
     String hostAddress;
     public Handler clientMsgHandler;
     OutputStream outputStream;
-    InputStream inputStream;
-    private int i = 0;
 
     public ClientSender(InetAddress hostAddress) {
         Log.d("serverLogs", "ClientSender; Tworzę nowego clientServera!");
@@ -41,7 +38,6 @@ public class ClientSender extends Thread {
 
             socket.connect(new InetSocketAddress(hostAddress, 3333), 500);
             outputStream = socket.getOutputStream();
-            inputStream = socket.getInputStream();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -60,14 +56,6 @@ public class ClientSender extends Thread {
                 Log.d("serverLogs", "ClientSender; Sprawdzam stan socketa: isOutputShutdown:  " + socket.isOutputShutdown());
                 Log.d("serverLogs", "ClientSender; Sprawdzam stan socketa: isInputShutdown:  " + socket.isInputShutdown());
                 Log.d("serverLogs", "ClientSender; Sprawdzam stan socketa: isClosed:  " + socket.isClosed());
-                try
-                {
-                    int i =inputStream.available();
-                    Log.d("serverLogs", "ClientSender; avaiable:  " + i);
-                }catch(IOException e)
-                {
-                    Log.d("serverLogs", "wyjątek w avaiable");
-                }
 
                 if (msg.what == 0) {
                     try {

@@ -113,13 +113,20 @@ public class ServerReceiver extends Thread {
             }
 
         if (serverSocket!= null && !serverSocket.isClosed())
-
-        Log.d("serverLogs", "ServerReceive; On Destroy; Zamykam też socketa, status: " + socket.isClosed());
-        socket.close();
-        Log.d("serverLogs", "ServerReceive; On Destroy; Zamknięto, status: " + socket.isClosed());
-        Log.d("serverLogs", "ServerReceive; On Destroy; Zamykam też serversocketa, status "+serverSocket.isClosed());
-        serverSocket.close();
-        Log.d("serverLogs", "ServerReceive; On Destroy; Zamknięto, status: " + serverSocket.isClosed());
+        {
+            Log.d("serverLogs", "ServerReceive; On Destroy; Zamykam też socketa, status: " + socket.isClosed());
+            socket.close();
+            Log.d("serverLogs", "ServerReceive; On Destroy; Zamknięto, status: " + socket.isClosed());
+            Log.d("serverLogs", "ServerReceive; On Destroy; Zamykam też serversocketa, status "+serverSocket.isClosed());
+            serverSocket.close();
+            Log.d("serverLogs", "ServerReceive; On Destroy; Zamknięto, status: " + serverSocket.isClosed());
+        }
+        if (socket!= null && !socket.isClosed())
+        {
+            Log.d("serverLogs", "ServerReceive; On Destroy; Zamykam też socketa, status: " + socket.isClosed());
+            socket.close();
+            Log.d("serverLogs", "ServerReceive; On Destroy; Zamknięto, status: " + socket.isClosed());
+        }
 
 
         this.interrupt();

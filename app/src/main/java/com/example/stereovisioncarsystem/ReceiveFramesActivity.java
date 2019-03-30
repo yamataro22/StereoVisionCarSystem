@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.os.Message;
 
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
@@ -35,11 +36,10 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
     ServerReceiver serverClass;
     ClientSender clientClass;
 
-
-    private boolean peerEstablished = false;
-    private boolean isClient = false;
     private boolean isDisabled = false;
     boolean isServerCreated = false;
+
+
     CameraFramesCapturer capturer;
 
 
@@ -89,27 +89,13 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
 
     private void checkClientStatusAndSendMessage(Object message)
     {
-        if(isClientLegit())
+        if(clientClass!=null)
         {
             sendMessageToServer(message);
         }
     }
 
-    private boolean isClientLegit() {
-        if(!isClient)
-        {
-            Toast.makeText(this,"Host nie może wysyłać widomości",Toast.LENGTH_SHORT).show();
-        }
-        else
-        {
-            if(clientClass!=null)
-            {
-                if(clientClass.isSocketAlive())
-                    return true;
-            }
-        }
-        return false;
-    }
+
 
     private void sendMessageToServer(Object message)
     {
@@ -123,7 +109,8 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
     @Override
     protected void onResume() {
         super.onResume();
-        if(isDisabled&&isClient) {
+        if(isDisabled) {
+            Log.i("serverLogs", "ConnectionListener; onResume, włączam widok");
             mOpenCvCameraView.enableView();
             isDisabled = false;
         }
@@ -136,8 +123,6 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
 
         clientClass = new ClientSender(groupOwnerAdress);
         clientClass.start();
-        peerEstablished = true;
-        isClient = true;
 
         Log.i("serverLogs", "ConnectionListener; Stworzyłem obiekt klienta; status: ");
     }
@@ -149,12 +134,11 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
         {
             twConnectionStatus.setText("host");
             serverClass = new ServerReceiver(messageHandler);
-            peerEstablished = true;
             serverClass.start();
         }
         else
         {
-            Log.i("serverLogs", "ConnectionListener; Jednak nie stworzę nowego serwera");
+            Log.i("serverLogs", "ConnectionListener; Serwer był już stworzony");
         }
 
 
@@ -201,15 +185,13 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
     {
         twConnectionStatus.setText("Rozłączono");
 
-        if(isClient && peerEstablished) {
+        if(clientClass!=null) {
             Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
             if(clientClass!=null)
             {
                 clientClass.clear();
-                clientClass.interrupt();
                 clientClass = null;
             }
-
         }
     }
 
@@ -285,27 +267,24 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
     @Override
     protected void onPause() {
         super.onPause();
-        if(clientClass == null) return;
-        if(isClient && peerEstablished) {
-            Log.d("serverLogs", "ReceiveFramesActivity; On Pause; Staram się usunąć klienta");
+        if(clientClass != null)
+        {
+            Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
             mOpenCvCameraView.disableView();
             isDisabled = true;
-            sendEmptyMessageToServer();
+            sendBreakMessageToServer();
+            SystemClock.sleep(40);
             clientClass.clear();
             clientClass = null;
+        }
 
-        }
-        if(serverClass!=null)
-        {
-            //serverClass.exitLoop();
-        }
     }
 
-    private void sendEmptyMessageToServer()
+    private void sendBreakMessageToServer()
     {
         if (clientClass.clientMsgHandler != null) {
             Log.d("serverLogs", "ReceiveFramesActivity; SendEmptyMessage; Handler różny od nulla");
-            Message msg = clientClass.clientMsgHandler.obtainMessage(1, "");
+            Message msg = clientClass.clientMsgHandler.obtainMessage(1, "b");
             Log.d("serverLogs", "ReceiveFramesActivity; SendEmptyMessage; Wysyłam żeby zakończyć komuniakcję");
             clientClass.clientMsgHandler.sendMessage(msg);
         }

@@ -28,8 +28,6 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
     ServerReceiver serverClass;
     ClientSender clientClass;
 
-    boolean peerEstablished = false;
-    boolean isClient = false;
     boolean isServerCreated = false;
 
     @Override
@@ -39,8 +37,6 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
 
         clientClass = new ClientSender(groupOwnerAdress);
         clientClass.start();
-        peerEstablished = true;
-        isClient = true;
 
         Log.d("serverLogs", "ConnectionListener; Stworzyłem obiekt klienta; status: ");
     }
@@ -53,11 +49,16 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
             Log.d("serverLogs", "ConnectionListener; Połaczony jako host, tworzę nowy serwer");
             connectionStatus.setText("host");
             serverClass = new ServerReceiver(messageHandler);
-            peerEstablished = true;
             serverClass.start();
+
             isServerCreated = true;
+            Log.d("serverLogs", "ConnectionListener; Nowy serwer stworzony " + serverClass.isAlive());
         }
-        Log.d("serverLogs", "ConnectionListener; Nowy serwer stworzony " + serverClass.isAlive());
+        else
+        {
+            Log.d("serverLogs", "ConnectionListener; Serwer był już utworzony wcześniej");
+        }
+
     }
 
     @Override
@@ -166,33 +167,29 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
     protected void onConnectionFail() {
         connectionStatus.setText("Rozłączono");
 
-        if(isClient && peerEstablished) {
-            Log.d("serverLogs", "onConnectionFailure; Staram się usunąć klienta");
-            if(clientClass!=null)
-            {
-                sendMessageToServer("e");
-                SystemClock.sleep(40);
-                clientClass.clear();
-                clientClass.interrupt();
-                clientClass = null;
-            }
-
+        if(clientClass!=null)
+        {
+            Log.d("serverLogs", "CommunicationTestActivity; onConnectionFail; Staram się usunąć klienta");
+            sendMessageToServer("e");
+            SystemClock.sleep(40);
+            clientClass.clear();
+            clientClass = null;
         }
+
         if(serverClass!=null)
         {
             try
             {
-                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Staram się usunąć serwer");
+                Log.d("serverLogs", "CommunicationTestActivity; onConnectionFail; Staram się usunąć serwer");
                 serverClass.closeServer();
                 isServerCreated = false;
+                serverClass=null;
             }
             catch(IOException e)
             {
                 Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Wyjątek");
             }
         }
-
-
     }
 
     private void checkClientStatusAndSendMessage(String message)
@@ -225,15 +222,15 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if(clientClass == null) return;
-        if(isClient && peerEstablished) {
+
+        if(clientClass != null)
+        {
             Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
             sendMessageToServer("b");
             SystemClock.sleep(40);
             clientClass.clear();
             clientClass = null;
         }
-
     }
 
     @Override
@@ -255,6 +252,7 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
             {
                 Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Staram się usunąć serwer");
                 serverClass.closeServer();
+                serverClass = null;
             }
             catch(IOException e)
             {
@@ -266,6 +264,7 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
             sendMessageToServer("e");
             SystemClock.sleep(40);
             clientClass.clear();
+            clientClass = null;
         }
         disableWiFi();
     }
