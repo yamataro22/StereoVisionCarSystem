@@ -9,6 +9,7 @@ import android.util.Log;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -19,6 +20,7 @@ public class ClientSender extends Thread {
     String hostAddress;
     public Handler clientMsgHandler;
     OutputStream outputStream;
+    InputStream inputStream;
     private int i = 0;
 
     public ClientSender(InetAddress hostAddress) {
@@ -39,21 +41,34 @@ public class ClientSender extends Thread {
 
             socket.connect(new InetSocketAddress(hostAddress, 3333), 500);
             outputStream = socket.getOutputStream();
+            inputStream = socket.getInputStream();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-
-        if(!socket.isConnected())
-        {
-            Log.d("serverLogs", "ClientSender, Przerywam!");
-            interrupt();
-        }
         final DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(outputStream));
+
+
+
 
         clientMsgHandler = new Handler() {
             public void handleMessage(Message msg) {
+
                 Log.d("serverLogs", "ClientSender; Jestem w handlerze, zaraz będę wysyłał wiadomość!");
+                Log.d("serverLogs", "ClientSender; Sprawdzam stan socketa: isbound:  " + socket.isBound());
+                Log.d("serverLogs", "ClientSender; Sprawdzam stan socketa: isConnected:  " + socket.isConnected());
+                Log.d("serverLogs", "ClientSender; Sprawdzam stan socketa: isOutputShutdown:  " + socket.isOutputShutdown());
+                Log.d("serverLogs", "ClientSender; Sprawdzam stan socketa: isInputShutdown:  " + socket.isInputShutdown());
+                Log.d("serverLogs", "ClientSender; Sprawdzam stan socketa: isClosed:  " + socket.isClosed());
+                try
+                {
+                    int i =inputStream.available();
+                    Log.d("serverLogs", "ClientSender; avaiable:  " + i);
+                }catch(IOException e)
+                {
+                    Log.d("serverLogs", "wyjątek w avaiable");
+                }
+
                 if (msg.what == 0) {
                     try {
                         dos.writeInt(76800);
@@ -68,11 +83,11 @@ public class ClientSender extends Thread {
                     Log.d("serverLogs", "ClientSender; Jestem w handlerze, what jest równe 0!");
                     try {
                         String message = (String)msg.obj;
-                        Log.d("serverLogs", "Wysyłam wiadomośc "+ message);
+                        Log.d("serverLogs", "ClientSender; Wysyłam wiadomośc "+ message);
                         byte[] byteArray = message.getBytes();
-                        Log.d("serverLogs", "Wysyłam wiadomośc długości "+ byteArray.length);
+                        Log.d("serverLogs", "ClientSender; Wysyłam wiadomośc długości "+ byteArray.length);
                         dos.writeInt(byteArray.length);
-
+                        Log.d("serverLogs", "ClientSender; Mesoda writeInt zwróciła "+ byteArray.length);
                         dos.write(message.getBytes());
                         dos.flush();
                     } catch (IOException e) {
@@ -82,9 +97,12 @@ public class ClientSender extends Thread {
             }
         };
 
-        Looper.loop();
 
+        Looper.loop();
+        Log.d("serverLogs", "ClientSender; Jestem już poza loopem");
     }
+
+
 
     public boolean isSocketAlive() {
         return socket == null ? false : socket.isConnected();
@@ -105,6 +123,7 @@ public class ClientSender extends Thread {
                 this.interrupt();
 
                 Log.d("serverLogs", "ClientSender; socket: " + socket.isClosed());
+                Log.d("serverLogs", "ClientSender; kończę wątek klienta! ");
             } catch (IOException e) {
                 e.printStackTrace();
             }

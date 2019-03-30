@@ -38,7 +38,8 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
 
     private boolean peerEstablished = false;
     private boolean isClient = false;
-
+    private boolean isDisabled = false;
+    boolean isServerCreated = false;
     CameraFramesCapturer capturer;
 
 
@@ -110,8 +111,6 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
         return false;
     }
 
-
-
     private void sendMessageToServer(Object message)
     {
         if (clientClass.clientMsgHandler != null) {
@@ -121,7 +120,14 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
         }
     }
 
-
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(isDisabled&&isClient) {
+            mOpenCvCameraView.enableView();
+            isDisabled = false;
+        }
+    }
 
     @Override
     protected void onClientConnected() {
@@ -139,13 +145,19 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
     @Override
     protected void onServerConnected() {
         Log.i("serverLogs", "ConnectionListener; Połaczony jako host, tworzę nowy serwer");
+        if(!isServerCreated)
+        {
+            twConnectionStatus.setText("host");
+            serverClass = new ServerReceiver(messageHandler);
+            peerEstablished = true;
+            serverClass.start();
+        }
+        else
+        {
+            Log.i("serverLogs", "ConnectionListener; Jednak nie stworzę nowego serwera");
+        }
 
-        twConnectionStatus.setText("host");
-        serverClass = new ServerReceiver(messageHandler);
-        peerEstablished = true;
-        serverClass.start();
 
-        Log.i("serverLogs", "ConnectionListener; Nowy serwer stworzony " + serverClass.isAlive());
     }
 
 
@@ -166,7 +178,6 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
     }
 
 
-
     @Override
     protected boolean processMessage(Message msg) {
         switch (msg.what) {
@@ -185,10 +196,21 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
         return true;
     }
 
-
     @Override
-    protected void onConnectionFail() {
+    protected void onConnectionFail()
+    {
+        twConnectionStatus.setText("Rozłączono");
 
+        if(isClient && peerEstablished) {
+            Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
+            if(clientClass!=null)
+            {
+                clientClass.clear();
+                clientClass.interrupt();
+                clientClass = null;
+            }
+
+        }
     }
 
     private void initialWork()
@@ -200,8 +222,6 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
         spinnerPeers = findViewById(R.id.spinner);
         mOpenCvCameraView = findViewById(R.id.InvisibleOpenCvView);
     }
-
-
 
 
     private void exqListener()
@@ -267,11 +287,33 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
         super.onPause();
         if(clientClass == null) return;
         if(isClient && peerEstablished) {
-            Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
+            Log.d("serverLogs", "ReceiveFramesActivity; On Pause; Staram się usunąć klienta");
+            mOpenCvCameraView.disableView();
+            isDisabled = true;
+            sendEmptyMessageToServer();
             clientClass.clear();
-            clientClass.interrupt();
             clientClass = null;
+
         }
+        if(serverClass!=null)
+        {
+            //serverClass.exitLoop();
+        }
+    }
+
+    private void sendEmptyMessageToServer()
+    {
+        if (clientClass.clientMsgHandler != null) {
+            Log.d("serverLogs", "ReceiveFramesActivity; SendEmptyMessage; Handler różny od nulla");
+            Message msg = clientClass.clientMsgHandler.obtainMessage(1, "");
+            Log.d("serverLogs", "ReceiveFramesActivity; SendEmptyMessage; Wysyłam żeby zakończyć komuniakcję");
+            clientClass.clientMsgHandler.sendMessage(msg);
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
     }
 }
 

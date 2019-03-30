@@ -22,24 +22,16 @@ import java.util.List;
 public abstract class CommunicationBasicActivity extends AppCompatActivity {
 
     private WifiManager wifiManager;
+
     private WifiP2pManager wifiP2pManager;
     private WifiP2pManager.Channel p2pChannel;
-
     private BroadcastReceiver broadcastReceiver;
     private IntentFilter intentFilter;
     protected InetAddress groupOwnerAdress;
-
     private List<WifiP2pDevice> peers = new ArrayList<>();
     private String[] deviceNameArray;
-
     private WifiP2pDevice[] deviceArray;
-
-    public WifiP2pDevice getConnectedDevice() {
-        return connectedDevice;
-    }
-
     private WifiP2pDevice connectedDevice = null;
-
     WifiP2pManager.ConnectionInfoListener connectionInfoListener;
 
     WifiP2pManager.PeerListListener peerListListener;
@@ -48,28 +40,29 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
     Handler messageHandler;
 
 
-
     protected abstract void onClientConnected();
 
     protected abstract void onServerConnected();
+    protected abstract void onPeersListUpdate(String[] deviceNameArray);
+    protected abstract void onDiscoverPeersInitiationFailure();
+    protected abstract void onDiscoverPeersInitiationSuccess();
+    protected abstract void onConnectionFail();
+    protected abstract boolean processMessage(Message msg);
+
     protected void onPeersListEmpty()
     {
         Toast.makeText(getApplicationContext(), "Nie ma żadnych peerów", Toast.LENGTH_SHORT).show();
     }
-    protected abstract void onPeersListUpdate(String[] deviceNameArray);
-    protected abstract void onDiscoverPeersInitiationFailure();
-    protected abstract void onDiscoverPeersInitiationSuccess();
+
     protected void onConnectionFailure()
     {
         Toast.makeText(getApplicationContext(), "Not connected", Toast.LENGTH_SHORT).show();
     }
+
     protected void onConnectionSuccess()
     {
         Toast.makeText(getApplicationContext(), "Connected to " + getConnectedDevice().deviceName, Toast.LENGTH_SHORT).show();
     }
-    protected abstract void onConnectionFail();
-    protected abstract boolean processMessage(Message msg);
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -81,7 +74,7 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
     private void initialWork() {
 
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-
+        enableWiFi();
         wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         p2pChannel = wifiP2pManager.initialize(this, getMainLooper(), null);
 
@@ -195,7 +188,6 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
     {
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = which.deviceAddress;
-
         wifiP2pManager.connect(p2pChannel, config, connectedActionListener);
     }
 
@@ -203,18 +195,8 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
         return deviceArray;
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        registerReceiver(broadcastReceiver, intentFilter);
-
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        unregisterReceiver(broadcastReceiver);
-
+    public WifiP2pDevice getConnectedDevice() {
+        return connectedDevice;
     }
 
     public void enableWiFi()
@@ -244,10 +226,24 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
         return connectedDevice;
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        registerReceiver(broadcastReceiver, intentFilter);
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(broadcastReceiver);
+
+    }
 
     @Override
     protected void onStop() {
         super.onStop();
-        disableWiFi();
+        //disableWiFi();
     }
+
 }

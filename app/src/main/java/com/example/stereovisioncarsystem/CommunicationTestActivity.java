@@ -2,6 +2,7 @@ package com.example.stereovisioncarsystem;
 
 import android.os.Bundle;
 import android.os.Message;
+import android.os.SystemClock;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
@@ -12,7 +13,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import java.io.IOException;
 
 public class CommunicationTestActivity extends CommunicationBasicActivity {
 
@@ -28,6 +30,7 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
 
     boolean peerEstablished = false;
     boolean isClient = false;
+    boolean isServerCreated = false;
 
     @Override
     protected void onClientConnected() {
@@ -44,13 +47,16 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
 
     @Override
     protected void onServerConnected() {
-        Log.d("serverLogs", "ConnectionListener; Połaczony jako host, tworzę nowy serwer");
-
-        connectionStatus.setText("host");
-        serverClass = new ServerReceiver(messageHandler);
-        peerEstablished = true;
-        serverClass.start();
-
+        Log.d("serverLogs", "ConnectionListener; onServerConnected");
+        if(!isServerCreated)
+        {
+            Log.d("serverLogs", "ConnectionListener; Połaczony jako host, tworzę nowy serwer");
+            connectionStatus.setText("host");
+            serverClass = new ServerReceiver(messageHandler);
+            peerEstablished = true;
+            serverClass.start();
+            isServerCreated = true;
+        }
         Log.d("serverLogs", "ConnectionListener; Nowy serwer stworzony " + serverClass.isAlive());
     }
 
@@ -69,7 +75,6 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
     protected void onDiscoverPeersInitiationSuccess() {
         connectionStatus.setText("Wykrywanie rozpoczęte");
     }
-
 
     @Override
     protected boolean processMessage(Message msg) {
@@ -157,27 +162,42 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
         });
     }
 
-
-
     @Override
     protected void onConnectionFail() {
         connectionStatus.setText("Rozłączono");
 
         if(isClient && peerEstablished) {
-            Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
+            Log.d("serverLogs", "onConnectionFailure; Staram się usunąć klienta");
             if(clientClass!=null)
             {
+                sendMessageToServer("e");
+                SystemClock.sleep(40);
                 clientClass.clear();
                 clientClass.interrupt();
                 clientClass = null;
             }
 
         }
+        if(serverClass!=null)
+        {
+            try
+            {
+                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Staram się usunąć serwer");
+                serverClass.closeServer();
+                isServerCreated = false;
+            }
+            catch(IOException e)
+            {
+                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Wyjątek");
+            }
+        }
+
 
     }
 
     private void checkClientStatusAndSendMessage(String message)
     {
+        if(clientClass == null) return;
         if(clientClass.isSocketAlive())
         {
             Log.d("serverLogs", "Sprawdzam status, żyje");
@@ -190,7 +210,7 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
         if (clientClass.clientMsgHandler != null) {
             Log.d("serverLogs", "Handler różny od nulla");
             Message msg = clientClass.clientMsgHandler.obtainMessage(1, message);
-            Log.d("serverLogs", "Wysyłam wiadomość" + message);
+            Log.d("serverLogs", "Wysyłam wiadomość: " + message);
             clientClass.clientMsgHandler.sendMessage(msg);
         }
     }
@@ -202,21 +222,19 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
 
     }
 
-
-
     @Override
     protected void onPause() {
         super.onPause();
         if(clientClass == null) return;
         if(isClient && peerEstablished) {
             Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
+            sendMessageToServer("b");
+            SystemClock.sleep(40);
             clientClass.clear();
-            clientClass.interrupt();
             clientClass = null;
         }
 
     }
-
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -228,4 +246,27 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(serverClass!=null)
+        {
+            try
+            {
+                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Staram się usunąć serwer");
+                serverClass.closeServer();
+            }
+            catch(IOException e)
+            {
+                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Wyjątek");
+            }
+        }
+        if(clientClass!=null)
+        {
+            sendMessageToServer("e");
+            SystemClock.sleep(40);
+            clientClass.clear();
+        }
+        disableWiFi();
+    }
 }
