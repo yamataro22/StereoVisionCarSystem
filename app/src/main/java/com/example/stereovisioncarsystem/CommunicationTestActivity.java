@@ -2,7 +2,6 @@ package com.example.stereovisioncarsystem;
 
 import android.os.Bundle;
 import android.os.Message;
-import android.os.SystemClock;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
@@ -14,8 +13,6 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import java.io.IOException;
-
 public class CommunicationTestActivity extends CommunicationBasicActivity {
 
     public static final int MESSAGE_READ = 1;
@@ -24,73 +21,6 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
     ListView listView;
     TextView readMsgBox, connectionStatus;
     EditText writeMsg;
-
-    ServerReceiver serverClass;
-    ClientSender clientClass;
-
-    boolean isServerCreated = false;
-
-    @Override
-    protected void onClientConnected() {
-        connectionStatus.setText("client");
-        Log.d("serverLogs", "ConnectionListener; Połaczony jako klient, tworzę nowy wątek klienta");
-
-        clientClass = new ClientSender(groupOwnerAdress);
-        clientClass.start();
-
-        Log.d("serverLogs", "ConnectionListener; Stworzyłem obiekt klienta; status: ");
-    }
-
-    @Override
-    protected void onServerConnected() {
-        Log.d("serverLogs", "ConnectionListener; onServerConnected");
-        if(!isServerCreated)
-        {
-            Log.d("serverLogs", "ConnectionListener; Połaczony jako host, tworzę nowy serwer");
-            connectionStatus.setText("host");
-            serverClass = new ServerReceiver(messageHandler);
-            serverClass.start();
-
-            isServerCreated = true;
-            Log.d("serverLogs", "ConnectionListener; Nowy serwer stworzony " + serverClass.isAlive());
-        }
-        else
-        {
-            Log.d("serverLogs", "ConnectionListener; Serwer był już utworzony wcześniej");
-        }
-
-    }
-
-    @Override
-    protected void onPeersListUpdate(String[] deviceNameArray) {
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_list_item_1, deviceNameArray);
-        listView.setAdapter(adapter);
-    }
-
-    @Override
-    protected void onDiscoverPeersInitiationFailure() {
-        connectionStatus.setText("Wykrywanie nieudane");
-    }
-
-    @Override
-    protected void onDiscoverPeersInitiationSuccess() {
-        connectionStatus.setText("Wykrywanie rozpoczęte");
-    }
-
-    @Override
-    protected boolean processMessage(Message msg) {
-        Log.d("serverLogs", "Jestem w handlerze"+msg.toString());
-        switch (msg.what) {
-            case MESSAGE_READ:
-                Log.d("serverLogs", "Jestem w handlerze, spróbuję nadpisac wiadomość");
-                byte[] readBuffer = (byte[]) msg.obj;
-                String tempMsg = new String(readBuffer, 0, msg.arg1);
-                Log.d("serverLogs", "otrzymano: " + tempMsg);
-                readMsgBox.setText(tempMsg);
-                break;
-        }
-        return true;
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -164,32 +94,52 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
     }
 
     @Override
+    protected void onClientConnected() {
+        connectionStatus.setText("client");
+        super.onClientConnected();
+    }
+
+    @Override
+    protected void onServerConnected() {
+        connectionStatus.setText("host");
+        super.onServerConnected();
+    }
+
+    @Override
+    protected void onPeersListUpdate(String[] deviceNameArray) {
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_list_item_1, deviceNameArray);
+        listView.setAdapter(adapter);
+    }
+
+    @Override
+    protected void onDiscoverPeersInitiationFailure() {
+        connectionStatus.setText("Wykrywanie nieudane");
+    }
+
+    @Override
+    protected void onDiscoverPeersInitiationSuccess() {
+        connectionStatus.setText("Wykrywanie rozpoczęte");
+    }
+
+    @Override
+    protected boolean processMessage(Message msg) {
+        Log.d("serverLogs", "Jestem w handlerze"+msg.toString());
+        switch (msg.what) {
+            case MESSAGE_READ:
+                Log.d("serverLogs", "Jestem w handlerze, spróbuję nadpisac wiadomość");
+                byte[] readBuffer = (byte[]) msg.obj;
+                String tempMsg = new String(readBuffer, 0, msg.arg1);
+                Log.d("serverLogs", "otrzymano: " + tempMsg);
+                readMsgBox.setText(tempMsg);
+                break;
+        }
+        return true;
+    }
+
+    @Override
     protected void onConnectionFail() {
         connectionStatus.setText("Rozłączono");
-
-        if(clientClass!=null)
-        {
-            Log.d("serverLogs", "CommunicationTestActivity; onConnectionFail; Staram się usunąć klienta");
-            clientClass.sendEndMessage();
-            SystemClock.sleep(40);
-            clientClass.clear();
-            clientClass = null;
-        }
-
-        if(serverClass!=null)
-        {
-            try
-            {
-                Log.d("serverLogs", "CommunicationTestActivity; onConnectionFail; Staram się usunąć serwer");
-                serverClass.closeServer();
-                isServerCreated = false;
-                serverClass=null;
-            }
-            catch(IOException e)
-            {
-                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Wyjątek");
-            }
-        }
+        super.onConnectionFail();
     }
 
     private void checkClientStatusAndSendMessage(String message)
@@ -219,19 +169,6 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
 
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-
-        if(clientClass != null)
-        {
-            Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
-            sendMessageToServer("b");
-            SystemClock.sleep(40);
-            clientClass.clear();
-            clientClass = null;
-        }
-    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -243,29 +180,4 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if(serverClass!=null)
-        {
-            try
-            {
-                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Staram się usunąć serwer");
-                serverClass.closeServer();
-                serverClass = null;
-            }
-            catch(IOException e)
-            {
-                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Wyjątek");
-            }
-        }
-        if(clientClass!=null)
-        {
-            clientClass.sendEndMessage();
-            SystemClock.sleep(40);
-            clientClass.clear();
-            clientClass = null;
-        }
-        disableWiFi();
-    }
 }

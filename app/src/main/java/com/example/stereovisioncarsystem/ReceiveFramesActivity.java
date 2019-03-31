@@ -7,7 +7,6 @@ import android.graphics.Bitmap;
 import android.os.Message;
 
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
@@ -21,28 +20,19 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
-import java.io.IOException;
-
 
 public class ReceiveFramesActivity extends CommunicationBasicActivity implements CameraFramesCapturer.CameraFrameConnector {
 
     protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
     public static final int MESSAGE_READ = 1;
+
     protected CameraBridgeViewBase mOpenCvCameraView;
     Button btnDiscoverPeers, btnConnect, btnStartCapturing;
     TextView twConnectionStatus;
     Spinner spinnerPeers;
 
-
-    ServerReceiver serverClass;
-    ClientSender clientClass;
-
-    private boolean isDisabled = false;
-    boolean isServerCreated = false;
-
-
+    private boolean isCameraViewDisabledOnClient = false;
     CameraFramesCapturer capturer;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,153 +55,6 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
             }
         }
         capturer = new CameraFramesCapturer(this);
-
-
-
-    }
-    @Override
-    public void sendFrame(Mat frame) {
-        Log.d("serverLogs", "Otrzymano klatkę");
-        checkClientStatusAndSendMessage(mat2Byte(frame));
-    }
-
-    public byte[] mat2Byte(Mat img)
-    {
-        int total_bytes = img.cols()*img.rows();
-        Log.d("serverLogs", "Wysyłam wiadomość długości: " + total_bytes);
-        Log.d("serverLogs", "rows: " + img.rows());
-        Log.d("serverLogs", "cols: " + img.cols());
-        Log.d("serverLogs", "typ: " + img.type());
-        byte[] returnByte = new byte[total_bytes];
-        img.get(0,0,returnByte);
-        return returnByte;
-
-    }
-
-    private void checkClientStatusAndSendMessage(Object message)
-    {
-        if(clientClass!=null)
-        {
-            sendMessageToServer(message);
-        }
-    }
-
-
-
-    private void sendMessageToServer(Object message)
-    {
-        if (clientClass.clientMsgHandler != null) {
-            Message msg = clientClass.clientMsgHandler.obtainMessage(0, message);
-            Log.d("serverLogs", "Wysyłam wiadomość");
-            clientClass.clientMsgHandler.sendMessage(msg);
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if(isDisabled) {
-            Log.i("serverLogs", "ConnectionListener; onResume, włączam widok");
-            mOpenCvCameraView.enableView();
-            isDisabled = false;
-        }
-    }
-
-    @Override
-    protected void onClientConnected() {
-        twConnectionStatus.setText("client");
-        Log.i("serverLogs", "ConnectionListener; Połaczony jako klient, tworzę nowy wątek klienta");
-
-        clientClass = new ClientSender(groupOwnerAdress);
-        clientClass.start();
-
-        Log.i("serverLogs", "ConnectionListener; Stworzyłem obiekt klienta; status: ");
-    }
-
-    @Override
-    protected void onServerConnected() {
-        Log.i("serverLogs", "ConnectionListener; Połaczony jako host, tworzę nowy serwer");
-        if(!isServerCreated)
-        {
-            twConnectionStatus.setText("host");
-            serverClass = new ServerReceiver(messageHandler);
-            serverClass.start();
-        }
-        else
-        {
-            Log.i("serverLogs", "ConnectionListener; Serwer był już stworzony");
-        }
-
-
-    }
-
-
-    @Override
-    protected void onPeersListUpdate(String[] deviceNameArray) {
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(getBaseContext(), android.R.layout.simple_spinner_item, deviceNameArray);
-        spinnerPeers.setAdapter(adapter);
-    }
-
-    @Override
-    protected void onDiscoverPeersInitiationFailure() {
-        twConnectionStatus.setText("Wykrywanie nieudane");
-    }
-
-    @Override
-    protected void onDiscoverPeersInitiationSuccess() {
-        twConnectionStatus.setText("Wykrywanie rozpoczęte");
-    }
-
-
-    @Override
-    protected boolean processMessage(Message msg) {
-        switch (msg.what) {
-            case MESSAGE_READ:
-
-                byte[] readBuffer = (byte[]) msg.obj;
-
-                Mat mat = new Mat(240,320,0);
-                mat.put(0,0,readBuffer);
-                Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(),Bitmap.Config.ARGB_8888);
-                Utils.matToBitmap(mat,btm);
-
-                ImageView im = findViewById(R.id.hostSurface);
-                im.setImageBitmap(btm);
-        }
-        return true;
-    }
-
-    @Override
-    protected void onConnectionFail()
-    {
-        twConnectionStatus.setText("Rozłączono");
-
-        if(clientClass!=null) {
-            Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
-            if(clientClass!=null)
-            {
-                mOpenCvCameraView.disableView();
-                isDisabled = true;
-                clientClass.sendEndMessage();
-                SystemClock.sleep(40);
-                clientClass.clear();
-                clientClass = null;
-            }
-        }
-        if(serverClass!=null)
-        {
-            try
-            {
-                Log.d("serverLogs", "CommunicationTestActivity; onConnectionFail; Staram się usunąć serwer");
-                serverClass.closeServer();
-                isServerCreated = false;
-                serverClass=null;
-            }
-            catch(IOException e)
-            {
-                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Wyjątek");
-            }
-        }
     }
 
     private void initialWork()
@@ -223,7 +66,6 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
         spinnerPeers = findViewById(R.id.spinner);
         mOpenCvCameraView = findViewById(R.id.InvisibleOpenCvView);
     }
-
 
     private void exqListener()
     {
@@ -260,6 +102,142 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
 
     }
 
+    private void checkClientStatusAndSendMessage(Object message)
+    {
+        try {
+            sendMessageToServer(message);
+        } catch (NullClientException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendMessageToServer(Object message) throws NullClientException
+    {
+        if(clientClass == null) throw new NullClientException();
+        if(clientClass.clientMsgHandler == null) throw new NullClientException();
+
+        Log.d("serverLogs", "Wysyłam wiadomość");
+        Message msg = clientClass.clientMsgHandler.obtainMessage(0, message);
+        clientClass.clientMsgHandler.sendMessage(msg);
+    }
+
+    public byte[] mat2Byte(Mat img)
+    {
+        int total_bytes = img.cols()*img.rows();
+        Log.d("serverLogs", "Wysyłam wiadomość długości: " + total_bytes);
+        Log.d("serverLogs", "rows: " + img.rows());
+        Log.d("serverLogs", "cols: " + img.cols());
+        Log.d("serverLogs", "typ: " + img.type());
+        byte[] returnByte = new byte[total_bytes];
+        img.get(0,0,returnByte);
+        return returnByte;
+
+    }
+
+    @Override
+    public void sendFrame(Mat frame) {
+        Log.d("serverLogs", "Otrzymano klatkę");
+        checkClientStatusAndSendMessage(mat2Byte(frame));
+    }
+
+
+    private void enableCameraViewOnClient() {
+        if(isCameraViewDisabledOnClient) {
+            Log.i("serverLogs", "ConnectionListener; onResume, włączam widok");
+            mOpenCvCameraView.enableView();
+            isCameraViewDisabledOnClient = false;
+        }
+    }
+
+    @Override
+    protected void onClientConnected() {
+        twConnectionStatus.setText("client");
+        super.onClientConnected();
+    }
+
+    @Override
+    protected void onServerConnected() {
+        twConnectionStatus.setText("host");
+        super.onServerConnected();
+    }
+
+    @Override
+    protected void onPeersListUpdate(String[] deviceNameArray) {
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(getBaseContext(), android.R.layout.simple_spinner_item, deviceNameArray);
+        spinnerPeers.setAdapter(adapter);
+    }
+
+    @Override
+    protected void onDiscoverPeersInitiationFailure() {
+        twConnectionStatus.setText("Wykrywanie nieudane");
+    }
+
+    @Override
+    protected void onDiscoverPeersInitiationSuccess() {
+        twConnectionStatus.setText("Wykrywanie rozpoczęte");
+    }
+
+    @Override
+    protected boolean processMessage(Message msg) {
+        switch (msg.what) {
+            case MESSAGE_READ:
+
+                byte[] readBuffer = (byte[]) msg.obj;
+
+                Mat mat = new Mat(240,320,0);
+                mat.put(0,0,readBuffer);
+                Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(),Bitmap.Config.ARGB_8888);
+                Utils.matToBitmap(mat,btm);
+
+                ImageView im = findViewById(R.id.hostSurface);
+                im.setImageBitmap(btm);
+        }
+        return true;
+    }
+
+    @Override
+    protected void onConnectionFail()
+    {
+        twConnectionStatus.setText("Rozłączono");
+        disableCameraViewOnClient();
+        super.onConnectionFail();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        enableCameraViewOnClient();
+    }
+
+    @Override
+    protected void onPause() {
+        disableCameraViewOnClient();
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        disableCameraViewOnClient();
+        super.onDestroy();
+    }
+
+    private void disableCameraViewOnClient() {
+        if (clientClass != null) {
+            mOpenCvCameraView.disableView();
+            isCameraViewDisabledOnClient = true;
+        }
+    }
+
+    private class NullClientException extends Exception
+    {
+
+        @Override
+        public String toString() {
+            return "Null client exception:(";
+        }
+
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
@@ -281,54 +259,8 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
             }
         }
     }
-
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if(clientClass != null)
-        {
-            Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
-            mOpenCvCameraView.disableView();
-            isDisabled = true;
-            clientClass.sendBreakMessage();
-            SystemClock.sleep(40);
-            clientClass.clear();
-            clientClass = null;
-        }
-
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if(serverClass!=null)
-        {
-            try
-            {
-                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Staram się usunąć serwer");
-                serverClass.closeServer();
-                serverClass = null;
-            }
-            catch(IOException e)
-            {
-                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Wyjątek");
-            }
-        }
-        if(clientClass!=null)
-        {
-            clientClass.sendEndMessage();
-            SystemClock.sleep(40);
-            clientClass.clear();
-            clientClass = null;
-        }
-        disableWiFi();
-    }
 }
+
+
 
 

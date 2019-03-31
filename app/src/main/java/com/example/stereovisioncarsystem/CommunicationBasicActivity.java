@@ -11,10 +11,13 @@ import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,14 +42,61 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
     WifiP2pManager.ActionListener connectedActionListener;
     Handler messageHandler;
 
+    protected ClientSender clientClass;
+    protected ServerReceiver serverClass;
+    boolean isServerCreated = false;
 
-    protected abstract void onClientConnected();
+    protected void onClientConnected()
+    {
+        Log.i("serverLogs", "ConnectionListener; Połaczony jako klient, tworzę nowy wątek klienta");
+        clientClass = new ClientSender(groupOwnerAdress);
+        clientClass.start();
+        Log.i("serverLogs", "ConnectionListener; Stworzyłem obiekt klienta; status: ");
+    }
 
-    protected abstract void onServerConnected();
+    protected void onServerConnected()
+    {
+        Log.i("serverLogs", "ConnectionListener; Połaczony jako host, tworzę nowy serwer");
+        if(!isServerCreated)
+        {
+            serverClass = new ServerReceiver(messageHandler);
+            serverClass.start();
+            isServerCreated = true;
+        }
+        else
+        {
+            Log.i("serverLogs", "ConnectionListener; Serwer był już stworzony");
+        }
+    }
     protected abstract void onPeersListUpdate(String[] deviceNameArray);
     protected abstract void onDiscoverPeersInitiationFailure();
     protected abstract void onDiscoverPeersInitiationSuccess();
-    protected abstract void onConnectionFail();
+    protected void onConnectionFail()
+    {
+
+        if(clientClass!=null)
+        {
+            Log.d("serverLogs", "onConnectionFail; Staram się usunąć klienta");
+            clientClass.sendEndMessage();
+            SystemClock.sleep(40);
+            clientClass.clear();
+            clientClass = null;
+        }
+        if(serverClass!=null)
+        {
+            try
+            {
+                Log.d("serverLogs", "CommunicationTestActivity; onConnectionFail; Staram się usunąć serwer");
+                serverClass.closeServer();
+                isServerCreated = false;
+                serverClass=null;
+            }
+            catch(IOException e)
+            {
+                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Wyjątek");
+            }
+        }
+    }
     protected abstract boolean processMessage(Message msg);
 
     protected void onPeersListEmpty()
@@ -236,8 +286,15 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        if(clientClass != null)
+        {
+            Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
+            clientClass.sendBreakMessage();
+            SystemClock.sleep(40);
+            clientClass.clear();
+            clientClass = null;
+        }
         unregisterReceiver(broadcastReceiver);
-
     }
 
     @Override
@@ -246,4 +303,30 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
         //disableWiFi();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(serverClass!=null)
+        {
+            try
+            {
+                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Staram się usunąć serwer");
+                serverClass.closeServer();
+                serverClass = null;
+            }
+            catch(IOException e)
+            {
+                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Wyjątek");
+            }
+        }
+        if(clientClass!=null)
+        {
+
+            clientClass.sendEndMessage();
+            SystemClock.sleep(40);
+            clientClass.clear();
+            clientClass = null;
+        }
+        disableWiFi();
+    }
 }
