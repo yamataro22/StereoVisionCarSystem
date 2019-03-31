@@ -16,11 +16,12 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
+
+import java.io.IOException;
 
 
 public class ReceiveFramesActivity extends CommunicationBasicActivity implements CameraFramesCapturer.CameraFrameConnector {
@@ -189,8 +190,26 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
             Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
             if(clientClass!=null)
             {
+                mOpenCvCameraView.disableView();
+                isDisabled = true;
+                clientClass.sendEndMessage();
+                SystemClock.sleep(40);
                 clientClass.clear();
                 clientClass = null;
+            }
+        }
+        if(serverClass!=null)
+        {
+            try
+            {
+                Log.d("serverLogs", "CommunicationTestActivity; onConnectionFail; Staram się usunąć serwer");
+                serverClass.closeServer();
+                isServerCreated = false;
+                serverClass=null;
+            }
+            catch(IOException e)
+            {
+                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Wyjątek");
             }
         }
     }
@@ -272,7 +291,7 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
             Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
             mOpenCvCameraView.disableView();
             isDisabled = true;
-            sendBreakMessageToServer();
+            clientClass.sendBreakMessage();
             SystemClock.sleep(40);
             clientClass.clear();
             clientClass = null;
@@ -280,19 +299,36 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
 
     }
 
-    private void sendBreakMessageToServer()
-    {
-        if (clientClass.clientMsgHandler != null) {
-            Log.d("serverLogs", "ReceiveFramesActivity; SendEmptyMessage; Handler różny od nulla");
-            Message msg = clientClass.clientMsgHandler.obtainMessage(1, "b");
-            Log.d("serverLogs", "ReceiveFramesActivity; SendEmptyMessage; Wysyłam żeby zakończyć komuniakcję");
-            clientClass.clientMsgHandler.sendMessage(msg);
-        }
-    }
-
     @Override
     protected void onStop() {
         super.onStop();
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(serverClass!=null)
+        {
+            try
+            {
+                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Staram się usunąć serwer");
+                serverClass.closeServer();
+                serverClass = null;
+            }
+            catch(IOException e)
+            {
+                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Wyjątek");
+            }
+        }
+        if(clientClass!=null)
+        {
+            clientClass.sendEndMessage();
+            SystemClock.sleep(40);
+            clientClass.clear();
+            clientClass = null;
+        }
+        disableWiFi();
+    }
 }
+
 

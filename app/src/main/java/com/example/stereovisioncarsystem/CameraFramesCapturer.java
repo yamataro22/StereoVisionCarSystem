@@ -54,18 +54,4 @@ public class CameraFramesCapturer implements CameraBridgeViewBase.CvCameraViewLi
         return mRgba;
     }
 
-   /* @Override
-    public Mat onCameraFrame(Mat inputFrame) {
-        Log.d("serverLogs", "CameraFramesCapturer, sendFrame");
-        Log.d("serverLogs", "CameraFramesCapturer, typ:"+ inputFrame.type());
-        mRgba = inputFrame;
-        // Rotate mRgba 90 degrees
-        Core.transpose(mRgba, mRgbaT);
-        Imgproc.resize(mRgbaT, mRgbaF, mRgbaF.size(), 0,0, 0);
-        Core.flip(mRgbaF, mRgba, 2 );
-        connector.sendFrame(mRgba);
-        return mRgba;
-
-        //return inputFrame;
-    }*/
 }

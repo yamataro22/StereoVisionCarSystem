@@ -20,6 +20,10 @@ public class ClientSender extends Thread {
     public Handler clientMsgHandler;
     OutputStream outputStream;
 
+    public static int PHOTO_MESSAGE_TYPE = 0;
+    public static int STRING_MESSAGE_TYPE = 1;
+
+
     public ClientSender(InetAddress hostAddress) {
         Log.d("serverLogs", "ClientSender; Tworzę nowego clientServera!");
         socket = new Socket();
@@ -50,14 +54,7 @@ public class ClientSender extends Thread {
         clientMsgHandler = new Handler() {
             public void handleMessage(Message msg) {
 
-                Log.d("serverLogs", "ClientSender; Jestem w handlerze, zaraz będę wysyłał wiadomość!");
-                Log.d("serverLogs", "ClientSender; Sprawdzam stan socketa: isbound:  " + socket.isBound());
-                Log.d("serverLogs", "ClientSender; Sprawdzam stan socketa: isConnected:  " + socket.isConnected());
-                Log.d("serverLogs", "ClientSender; Sprawdzam stan socketa: isOutputShutdown:  " + socket.isOutputShutdown());
-                Log.d("serverLogs", "ClientSender; Sprawdzam stan socketa: isInputShutdown:  " + socket.isInputShutdown());
-                Log.d("serverLogs", "ClientSender; Sprawdzam stan socketa: isClosed:  " + socket.isClosed());
-
-                if (msg.what == 0) {
+                if (msg.what == PHOTO_MESSAGE_TYPE) {
                     try {
                         dos.writeInt(76800);
                         dos.write((byte[])msg.obj);
@@ -66,7 +63,7 @@ public class ClientSender extends Thread {
                         e.printStackTrace();
                     }
                 }
-                else if(msg.what == 1)
+                else if(msg.what == STRING_MESSAGE_TYPE)
                 {
                     Log.d("serverLogs", "ClientSender; Jestem w handlerze, what jest równe 0!");
                     try {
@@ -75,7 +72,7 @@ public class ClientSender extends Thread {
                         byte[] byteArray = message.getBytes();
                         Log.d("serverLogs", "ClientSender; Wysyłam wiadomośc długości "+ byteArray.length);
                         dos.writeInt(byteArray.length);
-                        Log.d("serverLogs", "ClientSender; Mesoda writeInt zwróciła "+ byteArray.length);
+                        Log.d("serverLogs", "ClientSender; Metoda writeInt zwróciła "+ byteArray.length);
                         dos.write(message.getBytes());
                         dos.flush();
                     } catch (IOException e) {
@@ -116,6 +113,28 @@ public class ClientSender extends Thread {
                 e.printStackTrace();
             }
         }
-
     }
+
+    public void sendBreakMessage()
+    {
+        Log.d("serverLogs", "ReceiveFramesActivity; SendEmptyMessage; Wysyłam żeby zakończyć komuniakcję");
+        sendMessage(STRING_MESSAGE_TYPE, "b");
+    }
+
+    public void sendEndMessage()
+    {
+        Log.d("serverLogs", "ReceiveFramesActivity; SendEmptyMessage; Wysyłam żeby zakończyć komuniakcję");
+        sendMessage(STRING_MESSAGE_TYPE,"e");
+    }
+
+    public void sendMessage(int what, String message)
+    {
+        if(clientMsgHandler!=null)
+        {
+            Message msg = clientMsgHandler.obtainMessage(what, message);
+            clientMsgHandler.sendMessage(msg);
+        }
+    }
+
+
 }

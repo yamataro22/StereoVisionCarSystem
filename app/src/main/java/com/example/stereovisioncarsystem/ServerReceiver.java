@@ -79,8 +79,6 @@ public class ServerReceiver extends Thread {
                     {
                         Log.d("serverLogs", "SerwerClass; Length: "+ length);
 
-
-
                     }
                     Message m = Message.obtain(handler, CommunicationTestActivity.MESSAGE_READ, length, -1, buffImg);
                     handler.sendMessage(m);
@@ -131,25 +129,5 @@ public class ServerReceiver extends Thread {
 
         this.interrupt();
     }
-
-
-
-    public void clear()
-    {
-        if(socket.isConnected())
-        {
-            try {
-                Log.d("serverLogs", "Serwer; staram się wszystko pozamykać");
-                Log.d("serverLogs", "Serwer; socket: " + socket.isClosed());
-                socket.close();
-                this.interrupt();
-
-                Log.d("serverLogs", "Serwer; socket: " + socket.isClosed());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
 
 }

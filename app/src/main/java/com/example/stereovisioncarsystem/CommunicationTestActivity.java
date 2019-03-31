@@ -170,7 +170,7 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
         if(clientClass!=null)
         {
             Log.d("serverLogs", "CommunicationTestActivity; onConnectionFail; Staram się usunąć klienta");
-            sendMessageToServer("e");
+            clientClass.sendEndMessage();
             SystemClock.sleep(40);
             clientClass.clear();
             clientClass = null;
@@ -206,7 +206,7 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
     {
         if (clientClass.clientMsgHandler != null) {
             Log.d("serverLogs", "Handler różny od nulla");
-            Message msg = clientClass.clientMsgHandler.obtainMessage(1, message);
+            Message msg = clientClass.clientMsgHandler.obtainMessage(ClientSender.STRING_MESSAGE_TYPE, message);
             Log.d("serverLogs", "Wysyłam wiadomość: " + message);
             clientClass.clientMsgHandler.sendMessage(msg);
         }
@@ -261,7 +261,7 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
         }
         if(clientClass!=null)
         {
-            sendMessageToServer("e");
+            clientClass.sendEndMessage();
             SystemClock.sleep(40);
             clientClass.clear();
             clientClass = null;
