@@ -34,7 +34,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".DualCameraActivity"></activity>
+        <activity android:name=".ClientDualCameraActivity"></activity>
+        <activity android:name=".ServerDualCameraActivity" />
         <activity android:name=".CommunicationBasicActivity" />
         <activity android:name=".ReceiveFramesActivity" />
 

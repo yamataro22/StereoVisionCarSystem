@@ -128,13 +128,14 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
         wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         p2pChannel = wifiP2pManager.initialize(this, getMainLooper(), null);
 
-        broadcastReceiver = new WiFiBroadcastReceiver(wifiP2pManager, p2pChannel, this);
+        broadcastReceiver = new WiFiBroadcastReceiver(wifiManager, wifiP2pManager, p2pChannel, this);
 
         intentFilter = new IntentFilter();
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
+        intentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
     }
 
     private void initListeners() {
@@ -238,6 +239,7 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
     {
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = which.deviceAddress;
+        connectedDevice = which;
         wifiP2pManager.connect(p2pChannel, config, connectedActionListener);
     }
 
@@ -270,10 +272,9 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
     }
 
 
-    public WifiP2pDevice getDeviceByIndexAndUpdate(int id)
+    public WifiP2pDevice getDeviceByIndex(int id)
     {
-        connectedDevice = deviceArray[id];
-        return connectedDevice;
+        return deviceArray[id];
     }
 
     @Override
@@ -328,5 +329,8 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
             clientClass = null;
         }
         disableWiFi();
+    }
+
+    public void onWiFiOnListener() {
     }
 }

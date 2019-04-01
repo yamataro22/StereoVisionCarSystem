@@ -3,4 +3,6 @@
     <string name="action_settings">Ustawienia</string>
     <string name="test_connection">Komunikacja</string>
     <string name="test_camera_communication">Test wysyłania zdjęć</string>
+    <string name="server_dual_communication">Dual serwer</string>
+    <string name="client_dual_communication">Dual client</string>
 </resources>

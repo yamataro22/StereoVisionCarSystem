@@ -1,49 +1,39 @@
 package com.example.stereovisioncarsystem;
 
-
 import android.Manifest;
+import android.app.Activity;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.os.Message;
-
+import android.net.wifi.p2p.WifiP2pDevice;
 import android.os.Bundle;
+import android.os.Message;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.Spinner;
 import android.widget.TextView;
 
 import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
-
-public class ReceiveFramesActivity extends CommunicationBasicActivity implements CameraFramesCapturer.CameraFrameConnector {
-
+public class ClientDualCameraActivity extends CommunicationBasicActivity implements CameraFramesCapturer.CameraFrameConnector {
+    Button connectButton, disconnectButton, startCapturingButton;
+    TextView statusTextView;
+    final String clientDeviceName = "OnePlus 6T";
+    private boolean isConnected = false;
     protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
-    public static final int MESSAGE_READ = 1;
-
-    protected CameraBridgeViewBase mOpenCvCameraView;
-    Button btnDiscoverPeers, btnConnect, btnStartCapturing;
-    TextView twConnectionStatus;
-    Spinner spinnerPeers;
-    ImageView im;
 
     private boolean isCameraViewDisabledOnClient = false;
-    CameraFramesCapturer capturer;
+    protected CameraFramesCapturer capturer;
+    protected CameraBridgeViewBase mOpenCvCameraView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_receive_frames);
-
-        initialWork();
-        exqListener();
-
-        Log.d("serverLogs", "ReceiveFramesActivity, sprawdzam permissiony");
+        setContentView(R.layout.activity_client_dual_camera);
+        enableWiFi();
+        init();
+        exqListeners();
 
         if (checkSelfPermission(Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -58,21 +48,16 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
         capturer = new CameraFramesCapturer(this);
     }
 
-    private void initialWork()
-    {
-        btnDiscoverPeers = findViewById(R.id.button_discover_peers);
-        btnConnect = findViewById(R.id.connect_button);
-        btnStartCapturing = findViewById(R.id.start_capturing_button);
-        twConnectionStatus = findViewById(R.id.connection_status_text_view);
-        spinnerPeers = findViewById(R.id.spinner);
-        mOpenCvCameraView = findViewById(R.id.InvisibleOpenCvView);
-        im = findViewById(R.id.hostSurface);
+    private void init() {
+        connectButton = findViewById(R.id.connect_button);
+        disconnectButton = findViewById(R.id.disconnect_button);
+        statusTextView = findViewById(R.id.connection_status_text_view);
+        startCapturingButton = findViewById(R.id.start_capturing_button);
+        mOpenCvCameraView = findViewById(R.id.camera_view);
     }
 
-    private void exqListener()
-    {
-
-        btnDiscoverPeers.setOnClickListener(new View.OnClickListener() {
+    private void exqListeners() {
+        connectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 enableWiFi();
@@ -80,19 +65,10 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
             }
         });
 
-        btnConnect.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                int id = (int)spinnerPeers.getSelectedItemId();
-                connectToPeer(getDeviceByIndex(id));
-            }
-        });
-
-        btnStartCapturing.setOnClickListener(new View.OnClickListener() {
+        startCapturingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Log.d("serverLogs", "ReceiveFramesActivity, kliknąłem przycisk");
-
                 mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
                 mOpenCvCameraView.setCameraIndex(1);
                 mOpenCvCameraView.setCvCameraViewListener(capturer);
@@ -100,23 +76,21 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
                 mOpenCvCameraView.enableView();
             }
         });
-
-
     }
 
     private void checkClientStatusAndSendMessage(Object message)
     {
         try {
             sendMessageToServer(message);
-        } catch (NullClientException e) {
+        } catch (ClientDualCameraActivity.NullClientException e) {
             e.printStackTrace();
         }
     }
 
-    private void sendMessageToServer(Object message) throws NullClientException
+    private void sendMessageToServer(Object message) throws ClientDualCameraActivity.NullClientException
     {
-        if(clientClass == null) throw new NullClientException();
-        if(clientClass.clientMsgHandler == null) throw new NullClientException();
+        if(clientClass == null) throw new ClientDualCameraActivity.NullClientException();
+        if(clientClass.clientMsgHandler == null) throw new ClientDualCameraActivity.NullClientException();
 
         Log.d("serverLogs", "Wysyłam wiadomość");
         Message msg = clientClass.clientMsgHandler.obtainMessage(0, message);
@@ -153,74 +127,83 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
 
     @Override
     protected void onClientConnected() {
-        twConnectionStatus.setText("client");
+        statusTextView.setText("client");
+        isConnected = true;
         super.onClientConnected();
     }
 
     @Override
-    protected void onServerConnected() {
-        twConnectionStatus.setText("host");
-        super.onServerConnected();
+    public void onWiFiOnListener() {
+        super.onWiFiOnListener();
+        discoverPeers();
+        Log.d("serverLogs","Próbuję wyszukać peery");
     }
 
     @Override
-    protected void onPeersListUpdate(String[] deviceNameArray) {
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(getBaseContext(), android.R.layout.simple_spinner_item, deviceNameArray);
-        spinnerPeers.setAdapter(adapter);
+    protected void onPeersListUpdate(String[] deviceNameArray)
+    {
+        Log.d("serverLogs","On peer list update");
+        if(isConnected) return;
+        for (String device:deviceNameArray) {
+            Log.d("serverLogs","Znaleziono: " + device);
+        }
+        if(isClientInDeviceArray())
+        {
+            Log.d("serverLogs","Client is in device array");
+            WifiP2pDevice device = getDeviceByName();
+            connectToPeer(device);
+        }
+    }
+
+    private WifiP2pDevice getDeviceByName() {
+
+        for (WifiP2pDevice device :getDeviceArray()
+        ) {
+            if(device.deviceName.equals(clientDeviceName))
+            {
+                Log.d("serverLogs","Found device: " + device.deviceName);
+                return device;
+            }
+
+        }
+        return null;
+    }
+
+    private boolean isClientInDeviceArray() {
+
+        for (WifiP2pDevice device:getDeviceArray()) {
+            if(device.deviceName.equals(clientDeviceName))
+            {
+                return true;
+            }
+
+        }
+        return false;
     }
 
     @Override
     protected void onDiscoverPeersInitiationFailure() {
-        twConnectionStatus.setText("Wykrywanie nieudane");
+        statusTextView.setText("Wykrywanie nieudane");
     }
 
     @Override
     protected void onDiscoverPeersInitiationSuccess() {
-        twConnectionStatus.setText("Wykrywanie rozpoczęte");
+        statusTextView.setText("Wykrywanie rozpoczęte");
     }
 
     @Override
     protected boolean processMessage(Message msg) {
-        switch (msg.what) {
-            case MESSAGE_READ:
-
-                byte[] readBuffer = (byte[]) msg.obj;
-
-                Mat mat = new Mat(240,320,0);
-                mat.put(0,0,readBuffer);
-                Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(),Bitmap.Config.ARGB_8888);
-                Utils.matToBitmap(mat,btm);
-                im.setImageBitmap(btm);
-        }
-        return true;
+        return false;
     }
 
     @Override
-    protected void onConnectionFail()
-    {
-        twConnectionStatus.setText("Rozłączono");
+    protected void onConnectionFail() {
+        statusTextView.setText("Rozłączono");
+        isConnected = false;
         disableCameraViewOnClient();
         super.onConnectionFail();
-    }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        enableCameraViewOnClient();
     }
-
-    @Override
-    protected void onPause() {
-        disableCameraViewOnClient();
-        super.onPause();
-    }
-
-    @Override
-    protected void onDestroy() {
-        disableCameraViewOnClient();
-        super.onDestroy();
-    }
-
     private void disableCameraViewOnClient() {
         if (clientClass != null) {
             mOpenCvCameraView.disableView();
@@ -228,15 +211,6 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
         }
     }
 
-    private class NullClientException extends Exception
-    {
-
-        @Override
-        public String toString() {
-            return "Null client exception:(";
-        }
-
-    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -259,8 +233,32 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
             }
         }
     }
+
+    private class NullClientException extends Exception
+    {
+
+        @Override
+        public String toString() {
+            return "Null client exception:(";
+        }
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        enableCameraViewOnClient();
+    }
+
+    @Override
+    protected void onPause() {
+        disableCameraViewOnClient();
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        disableCameraViewOnClient();
+        super.onDestroy();
+    }
 }
-
-
-
-

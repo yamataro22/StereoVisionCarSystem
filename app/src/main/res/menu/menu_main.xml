@@ -19,7 +19,16 @@
         android:orderInCategory="20"
         android:title="@string/test_camera_communication"
         ></item>
-
+    <item
+        android:id="@+id/action_server_dual_communication"
+        android:orderInCategory="20"
+        android:title="@string/server_dual_communication"
+        ></item>
+    <item
+        android:id="@+id/action_client_dual_communication"
+        android:orderInCategory="20"
+        android:title="@string/client_dual_communication"
+        ></item>
 
 
 

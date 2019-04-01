@@ -60,7 +60,12 @@ public class MainActivity extends AppCompatActivity {
         else if(id == R.id.action_photo_communication) {
             createAndStartIntent(ReceiveFramesActivity.class);
         }
-
+        else if(id == R.id.action_server_dual_communication) {
+            createAndStartIntent(ServerDualCameraActivity.class);
+        }
+        else if(id == R.id.action_client_dual_communication) {
+            createAndStartIntent(ClientDualCameraActivity.class);
+        }
         return super.onOptionsItemSelected(item);
     }
 
