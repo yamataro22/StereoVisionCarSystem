@@ -3,8 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ServerDualCameraActivity"
-    xmlns:opencv="http://schemas.android.com/apk/res-auto">
+    tools:context=".ServerDualCameraActivity">
 
     <Button
         android:layout_width="wrap_content"
@@ -40,22 +39,21 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/connection_status_text_view"
-        android:orientation="vertical">
+        android:orientation="horizontal">
 
 
         <org.opencv.android.JavaCameraView
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
             android:id="@+id/self_server_camera_view"
             android:layout_margin="10dp"
             android:layout_weight="5"
-            android:visibility="gone"
-            opencv:camera_id="any"/>
+            android:visibility="visible"/>
 
         <ImageView
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_weight="5"
-            android:layout_height="0dp"
+            android:layout_height="match_parent"
             android:layout_margin="10dp"
             android:id="@+id/serwer_camera_view"/>
 

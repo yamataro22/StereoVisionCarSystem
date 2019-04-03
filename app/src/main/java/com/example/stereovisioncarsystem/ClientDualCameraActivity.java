@@ -72,7 +72,7 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
                 mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
                 mOpenCvCameraView.setCameraIndex(1);
                 mOpenCvCameraView.setCvCameraViewListener(capturer);
-                mOpenCvCameraView.setMaxFrameSize(320,640);
+                mOpenCvCameraView.setMaxFrameSize(400,400);
                 mOpenCvCameraView.enableView();
             }
         });

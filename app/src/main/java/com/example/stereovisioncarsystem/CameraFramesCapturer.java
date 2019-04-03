@@ -50,7 +50,7 @@ public class CameraFramesCapturer implements CameraBridgeViewBase.CvCameraViewLi
         Core.flip(mRgbaF, mRgba, -1 );
         gray.filtr(mRgba);
         connector.sendFrame(mRgba);
-        SystemClock.sleep(50);
+        SystemClock.sleep(60);
         return mRgba;
     }
 

@@ -1,24 +1,31 @@
 package com.example.stereovisioncarsystem;
 
 import android.Manifest;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.os.Bundle;
 import android.os.Message;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
-public class ServerDualCameraActivity extends CommunicationBasicActivity implements CameraFramesCapturer.CameraFrameConnector{
+public class ServerDualCameraActivity extends CommunicationBasicActivity{
+
 
     Button connectButton, disconnectButton;
     TextView statusTextView;
@@ -33,11 +40,12 @@ public class ServerDualCameraActivity extends CommunicationBasicActivity impleme
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_server_dual_camera);
+        capturer = new BasicCapturer();
         enableWiFi();
-        init();
-        exqListeners();
+
 
         Log.d("serverLogs", "ReceiveFramesActivity, sprawdzam permissiony");
+
 
         if (checkSelfPermission(Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -49,16 +57,23 @@ public class ServerDualCameraActivity extends CommunicationBasicActivity impleme
                         MY_PERMISSIONS_REQUEST_CAMERA);
             }
         }
-        capturer = new BasicCapturer();
+        Log.d("serverLogs", "DualScreen, onCreate");
+
+        init();
+
+        exqListeners();
     }
+
+
 
     private void init() {
         connectButton = findViewById(R.id.connect_button);
         disconnectButton = findViewById(R.id.disconnect_button);
         statusTextView = findViewById(R.id.connection_status_text_view);
         im = findViewById(R.id.serwer_camera_view);
-        mOpenCvCameraView = findViewById(R.id.camera_view);
-        initCamera();
+        Log.d("serverLogs", "DualScreen, init");
+        mOpenCvCameraView = findViewById(R.id.self_server_camera_view);
+
     }
 
     private void exqListeners() {
@@ -73,14 +88,16 @@ public class ServerDualCameraActivity extends CommunicationBasicActivity impleme
 
     private void initCamera()
     {
-        mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCameraIndex(1);
+        mOpenCvCameraView.setMaxFrameSize(2400, 2000);
+        mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(capturer);
-        mOpenCvCameraView.setMaxFrameSize(1500,1500);
+        //mOpenCvCameraView.setMaxFrameSize(1500,1500);
     }
     private void enableView()
     {
         if(isCameraViewDisabledOnClient) {
+            Log.d("serverLogs", "DualScreen, enable view");
             mOpenCvCameraView.enableView();
             isCameraViewDisabledOnClient = false;
         }
@@ -110,8 +127,9 @@ public class ServerDualCameraActivity extends CommunicationBasicActivity impleme
     protected void onServerConnected()
     {
         statusTextView.setText("host");
-        enableView();
         super.onServerConnected();
+        initCamera();
+        enableView();
     }
 
     @Override
@@ -138,7 +156,7 @@ public class ServerDualCameraActivity extends CommunicationBasicActivity impleme
 
                 byte[] readBuffer = (byte[]) msg.obj;
 
-                Mat mat = new Mat(240,320,0);
+                Mat mat = new Mat(288,352,0);
                 mat.put(0,0,readBuffer);
                 Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(),Bitmap.Config.ARGB_8888);
                 Utils.matToBitmap(mat,btm);
@@ -154,10 +172,6 @@ public class ServerDualCameraActivity extends CommunicationBasicActivity impleme
 
     }
 
-    @Override
-    public void sendFrame(Mat frame) {
-
-    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -179,5 +193,18 @@ public class ServerDualCameraActivity extends CommunicationBasicActivity impleme
                 return;
             }
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        disableView();
+        mOpenCvCameraView = null;
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        disableView();
     }
 }

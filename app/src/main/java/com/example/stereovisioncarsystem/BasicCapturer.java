@@ -3,6 +3,7 @@ package com.example.stereovisioncarsystem;
 import android.util.Log;
 
 import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.android.OpenCVLoader;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
@@ -14,6 +15,10 @@ public class BasicCapturer implements CameraBridgeViewBase.CvCameraViewListener2
     Filtr gray = new GrayFiltr();
 
 
+    public BasicCapturer()
+    {
+        Log.d("serverLogs", "CameraFramesCapturer, jestem w konstruktorze");
+    }
     @Override
     public void onCameraViewStarted(int width, int height) {
         Log.d("serverLogs", "CameraFramesCapturer, cameraViewStarted");
@@ -31,6 +36,12 @@ public class BasicCapturer implements CameraBridgeViewBase.CvCameraViewListener2
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         return inputFrame.gray();
     }
+
+
+    /*@Override
+    public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
+        return inputFrame.gray();
+    }*/
 
 
 }

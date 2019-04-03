@@ -56,8 +56,9 @@ public class ClientSender extends Thread {
 
                 if (msg.what == PHOTO_MESSAGE_TYPE) {
                     try {
-                        dos.writeInt(76800);
-                        dos.write((byte[])msg.obj);
+                        byte[] photoArray = (byte[])msg.obj;
+                        dos.writeInt(photoArray.length);
+                        dos.write(photoArray);
                         dos.flush();
                     } catch (IOException e) {
                         e.printStackTrace();
