@@ -5,6 +5,11 @@ import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceView;
+
+import com.example.stereovisioncarsystem.Filtr.Filtr;
+import com.example.stereovisioncarsystem.Filtr.GBlurFiltr;
+import com.example.stereovisioncarsystem.Filtr.GrayFiltr;
+
 import org.opencv.core.Mat;
 import java.util.ArrayList;
 import java.util.List;

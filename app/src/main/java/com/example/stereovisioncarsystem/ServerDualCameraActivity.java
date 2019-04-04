@@ -1,26 +1,21 @@
 package com.example.stereovisioncarsystem;
 
 import android.Manifest;
-import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.net.wifi.p2p.WifiP2pDevice;
 import android.os.Bundle;
 import android.os.Message;
-import android.os.SystemClock;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.opencv.android.BaseLoaderCallback;
+import com.example.stereovisioncarsystem.CameraCapturers.CameraFramesCapturer;
+
 import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.LoaderCallbackInterface;
-import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
@@ -31,7 +26,7 @@ public class ServerDualCameraActivity extends CommunicationBasicActivity{
     TextView statusTextView;
     ImageView im;
     public static final int MESSAGE_READ = 1;
-    BasicCapturer capturer;
+    CameraFramesCapturer capturer;
     protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
     protected CameraBridgeViewBase mOpenCvCameraView;
     private boolean isCameraViewDisabledOnClient = true;
@@ -40,7 +35,7 @@ public class ServerDualCameraActivity extends CommunicationBasicActivity{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_server_dual_camera);
-        capturer = new BasicCapturer();
+        capturer = new CameraFramesCapturer();
         enableWiFi();
 
 
@@ -156,7 +151,7 @@ public class ServerDualCameraActivity extends CommunicationBasicActivity{
 
                 byte[] readBuffer = (byte[]) msg.obj;
 
-                Mat mat = new Mat(288,352,0);
+                Mat mat = new Mat(msg.arg1,msg.arg2,0);
                 mat.put(0,0,readBuffer);
                 Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(),Bitmap.Config.ARGB_8888);
                 Utils.matToBitmap(mat,btm);

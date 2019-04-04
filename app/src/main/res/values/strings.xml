@@ -5,4 +5,13 @@
     <string name="test_camera_communication">Test wysyłania zdjęć</string>
     <string name="server_dual_communication">Dual serwer</string>
     <string name="client_dual_communication">Dual client</string>
+
+    <array name="camera_types">
+        <item>Front</item>
+        <item>Back</item>
+    </array>
+    <array name="device_types">
+        <item>Server</item>
+        <item>Client</item>
+    </array>
 </resources>

@@ -48,76 +48,8 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
     protected ServerReceiver serverClass;
     boolean isServerCreated = false;
 
-    protected void onClientConnected()
-    {
-        Log.i("serverLogs", "ConnectionListener; Połaczony jako klient, tworzę nowy wątek klienta");
-        clientClass = new ClientSender(groupOwnerAdress);
-        clientClass.start();
-        Log.i("serverLogs", "ConnectionListener; Stworzyłem obiekt klienta; status: ");
-    }
-
-    protected void onServerConnected()
-    {
-        Log.i("serverLogs", "ConnectionListener; Połaczony jako host, tworzę nowy serwer");
-        if(!isServerCreated)
-        {
-            serverClass = new ServerReceiver(messageHandler);
-            serverClass.start();
-            isServerCreated = true;
-        }
-        else
-        {
-            Log.i("serverLogs", "ConnectionListener; Serwer był już stworzony");
-        }
-    }
-    protected abstract void onPeersListUpdate(String[] deviceNameArray);
-    protected abstract void onDiscoverPeersInitiationFailure();
-    protected abstract void onDiscoverPeersInitiationSuccess();
-    protected void onConnectionFail()
-    {
-
-        if(clientClass!=null)
-        {
-            Log.d("serverLogs", "onConnectionFail; Staram się usunąć klienta");
-            clientClass.sendEndMessage();
-            SystemClock.sleep(40);
-            clientClass.clear();
-            clientClass = null;
-        }
-        if(serverClass!=null)
-        {
-            try
-            {
-                Log.d("serverLogs", "CommunicationTestActivity; onConnectionFail; Staram się usunąć serwer");
-                serverClass.closeServer();
-                isServerCreated = false;
-                serverClass=null;
-            }
-            catch(IOException e)
-            {
-                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Wyjątek");
-            }
-        }
-    }
-    protected abstract boolean processMessage(Message msg);
-
-    protected void onPeersListEmpty()
-    {
-        Toast.makeText(getApplicationContext(), "Nie ma żadnych peerów", Toast.LENGTH_SHORT).show();
-    }
-
-    protected void onConnectionFailure()
-    {
-        Toast.makeText(getApplicationContext(), "Not connected", Toast.LENGTH_SHORT).show();
-    }
-
-    protected void onConnectionSuccess()
-    {
-        Toast.makeText(getApplicationContext(), "Connected to " + getConnectedDevice().deviceName, Toast.LENGTH_SHORT).show();
-    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
         initialWork();
         initListeners();
@@ -139,7 +71,6 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
         intentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
     }
-
     private void initListeners() {
         connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
             @Override
@@ -202,6 +133,74 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
                 return processMessage(msg);
             }
         });
+    }
+    protected void onClientConnected()
+    {
+        Log.i("serverLogs", "ConnectionListener; Połaczony jako klient, tworzę nowy wątek klienta");
+        clientClass = new ClientSender(groupOwnerAdress);
+        clientClass.start();
+        Log.i("serverLogs", "ConnectionListener; Stworzyłem obiekt klienta; status: ");
+    }
+    protected void onServerConnected()
+    {
+        Log.i("serverLogs", "ConnectionListener; Połaczony jako host, tworzę nowy serwer");
+        if(!isServerCreated)
+        {
+            serverClass = new ServerReceiver(messageHandler);
+            serverClass.start();
+            isServerCreated = true;
+        }
+        else
+        {
+            Log.i("serverLogs", "ConnectionListener; Serwer był już stworzony");
+        }
+    }
+    protected abstract void onPeersListUpdate(String[] deviceNameArray);
+    protected abstract void onDiscoverPeersInitiationFailure();
+
+    protected abstract void onDiscoverPeersInitiationSuccess();
+
+    protected void onConnectionFail()
+    {
+
+        if(clientClass!=null)
+        {
+            Log.d("serverLogs", "onConnectionFail; Staram się usunąć klienta");
+            clientClass.sendEndMessage();
+            SystemClock.sleep(40);
+            clientClass.clear();
+            clientClass = null;
+        }
+        if(serverClass!=null)
+        {
+            try
+            {
+                Log.d("serverLogs", "CommunicationTestActivity; onConnectionFail; Staram się usunąć serwer");
+                serverClass.closeServer();
+                isServerCreated = false;
+                serverClass=null;
+            }
+            catch(IOException e)
+            {
+                Log.d("serverLogs", "CommunicationTestActivity; On Destroy; Wyjątek");
+            }
+        }
+    }
+
+    protected abstract boolean processMessage(Message msg);
+    protected void onPeersListEmpty()
+    {
+        Toast.makeText(getApplicationContext(), "Nie ma żadnych peerów", Toast.LENGTH_SHORT).show();
+    }
+
+    protected void onConnectionFailure()
+    {
+        Toast.makeText(getApplicationContext(), "Not connected", Toast.LENGTH_SHORT).show();
+    }
+
+    protected void onConnectionSuccess()
+    {
+        Toast.makeText(getApplicationContext(), "Connected to " + getConnectedDevice().deviceName, Toast.LENGTH_SHORT).show();
     }
 
     public void discoverPeers()

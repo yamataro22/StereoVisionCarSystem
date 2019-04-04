@@ -50,19 +50,23 @@ public class ServerReceiver extends Thread {
                 while(socket.isBound())
                 {
                     Log.d("serverLogs", "SerwerClass; Jestem w pętli");
-                    int length = dis.readInt();
-                    Log.d("serverLogs", "SerwerClass; Jestem za dis.readInt, length: " + length);
+                    int rows = dis.readInt();
+                    int cols = dis.readInt();
+                    Log.d("serverLogs", "SerwerClass; Jestem za dis.readInt, length: " + rows*cols);
                     if  ( Thread.interrupted() )
                     {
                         shouldIFinish = true;
                         Log.d("serverLogs", "SerwerClass; Wykryto interrupt!");
                     }
-                    byte[] buffImg = new byte[length];
+
+
+                    int length = rows * cols;
+                    byte[] buffImg = new byte[rows*cols];
                     dis.readFully(buffImg,0,length);
 
-                    if(length == 1)
+                    if(rows == 1)
                     {
-                        String msg = new String(buffImg, 0, length);
+                        String msg = new String(buffImg, 0, rows);
                         Log.d("serverLogs", "SerwerClass; otrzymano specjalną wiadomość: " + msg);
                         if(msg.equals("b"))
                         {
@@ -80,7 +84,7 @@ public class ServerReceiver extends Thread {
                         Log.d("serverLogs", "SerwerClass; Length: "+ length);
 
                     }
-                    Message m = Message.obtain(handler, CommunicationTestActivity.MESSAGE_READ, length, -1, buffImg);
+                    Message m = Message.obtain(handler, CommunicationTestActivity.MESSAGE_READ, rows, cols, buffImg);
                     handler.sendMessage(m);
                 }
                 Log.d("serverLogs", "SerwerClass; wyszedłem z pętli");

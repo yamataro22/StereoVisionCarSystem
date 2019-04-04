@@ -2,18 +2,11 @@ package com.example.stereovisioncarsystem;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.annotation.NonNull;
-import android.util.Log;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
+import com.example.stereovisioncarsystem.Filtr.Filtr;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 /**
  * Created by adamw on 19.11.2018.

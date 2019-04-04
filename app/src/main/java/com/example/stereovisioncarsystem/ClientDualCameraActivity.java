@@ -1,7 +1,6 @@
 package com.example.stereovisioncarsystem;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.os.Bundle;
@@ -12,10 +11,12 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.example.stereovisioncarsystem.CameraCapturers.ObservedRotatedCameraFramesCapturer;
+
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.core.Mat;
 
-public class ClientDualCameraActivity extends CommunicationBasicActivity implements CameraFramesCapturer.CameraFrameConnector {
+public class ClientDualCameraActivity extends CommunicationBasicActivity implements ObservedRotatedCameraFramesCapturer.CameraFrameConnector {
     Button connectButton, disconnectButton, startCapturingButton;
     TextView statusTextView;
     final String clientDeviceName = "OnePlus 6T";
@@ -23,7 +24,7 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
     protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
 
     private boolean isCameraViewDisabledOnClient = false;
-    protected CameraFramesCapturer capturer;
+    protected ObservedRotatedCameraFramesCapturer capturer;
     protected CameraBridgeViewBase mOpenCvCameraView;
 
 
@@ -45,7 +46,7 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
                         MY_PERMISSIONS_REQUEST_CAMERA);
             }
         }
-        capturer = new CameraFramesCapturer(this);
+        capturer = new ObservedRotatedCameraFramesCapturer(this);
     }
 
     private void init() {
@@ -93,11 +94,12 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
         if(clientClass.clientMsgHandler == null) throw new ClientDualCameraActivity.NullClientException();
 
         Log.d("serverLogs", "Wysyłam wiadomość");
-        Message msg = clientClass.clientMsgHandler.obtainMessage(0, message);
+        FrameParameters params = (FrameParameters) message;
+        Message msg = clientClass.clientMsgHandler.obtainMessage(0, params.rows,params.cols,params.bytes);
         clientClass.clientMsgHandler.sendMessage(msg);
     }
 
-    public byte[] mat2Byte(Mat img)
+    public FrameParameters mat2Byte(Mat img)
     {
         int total_bytes = img.cols()*img.rows();
         Log.d("serverLogs", "Wysyłam wiadomość długości: " + total_bytes);
@@ -106,8 +108,20 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
         Log.d("serverLogs", "typ: " + img.type());
         byte[] returnByte = new byte[total_bytes];
         img.get(0,0,returnByte);
-        return returnByte;
+        return new FrameParameters(returnByte, img.rows(), img.cols());
+    }
 
+    private class FrameParameters
+    {
+        public FrameParameters(byte[] bytes, int rows, int cols) {
+            this.bytes = bytes;
+            this.rows = rows;
+            this.cols = cols;
+        }
+
+        public byte[] bytes;
+        public int rows;
+        public int cols;
     }
 
     @Override

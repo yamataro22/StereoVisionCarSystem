@@ -1,4 +1,6 @@
-package com.example.stereovisioncarsystem;
+package com.example.stereovisioncarsystem.Filtr;
+
+import com.example.stereovisioncarsystem.Filtr.Filtr;
 
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;

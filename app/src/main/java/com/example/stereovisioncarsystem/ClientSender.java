@@ -57,7 +57,8 @@ public class ClientSender extends Thread {
                 if (msg.what == PHOTO_MESSAGE_TYPE) {
                     try {
                         byte[] photoArray = (byte[])msg.obj;
-                        dos.writeInt(photoArray.length);
+                        dos.writeInt(msg.arg1);
+                        dos.writeInt(msg.arg2);
                         dos.write(photoArray);
                         dos.flush();
                     } catch (IOException e) {
@@ -73,6 +74,7 @@ public class ClientSender extends Thread {
                         byte[] byteArray = message.getBytes();
                         Log.d("serverLogs", "ClientSender; Wysyłam wiadomośc długości "+ byteArray.length);
                         dos.writeInt(byteArray.length);
+                        dos.writeInt(1);
                         Log.d("serverLogs", "ClientSender; Metoda writeInt zwróciła "+ byteArray.length);
                         dos.write(message.getBytes());
                         dos.flush();

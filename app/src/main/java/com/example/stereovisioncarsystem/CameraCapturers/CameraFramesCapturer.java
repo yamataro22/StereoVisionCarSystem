@@ -1,27 +1,21 @@
-package com.example.stereovisioncarsystem;
+package com.example.stereovisioncarsystem.CameraCapturers;
 
 import android.util.Log;
 
 import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.OpenCVLoader;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
-public class BasicCapturer implements CameraBridgeViewBase.CvCameraViewListener2 {
+public class CameraFramesCapturer implements CameraBridgeViewBase.CvCameraViewListener2 {
 
-    Mat mRgba;
-    Mat mRgbaF;
-    Mat mRgbaT;
-    Filtr gray = new GrayFiltr();
+    protected Mat mRgba;
+    protected Mat mRgbaF;
+    protected Mat mRgbaT;
 
 
-    public BasicCapturer()
-    {
-        Log.d("serverLogs", "CameraFramesCapturer, jestem w konstruktorze");
-    }
     @Override
     public void onCameraViewStarted(int width, int height) {
-        Log.d("serverLogs", "CameraFramesCapturer, cameraViewStarted");
+        Log.d("serverLogs", "ObservedRotatedCameraFramesCapturer, cameraViewStarted");
         mRgba = new Mat(height, width, CvType.CV_8UC4);
         mRgbaF = new Mat(height, width, CvType.CV_8UC4);
         mRgbaT = new Mat(width, width, CvType.CV_8UC4);
@@ -37,11 +31,6 @@ public class BasicCapturer implements CameraBridgeViewBase.CvCameraViewListener2
         return inputFrame.gray();
     }
 
-
-    /*@Override
-    public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        return inputFrame.gray();
-    }*/
 
 
 }

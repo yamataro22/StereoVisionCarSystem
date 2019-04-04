@@ -16,12 +16,14 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.example.stereovisioncarsystem.CameraCapturers.ObservedRotatedCameraFramesCapturer;
+
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
 
-public class ReceiveFramesActivity extends CommunicationBasicActivity implements CameraFramesCapturer.CameraFrameConnector {
+public class ReceiveFramesActivity extends CommunicationBasicActivity implements ObservedRotatedCameraFramesCapturer.CameraFrameConnector {
 
     protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
     public static final int MESSAGE_READ = 1;
@@ -33,7 +35,7 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
     ImageView im;
 
     private boolean isCameraViewDisabledOnClient = false;
-    CameraFramesCapturer capturer;
+    ObservedRotatedCameraFramesCapturer capturer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,7 +57,7 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
                         MY_PERMISSIONS_REQUEST_CAMERA);
             }
         }
-        capturer = new CameraFramesCapturer(this);
+        capturer = new ObservedRotatedCameraFramesCapturer(this);
     }
 
     private void initialWork()

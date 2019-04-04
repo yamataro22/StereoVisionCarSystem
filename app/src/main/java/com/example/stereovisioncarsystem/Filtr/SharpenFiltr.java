@@ -1,6 +1,4 @@
-package com.example.stereovisioncarsystem;
-
-import android.view.ScaleGestureDetector;
+package com.example.stereovisioncarsystem.Filtr;
 
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
