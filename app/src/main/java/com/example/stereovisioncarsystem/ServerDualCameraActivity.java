@@ -38,10 +38,6 @@ public class ServerDualCameraActivity extends CommunicationBasicActivity{
         capturer = new CameraFramesCapturer();
         enableWiFi();
 
-
-        Log.d("serverLogs", "ReceiveFramesActivity, sprawdzam permissiony");
-
-
         if (checkSelfPermission(Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
 
@@ -52,7 +48,8 @@ public class ServerDualCameraActivity extends CommunicationBasicActivity{
                         MY_PERMISSIONS_REQUEST_CAMERA);
             }
         }
-        Log.d("serverLogs", "DualScreen, onCreate");
+        Log.d("serverLogs", "DualScreen, orientation: " + getResources().getConfiguration().orientation);
+        Log.d("serverLogs", "DualScreen, rotetion: " + getWindowManager().getDefaultDisplay().getRotation());
 
         init();
 
@@ -83,11 +80,10 @@ public class ServerDualCameraActivity extends CommunicationBasicActivity{
 
     private void initCamera()
     {
-        mOpenCvCameraView.setCameraIndex(1);
-        mOpenCvCameraView.setMaxFrameSize(2400, 2000);
+        mOpenCvCameraView.setCameraIndex(CameraBridgeViewBase.CAMERA_ID_BACK);
+        capturer.setCameraOrientation(CameraBridgeViewBase.CAMERA_ID_BACK, getWindowManager().getDefaultDisplay().getRotation());
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(capturer);
-        //mOpenCvCameraView.setMaxFrameSize(1500,1500);
     }
     private void enableView()
     {

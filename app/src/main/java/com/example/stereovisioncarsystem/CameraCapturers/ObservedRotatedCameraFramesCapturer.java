@@ -12,23 +12,26 @@ import org.opencv.imgproc.Imgproc;
 
 public class ObservedRotatedCameraFramesCapturer extends ObservedCameraFramesCapturer {
 
+
+    int freshRate = 200;
     Filtr gray = new GrayFiltr();
 
     public ObservedRotatedCameraFramesCapturer(CameraFrameConnector connector) {
         super(connector);
     }
 
+    public void setFreshRate(int freshRate) {
+        this.freshRate = freshRate;
+    }
+
     @Override
-    public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        mRgba = inputFrame.rgba();
-        // Rotate mRgba 90 degrees
-        Core.transpose(mRgba, mRgbaT);
-        Imgproc.resize(mRgbaT, mRgbaF, mRgbaF.size(), 0,0, 0);
-        Core.flip(mRgbaF, mRgba, -1 );
-        gray.filtr(mRgba);
-        connector.sendFrame(mRgba);
-        SystemClock.sleep(60);
-        return mRgba;
+    public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame)
+    {
+        super.onCameraFrame(inputFrame);
+        gray.filtr(rgbaMat);
+        connector.sendFrame(rgbaMat);
+        SystemClock.sleep(freshRate);
+        return rgbaMat;
     }
 
 }

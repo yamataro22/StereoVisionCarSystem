@@ -1,24 +1,34 @@
 package com.example.stereovisioncarsystem.CameraCapturers;
 
-import android.util.Log;
 
+import android.content.res.Configuration;
+
+import com.example.stereovisioncarsystem.CameraFramesFlipper;
 import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
 public class CameraFramesCapturer implements CameraBridgeViewBase.CvCameraViewListener2 {
+    protected Mat rgbaMat;
+    protected CameraFramesFlipper flipper;
+    protected int cameraID = CameraBridgeViewBase.CAMERA_ID_BACK;
+    protected int orientation = Configuration.ORIENTATION_PORTRAIT;
 
-    protected Mat mRgba;
-    protected Mat mRgbaF;
-    protected Mat mRgbaT;
 
+    public void setCameraOrientation(int cameraID)
+    {
+        this.cameraID = cameraID;
+    }
+    public void setCameraOrientation(int cameraID, int orientation)
+    {
+        this.cameraID = cameraID;
+        this.orientation = orientation;
+    }
 
     @Override
     public void onCameraViewStarted(int width, int height) {
-        Log.d("serverLogs", "ObservedRotatedCameraFramesCapturer, cameraViewStarted");
-        mRgba = new Mat(height, width, CvType.CV_8UC4);
-        mRgbaF = new Mat(height, width, CvType.CV_8UC4);
-        mRgbaT = new Mat(width, width, CvType.CV_8UC4);
+
+        flipper = new CameraFramesFlipper(width,height);
+
     }
 
     @Override
@@ -28,7 +38,9 @@ public class CameraFramesCapturer implements CameraBridgeViewBase.CvCameraViewLi
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        return inputFrame.gray();
+        rgbaMat = inputFrame.rgba();
+        flipper.adjustCameraFrames(rgbaMat,cameraID, orientation);
+        return rgbaMat;
     }
 
 

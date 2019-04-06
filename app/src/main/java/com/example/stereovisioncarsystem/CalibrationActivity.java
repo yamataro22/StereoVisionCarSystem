@@ -1,8 +1,6 @@
 package com.example.stereovisioncarsystem;
 
-import android.graphics.Bitmap;
 import android.os.Handler;
-import android.os.Message;
 import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -15,14 +13,12 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedCameraFramesCapturer;
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedSingleCameraFramesCapturer;
 
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.JavaCameraView;
-import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
 public class CalibrationActivity extends AppCompatActivity implements ObservedCameraFramesCapturer.CameraFrameConnector {
@@ -38,6 +34,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
 
 
     private boolean isTimerRunning = false;
+    private boolean isInterrupted = false;
     private int seconds = 3;
     final private int howManyFramesCaptured = 5;
 
@@ -60,28 +57,33 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     }
 
     private void initCamera() {
-        javaCameraView.setCameraIndex(getCameraIndex());
-        //javaCameraView.setMaxFrameSize(350,350);
         javaCameraView.setCvCameraViewListener(capturer);
     }
 
     private int getCameraIndex() {
         String cameraType = cameraTypeSpinner.getSelectedItem().toString();
+        int cameraID;
+        Log.d("serverLogs","Zarządano indexu kamery " + cameraType);
         switch(cameraType)
         {
             case "Front":
             {
-                return CameraBridgeViewBase.CAMERA_ID_FRONT;
-            }
+                cameraID = CameraBridgeViewBase.CAMERA_ID_FRONT;
+                break;
+        }
             case "Back":
             {
-                return CameraBridgeViewBase.CAMERA_ID_BACK;
+                cameraID = CameraBridgeViewBase.CAMERA_ID_BACK;
+                break;
+            }
+            default:
+            {
+                cameraID = CameraBridgeViewBase.CAMERA_ID_ANY;
             }
         }
-
-
-        return 0;
-    }
+        capturer.setCameraOrientation(cameraID);
+        return cameraID;
+}
 
 
     private void init() {
@@ -109,7 +111,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         photoSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                imageView.setImageBitmap(calibrator.getPhotoByIndex(i));
+                imageView.setImageBitmap(calibrator.getUndistortedPhotoByIndex(i));
                 processInformationTextView.setText("Photo nb " + (i + 1));
             }
 
@@ -126,14 +128,13 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         okButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                calibrator.findChessboards();
-                processInformationTextView.setText("Finding chessboards");
+                processInformationTextView.setText("I'm calibrating");
+                //calibrator.performUndisortion();
             }
         });
     }
 
     private void initCalibration() {
-
         statusTextView.setText("Calib started");
         hideFramesVerificationGUI();
         calibrator.resetFrameIndex();
@@ -147,6 +148,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     }
 
     private void showCameraScreen() {
+        javaCameraView.setCameraIndex(getCameraIndex());
         javaCameraView.setVisibility(View.VISIBLE);
         javaCameraView.enableView();
     }
@@ -163,42 +165,46 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
             private int counter = 0;
             @Override
             public void run() {
-
-                if(seconds == 0)
+                if(!isInterrupted)
                 {
-                    seconds = 3;
-                    if(counter < howManyFramesCaptured)
+                    if(seconds == 0)
                     {
-                        counter++;
-                        if(counter == 5) seconds = 1;
-                        capturer.getSingleFrameToBeProcessed();
+                        seconds = 3;
+                        if(counter < howManyFramesCaptured)
+                        {
+                            counter++;
+                            if(counter == 5) seconds = 1;
+                            capturer.getSingleFrameToBeProcessed();
+                        }
+                        else
+                        {
+                            seconds = 0;
+                            isTimerRunning = false;
+                            onCountdownFinish();
+                        }
+                    }
+
+                    if(isTimerRunning)
+                    {
+                        processInformationTextView.setText("Change position of chessboard on every photo, time: " + seconds);
+                        Log.d("serverLogs","Runner, seconds: " + seconds);
+                        seconds--;
+                        handler.postDelayed(this, 1000);
                     }
                     else
                     {
-                        seconds = 0;
-                        isTimerRunning = false;
-                        onCountdownFinish();
+                        seconds = 3;
                     }
-                }
-
-
-
-                if(isTimerRunning)
-                {
-                    processInformationTextView.setText("Change position of chessboard on every photo, time: " + seconds);
-                    Log.d("serverLogs","Runner, seconds: " + seconds);
-                    seconds--;
-                    handler.postDelayed(this, 1000);
-                }
-                else
-                {
-                    seconds = 3;
                 }
             }
         });
     }
 
-
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        isInterrupted = true;
+    }
 
     private void onCountdownFinish() {
         SystemClock.sleep(50);
@@ -215,8 +221,9 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         photoSeekBar.setVisibility(View.VISIBLE);
         okButton.setVisibility(View.VISIBLE);
         imageView.setVisibility(View.VISIBLE);
-        imageView.setImageBitmap(calibrator.getPhotoByIndex(0));
-        processInformationTextView.setText("Capturing finished, check frames");
+        imageView.setImageBitmap(calibrator.getColorPhotoByIndex(0));
+        processInformationTextView.setText("Capturing finished, check colorFrames");
+        calibrator.performUndisortion();
     }
 
 
@@ -226,7 +233,6 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         if (item.getItemId() == android.R.id.home) {
             finish(); // close this activity and return to preview activity (if there is any)
         }
-
         return super.onOptionsItemSelected(item);
     }
 

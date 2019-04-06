@@ -17,8 +17,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
-import org.opencv.android.OpenCVLoader;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
