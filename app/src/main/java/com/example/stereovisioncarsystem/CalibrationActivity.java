@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedCameraFramesCapturer;
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedSingleCameraFramesCapturer;
@@ -33,18 +34,15 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     private ImageView imageView;
     private SeekBar photoSeekBar;
     private ObservedSingleCameraFramesCapturer capturer;
+    private CounterConfigData counterConfig;
 
-    private boolean isTimerRunning = false;
-    private boolean isInterrupted = false;
-    private int seconds = 3;
-    private int howManyFramesCaptured = 10;
 
-    private int counter = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_calibration);
 
+        counterConfig = new CounterConfigData();
         initToolbar();
         initGUI();
         exqListeners();
@@ -64,8 +62,6 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     private void initCamera() {
         javaCameraView.setCvCameraViewListener(capturer);
     }
-
-
 
     private int getCameraIndex() {
         String cameraType = cameraTypeSpinner.getSelectedItem().toString();
@@ -102,7 +98,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         capturer = new ObservedSingleCameraFramesCapturer(this);
         imageView = findViewById(R.id.image_preview);
         photoSeekBar = findViewById(R.id.photo_choose_seek_bar);
-        photoSeekBar.setMax(howManyFramesCaptured-1);
+        photoSeekBar.setMax(counterConfig.getFramesQuantity()-1);
         okButton = findViewById(R.id.ok_button);
         undisortButton = findViewById(R.id.undisort_button);
         framesQuantityEditText = findViewById(R.id.frames_quantity_edit_text);
@@ -162,29 +158,26 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
 
 
     private void initCalibration() {
-
+        if(counterConfig.isRunning())
+        {
+            Toast.makeText(this,"Przecież działa już",Toast.LENGTH_SHORT).show();
+            return;
+        }
         updateVariablesAndGUI();
-
         calibrator = null;
-        calibrator = new Calibrator(howManyFramesCaptured);
-        counter = 0;
+        calibrator = new Calibrator(counterConfig.getFramesQuantity());
         statusTextView.setText("Calib started");
         hideFramesVerificationGUI();
         showCameraScreen();
-        initTimerHandler();
+        runTimer();
     }
 
     private void updateVariablesAndGUI()
     {
-        howManyFramesCaptured = Integer.parseInt(framesQuantityEditText.getText().toString());
-        photoSeekBar.setMax(howManyFramesCaptured-1);
+        counterConfig.changeConfig(Integer.parseInt(framesQuantityEditText.getText().toString()));
+        photoSeekBar.setMax(counterConfig.getFramesQuantity()-1);
     }
 
-
-    private void initTimerHandler() {
-        runTimer();
-        isTimerRunning = true;
-    }
 
     private void showCameraScreen() {
         javaCameraView.setCameraIndex(getCameraIndex());
@@ -201,24 +194,37 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     private void runTimer() {
         final Handler handler = new Handler(getMainLooper());
         handler.post(new Runnable() {
+            private int interval = counterConfig.getInterval();
+            private int seconds = interval;
+            private int  howManyFramesToCapture = counterConfig.getFramesQuantity();
+
+
+            private boolean isTimerRunning = true;
+            private int counter = 0;
+            private boolean isFirstTime = true;
 
             @Override
             public void run() {
-                if(!isInterrupted)
+
+                if(isFirstTime) counterConfig.run(); isFirstTime = false;
+                counterConfig.updateStatus(isTimerRunning);
+
+                if(counterConfig.shouldBeRunning())
                 {
                     if(seconds == 0)
                     {
-                        seconds = 3;
-                        if(counter < howManyFramesCaptured)
+                        seconds = interval;
+                        if(counter < howManyFramesToCapture)
                         {
                             counter++;
-                            if(counter == 5) seconds = 1;
+                            if(counter == howManyFramesToCapture) seconds = 1;
                             capturer.getSingleFrameToBeProcessed();
                         }
                         else
                         {
                             seconds = 0;
                             isTimerRunning = false;
+                            counterConfig.updateStatus(isTimerRunning);
                             onCountdownFinish();
                         }
                     }
@@ -226,14 +232,10 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
                     if(isTimerRunning)
                     {
                         processInformationTextView.setText("Change position of chessboard on every photo, time: " + seconds +" ;" +
-                                (howManyFramesCaptured-counter)+" remaining");
+                                (howManyFramesToCapture-counter)+" remaining");
                         Log.d("serverLogs","Runner, seconds: " + seconds);
                         seconds--;
                         handler.postDelayed(this, 1000);
-                    }
-                    else
-                    {
-                        seconds = 3;
                     }
                 }
             }
@@ -243,7 +245,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        isInterrupted = true;
+        counterConfig.interrupt();
     }
 
     private void hideCameraScreen() {
