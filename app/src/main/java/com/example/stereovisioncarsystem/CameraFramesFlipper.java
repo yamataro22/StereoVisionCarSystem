@@ -37,18 +37,12 @@ public class CameraFramesFlipper {
             {
                 case FRONT:
                 {
-                    Core.transpose(frame, mRgbaT);
-                    Imgproc.resize(mRgbaT, mRgbaF, mRgbaF.size(), 0,0, 0);
-                    Core.flip(mRgbaF, frame, -1 );
-                    Log.d("serverLogs", "Flipper, front: "+frame.width()+" "+frame.height());
+                    transponseAndFilp(frame, -1);
                     break;
                 }
                 case BACK:
                 {
-                    Core.transpose(frame, mRgbaT);
-                    Imgproc.resize(mRgbaT, mRgbaF, mRgbaF.size(), 0,0, 0);
-                    Core.flip(mRgbaF, frame, 1 );
-                    Log.d("serverLogs", "Flipper, back: "+frame.width()+" "+frame.height());
+                    transponseAndFilp(frame, 1);
                     break;
                 }
             }
@@ -73,26 +67,25 @@ public class CameraFramesFlipper {
 
     public void adjustCameraFrames(Mat frame, int cameraId)
     {
-        Log.d("serverLogs", "Flipper, próbuję obrócicić: "+frame.width()+" "+frame.height());
         switch(cameraId)
         {
             case FRONT:
             {
-                Core.transpose(frame, mRgbaT);
-                Imgproc.resize(mRgbaT, mRgbaF, mRgbaF.size(), 0,0, 0);
-                Core.flip(mRgbaF, frame, -1 );
-                Log.d("serverLogs", "Flipper, front: "+frame.width()+" "+frame.height());
+                transponseAndFilp(frame, -1);
                 break;
             }
             case BACK:
             {
-                Core.transpose(frame, mRgbaT);
-                Imgproc.resize(mRgbaT, mRgbaF, mRgbaF.size(), 0,0, 0);
-                Core.flip(mRgbaF, frame, 1 );
-                Log.d("serverLogs", "Flipper, back: "+frame.width()+" "+frame.height());
+                transponseAndFilp(frame, 1);
                 break;
             }
         }
+    }
+
+    private void transponseAndFilp(Mat frame, int flipCode) {
+        Core.transpose(frame, mRgbaT);
+        Imgproc.resize(mRgbaT, mRgbaF, mRgbaF.size(), 0, 0, 0);
+        Core.flip(mRgbaF, frame, flipCode);
     }
 
 

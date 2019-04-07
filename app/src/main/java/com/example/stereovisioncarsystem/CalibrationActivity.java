@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.Spinner;
@@ -24,7 +25,8 @@ import org.opencv.core.Mat;
 public class CalibrationActivity extends AppCompatActivity implements ObservedCameraFramesCapturer.CameraFrameConnector {
 
     private TextView statusTextView, processInformationTextView;
-    private Button startCalibrationButton, okButton;
+    private EditText framesQuantityEditText;
+    private Button startCalibrationButton, okButton, undisortButton;
     private Spinner cameraTypeSpinner;
     private Calibrator calibrator;
     private JavaCameraView javaCameraView;
@@ -32,33 +34,38 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     private SeekBar photoSeekBar;
     private ObservedSingleCameraFramesCapturer capturer;
 
-
     private boolean isTimerRunning = false;
     private boolean isInterrupted = false;
     private int seconds = 3;
-    final private int howManyFramesCaptured = 5;
+    private int howManyFramesCaptured = 10;
 
+    private int counter = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_calibration);
+
+        initToolbar();
+        initGUI();
+        exqListeners();
+        initCamera();
+    }
+
+    private void initToolbar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle("Kalibracja");
-
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null){
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
-
-        init();
-        exqListeners();
-        initCamera();
     }
 
     private void initCamera() {
         javaCameraView.setCvCameraViewListener(capturer);
     }
+
+
 
     private int getCameraIndex() {
         String cameraType = cameraTypeSpinner.getSelectedItem().toString();
@@ -81,16 +88,15 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
                 cameraID = CameraBridgeViewBase.CAMERA_ID_ANY;
             }
         }
-        capturer.setCameraOrientation(cameraID);
+        capturer.setCameraOrientation(cameraID, getWindowManager().getDefaultDisplay().getRotation());
         return cameraID;
 }
 
 
-    private void init() {
+    private void initGUI() {
         statusTextView = findViewById(R.id.calib_status_text_view);
         processInformationTextView = findViewById(R.id.calib_instruction_text_view);
         startCalibrationButton = findViewById(R.id.start_calibration_button);
-        calibrator = new Calibrator();
         javaCameraView = findViewById(R.id.camera_view);
         cameraTypeSpinner = findViewById(R.id.camera_type_spinner);
         capturer = new ObservedSingleCameraFramesCapturer(this);
@@ -98,6 +104,8 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         photoSeekBar = findViewById(R.id.photo_choose_seek_bar);
         photoSeekBar.setMax(howManyFramesCaptured-1);
         okButton = findViewById(R.id.ok_button);
+        undisortButton = findViewById(R.id.undisort_button);
+        framesQuantityEditText = findViewById(R.id.frames_quantity_edit_text);
     }
 
 
@@ -111,8 +119,11 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         photoSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                imageView.setImageBitmap(calibrator.getUndistortedPhotoByIndex(i));
-                processInformationTextView.setText("Photo nb " + (i + 1));
+                if(calibrator!=null)
+                {
+                    imageView.setImageBitmap(calibrator.getColorPhotoByIndex(i));
+                    processInformationTextView.setText("Photo nb " + (i + 1));
+                }
             }
 
             @Override
@@ -128,19 +139,47 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         okButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                processInformationTextView.setText("I'm calibrating");
-                //calibrator.performUndisortion();
+                boolean wasFound = false;
+                processInformationTextView.setText("I'm looking for chessboards");
+                try {
+                    calibrator.drawChessboardsOnColorFrames();
+                    wasFound = true;
+                } catch (Calibrator.NotEnoughChessboardsException e) {
+                    e.printStackTrace();
+                    processInformationTextView.setText("Chessboards not on all photos :(");
+                }
+                if(wasFound) undisortButton.setVisibility(View.VISIBLE);
+            }
+        });
+        undisortButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                calibrator.performUndisortion();
             }
         });
     }
 
+
+
     private void initCalibration() {
+
+        updateVariablesAndGUI();
+
+        calibrator = null;
+        calibrator = new Calibrator(howManyFramesCaptured);
+        counter = 0;
         statusTextView.setText("Calib started");
         hideFramesVerificationGUI();
-        calibrator.resetFrameIndex();
         showCameraScreen();
         initTimerHandler();
     }
+
+    private void updateVariablesAndGUI()
+    {
+        howManyFramesCaptured = Integer.parseInt(framesQuantityEditText.getText().toString());
+        photoSeekBar.setMax(howManyFramesCaptured-1);
+    }
+
 
     private void initTimerHandler() {
         runTimer();
@@ -162,7 +201,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     private void runTimer() {
         final Handler handler = new Handler(getMainLooper());
         handler.post(new Runnable() {
-            private int counter = 0;
+
             @Override
             public void run() {
                 if(!isInterrupted)
@@ -186,7 +225,8 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
 
                     if(isTimerRunning)
                     {
-                        processInformationTextView.setText("Change position of chessboard on every photo, time: " + seconds);
+                        processInformationTextView.setText("Change position of chessboard on every photo, time: " + seconds +" ;" +
+                                (howManyFramesCaptured-counter)+" remaining");
                         Log.d("serverLogs","Runner, seconds: " + seconds);
                         seconds--;
                         handler.postDelayed(this, 1000);
@@ -206,15 +246,15 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         isInterrupted = true;
     }
 
+    private void hideCameraScreen() {
+        javaCameraView.setVisibility(View.GONE);
+        javaCameraView.disableView();
+    }
+
     private void onCountdownFinish() {
         SystemClock.sleep(50);
         hideCameraScreen();
         showFramesVerificationGUI();
-    }
-
-    private void hideCameraScreen() {
-        javaCameraView.setVisibility(View.GONE);
-        javaCameraView.disableView();
     }
 
     private void showFramesVerificationGUI() {
@@ -223,7 +263,6 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         imageView.setVisibility(View.VISIBLE);
         imageView.setImageBitmap(calibrator.getColorPhotoByIndex(0));
         processInformationTextView.setText("Capturing finished, check colorFrames");
-        calibrator.performUndisortion();
     }
 
 

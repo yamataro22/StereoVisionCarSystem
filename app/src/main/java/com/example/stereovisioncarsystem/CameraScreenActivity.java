@@ -38,8 +38,6 @@ public class CameraScreenActivity extends CameraBasicActivity {
 
             VisionParameters visionParams = intent.getParcelableExtra(PARAMETERS);
             filters = new boolean[VisionParameters.FILTERS_QUANTITY];
-
-
         }*/
 
         CameraInfo.getCameraInfo("cameraInfo");

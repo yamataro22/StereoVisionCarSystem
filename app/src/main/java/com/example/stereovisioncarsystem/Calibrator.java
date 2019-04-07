@@ -1,6 +1,7 @@
 package com.example.stereovisioncarsystem;
 
 import android.graphics.Bitmap;
+import android.util.Log;
 
 import com.example.stereovisioncarsystem.Filtr.Filtr;
 import com.example.stereovisioncarsystem.Filtr.GrayFiltr;
@@ -23,11 +24,12 @@ class Calibrator {
     Mat[] colorFrames;
     Mat[] grayFrames;
     Mat[] undistortedFrames;
-
+    public static int HOW_MANY_FRAMES = 0;
 
     private int index = 0;
     int numCornersHor = 7;
     int numCornersVer = 5;
+    private Size boardSize;
     private MatOfPoint3f obj;
     private MatOfPoint2f imageCorners;
     private Mat intrinsic;
@@ -39,11 +41,16 @@ class Calibrator {
     private Filtr filtr;
 
 
-    public Calibrator()
+    private boolean isCalibrated = false;
+
+
+
+    public Calibrator(int howManyFrames)
     {
-        colorFrames = new Mat[5];
-        grayFrames = new Mat[5];
-        undistortedFrames = new Mat[5];
+        HOW_MANY_FRAMES = howManyFrames;
+        colorFrames = new Mat[HOW_MANY_FRAMES];
+        grayFrames = new Mat[HOW_MANY_FRAMES];
+        undistortedFrames = new Mat[HOW_MANY_FRAMES];
 
         imageCorners = new MatOfPoint2f();
         obj = new MatOfPoint3f();
@@ -53,12 +60,14 @@ class Calibrator {
         intrinsic = new Mat(3, 3, CvType.CV_32FC1);
         distCoeffs = new Mat();
         tempSavedImage = new Mat();
+        boardSize = new Size(this.numCornersHor, this.numCornersVer);
 
         int numSquares = this.numCornersHor * this.numCornersVer;
         for (int j = 0; j < numSquares; j++)
             obj.push_back(new MatOfPoint3f(new Point3(j / this.numCornersHor, j % this.numCornersVer, 0.0f)));
 
     }
+
 
     public void processFrame(Mat frame)
     {
@@ -70,6 +79,7 @@ class Calibrator {
     private void addFrameToColorFrames(Mat frame) {
         colorFrames[index]=frame;
     }
+
 
     private void addFrameToGrayFrames(Mat frame) {
         Mat grayFrame;
@@ -83,7 +93,8 @@ class Calibrator {
     public Bitmap getColorPhotoByIndex(int index)
     {
         if(index > colorFrames.length) return null;
-        return mat2Bitmap(colorFrames[index]);
+        if(!isCalibrated) return mat2Bitmap(colorFrames[index]);
+        else return mat2Bitmap(undistortedFrames[index]);
     }
 
     public Bitmap getGrayPhotoByIndex(int index)
@@ -91,6 +102,7 @@ class Calibrator {
         if(index > grayFrames.length) return null;
         return mat2Bitmap(grayFrames[index]);
     }
+
     public Bitmap getUndistortedPhotoByIndex(int index)
     {
         if(index > grayFrames.length) return null;
@@ -99,7 +111,7 @@ class Calibrator {
 
     public void performUndisortion()
     {
-        findChessboards();
+        //findChessboards();
         calculateCameraParameters();
         undistortImages();
     }
@@ -112,11 +124,10 @@ class Calibrator {
     }
 
 
-    public int findChessboards()
+    private int findChessboards()
     {
-        Size boardSize = new Size(this.numCornersHor, this.numCornersVer);
         TermCriteria term = new TermCriteria(TermCriteria.EPS | TermCriteria.MAX_ITER, 30, 0.1);
-        int i = 0;
+
         int howManyFound = 0;
         for(Mat frame : grayFrames)
         {
@@ -124,23 +135,34 @@ class Calibrator {
                     Calib3d.CALIB_CB_ADAPTIVE_THRESH + Calib3d.CALIB_CB_NORMALIZE_IMAGE + Calib3d.CALIB_CB_FAST_CHECK);
             if(found)
             {
+                Log.d("serverLogs", "Znaleziono szachy");
                 Imgproc.cornerSubPix(frame, imageCorners, new Size(11, 11), new Size(-1, -1), term);
                 saveState();
                 frame.copyTo(tempSavedImage);
-                //Calib3d.drawChessboardCorners(colorFrames[i], boardSize, imageCorners, found);
                 howManyFound++;
             }
-            i++;
         }
         return howManyFound;
     }
+    public void drawChessboardsOnColorFrames() throws NotEnoughChessboardsException
+    {
+        findChessboards();
 
+        if(imagePoints.size() < HOW_MANY_FRAMES)
+            throw new NotEnoughChessboardsException();
+        else
+        {
+            for(int i = 0; i < colorFrames.length; i++)
+            {
+                Calib3d.drawChessboardCorners(colorFrames[i], boardSize, (MatOfPoint2f) imagePoints.get(i),true);
+            }
+        }
+    }
     private void saveState() {
         imagePoints.add(imageCorners);
         imageCorners = new MatOfPoint2f();
         objectPoints.add(obj);
     }
-
 
     public void resetFrameIndex() {
         index = 0;
@@ -160,7 +182,14 @@ class Calibrator {
     {
         for(int i = 0; i < colorFrames.length; i++)
         {
+            undistortedFrames[i] = new Mat();
             Imgproc.undistort(colorFrames[i], undistortedFrames[i], intrinsic, distCoeffs);
         }
+        isCalibrated = true;
+    }
+
+    public class NotEnoughChessboardsException extends Exception
+    {
+
     }
 }

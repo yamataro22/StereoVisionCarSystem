@@ -130,4 +130,29 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/undisort_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:text="Undisort"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/start_calibration_button"
+        app:layout_constraintEnd_toStartOf="@+id/start_calibration_button" />
+
+    <android.support.design.widget.TextInputLayout
+        android:layout_width="53dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        app:layout_constraintBottom_toBottomOf="@+id/start_calibration_button"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <android.support.design.widget.TextInputEditText
+            android:id="@+id/frames_quantity_edit_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="hint"
+            android:text="20" />
+    </android.support.design.widget.TextInputLayout>
 </android.support.constraint.ConstraintLayout>

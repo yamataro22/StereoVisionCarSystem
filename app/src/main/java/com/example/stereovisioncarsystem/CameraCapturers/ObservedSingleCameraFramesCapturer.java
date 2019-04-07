@@ -25,7 +25,6 @@ public class ObservedSingleCameraFramesCapturer extends ObservedCameraFramesCapt
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame)
     {
         super.onCameraFrame(inputFrame);
-        gray.filtr(rgbaMat);
         if(shouldBeSent)
         {
             connector.sendFrame(rgbaMat.clone());
