@@ -23,7 +23,7 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.JavaCameraView;
 import org.opencv.core.Mat;
 
-public class CalibrationActivity extends AppCompatActivity implements ObservedCameraFramesCapturer.CameraFrameConnector {
+public class CalibrationActivity extends AppCompatActivity implements ObservedCameraFramesCapturer.CameraFrameConnector, Counter.CounterListener {
 
     private TextView statusTextView, processInformationTextView;
     private EditText framesQuantityEditText;
@@ -34,7 +34,8 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     private ImageView imageView;
     private SeekBar photoSeekBar;
     private ObservedSingleCameraFramesCapturer capturer;
-    private CounterConfigData counterConfig;
+    private CounterManager counterManager;
+    private Handler handler;
 
 
     @Override
@@ -42,7 +43,8 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_calibration);
 
-        counterConfig = new CounterConfigData();
+        counterManager = new CounterManager();
+        handler = new Handler(getMainLooper());
         initToolbar();
         initGUI();
         exqListeners();
@@ -98,7 +100,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         capturer = new ObservedSingleCameraFramesCapturer(this);
         imageView = findViewById(R.id.image_preview);
         photoSeekBar = findViewById(R.id.photo_choose_seek_bar);
-        photoSeekBar.setMax(counterConfig.getFramesQuantity()-1);
+        photoSeekBar.setMax(counterManager.getFramesQuantity()-1);
         okButton = findViewById(R.id.ok_button);
         undisortButton = findViewById(R.id.undisort_button);
         framesQuantityEditText = findViewById(R.id.frames_quantity_edit_text);
@@ -158,24 +160,28 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
 
 
     private void initCalibration() {
-        if(counterConfig.isRunning())
-        {
-            Toast.makeText(this,"Przecież działa już",Toast.LENGTH_SHORT).show();
-            return;
+
+        try {
+            counterManager.initCounter();
+            updateVariablesAndGUI();
+            calibrator = null;
+            calibrator = new Calibrator(counterManager.getFramesQuantity());
+            statusTextView.setText("Calib started");
+            hideFramesVerificationGUI();
+            showCameraScreen();
+            counterManager.runNewCounter(handler, this);
+
+        } catch (CounterManager.CounterRunningException e) {
+            Toast.makeText(this,"Counter already running",Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
         }
-        updateVariablesAndGUI();
-        calibrator = null;
-        calibrator = new Calibrator(counterConfig.getFramesQuantity());
-        statusTextView.setText("Calib started");
-        hideFramesVerificationGUI();
-        showCameraScreen();
-        runTimer();
+
     }
 
     private void updateVariablesAndGUI()
     {
-        counterConfig.changeConfig(Integer.parseInt(framesQuantityEditText.getText().toString()));
-        photoSeekBar.setMax(counterConfig.getFramesQuantity()-1);
+        counterManager.changeConfig(Integer.parseInt(framesQuantityEditText.getText().toString()));
+        photoSeekBar.setMax(counterManager.getFramesQuantity()-1);
     }
 
 
@@ -191,61 +197,10 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         imageView.setVisibility(View.GONE);
     }
 
-    private void runTimer() {
-        final Handler handler = new Handler(getMainLooper());
-        handler.post(new Runnable() {
-            private int interval = counterConfig.getInterval();
-            private int seconds = interval;
-            private int  howManyFramesToCapture = counterConfig.getFramesQuantity();
-
-
-            private boolean isTimerRunning = true;
-            private int counter = 0;
-            private boolean isFirstTime = true;
-
-            @Override
-            public void run() {
-
-                if(isFirstTime) counterConfig.run(); isFirstTime = false;
-                counterConfig.updateStatus(isTimerRunning);
-
-                if(counterConfig.shouldBeRunning())
-                {
-                    if(seconds == 0)
-                    {
-                        seconds = interval;
-                        if(counter < howManyFramesToCapture)
-                        {
-                            counter++;
-                            if(counter == howManyFramesToCapture) seconds = 1;
-                            capturer.getSingleFrameToBeProcessed();
-                        }
-                        else
-                        {
-                            seconds = 0;
-                            isTimerRunning = false;
-                            counterConfig.updateStatus(isTimerRunning);
-                            onCountdownFinish();
-                        }
-                    }
-
-                    if(isTimerRunning)
-                    {
-                        processInformationTextView.setText("Change position of chessboard on every photo, time: " + seconds +" ;" +
-                                (howManyFramesToCapture-counter)+" remaining");
-                        Log.d("serverLogs","Runner, seconds: " + seconds);
-                        seconds--;
-                        handler.postDelayed(this, 1000);
-                    }
-                }
-            }
-        });
-    }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        counterConfig.interrupt();
+        counterManager.interrupt();
     }
 
     private void hideCameraScreen() {
@@ -285,4 +240,25 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     }
 
 
+    @Override
+    public void onTick() {
+        capturer.getSingleFrameToBeProcessed();
+    }
+
+    @Override
+    public void onUpdate(int seconds, int remaining) {
+                        processInformationTextView.setText("Change position of chessboard on every photo, time: " + seconds +" ;" +
+                        remaining+" remaining");
+    }
+
+    @Override
+    public void onFinish() {
+        onCountdownFinish();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        counterManager.interrupt();
+    }
 }
