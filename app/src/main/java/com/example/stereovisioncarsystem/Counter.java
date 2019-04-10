@@ -8,16 +8,14 @@ class Counter implements Runnable {
     private int seconds;
     private int  howManyFramesToCapture;
 
-
     private boolean isTimerRunning = true;
     private boolean isInterrupted = false;
     private int counter = 0;
 
-
-
     CounterManager manager;
     CounterListener listener;
     Handler handler;
+
 
     public void interrupt() {
         isInterrupted = true;

@@ -37,12 +37,16 @@ public class CameraFramesFlipper {
             {
                 case FRONT:
                 {
-                    transponseAndFilp(frame, -1);
+                    Core.transpose(frame, mRgbaT);
+                    Imgproc.resize(mRgbaT, mRgbaF, mRgbaF.size(), 0, 0, 0);
+                    Core.flip(mRgbaF, frame, -1);
                     break;
                 }
                 case BACK:
                 {
-                    transponseAndFilp(frame, 1);
+                    Core.transpose(frame, mRgbaT);
+                    Imgproc.resize(mRgbaT, mRgbaF, mRgbaF.size(), 0, 0, 0);
+                    Core.flip(mRgbaF, frame, 1);
                     break;
                 }
             }
