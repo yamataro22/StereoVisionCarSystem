@@ -12,6 +12,8 @@ import android.view.MenuItem;
 
 import org.opencv.android.OpenCVLoader;
 
+import com.example.stereovisioncarsystem.ExternalCalibrator.CameraCalibrationActivity2;
+
 public class MainActivity extends AppCompatActivity {
 
     static {
@@ -68,6 +70,9 @@ public class MainActivity extends AppCompatActivity {
         }
         else if(id == R.id.action_client_dual_communication) {
             createAndStartIntent(ClientDualCameraActivity.class);
+        }
+        else if(id == R.id.opencvcalib) {
+            createAndStartIntent(CameraCalibrationActivity2.class);
         }
         return super.onOptionsItemSelected(item);
     }

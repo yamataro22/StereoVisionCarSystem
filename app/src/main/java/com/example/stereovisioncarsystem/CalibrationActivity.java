@@ -1,11 +1,11 @@
 package com.example.stereovisioncarsystem;
 
+import android.opengl.Visibility;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -25,9 +25,9 @@ import org.opencv.core.Mat;
 
 public class CalibrationActivity extends AppCompatActivity implements ObservedCameraFramesCapturer.CameraFrameConnector, Counter.CounterListener {
 
-    private TextView statusTextView, processInformationTextView;
+    private TextView statusTextView, processInformationTextView, cameraMatrixTextView;
     private EditText framesQuantityEditText;
-    private Button startCalibrationButton, okButton, undisortButton;
+    private Button startCalibrationButton, okButton, undisortButton, showMatrixButton, saveButton;
     private Spinner cameraTypeSpinner;
     private Calibrator calibrator;
     private JavaCameraView javaCameraView;
@@ -67,13 +67,16 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         startCalibrationButton = findViewById(R.id.start_calibration_button);
         javaCameraView = findViewById(R.id.camera_view);
         cameraTypeSpinner = findViewById(R.id.camera_type_spinner);
-        initCapturer();
+        capturer = new ObservedSingleCameraFramesCapturer(this);
         imageView = findViewById(R.id.image_preview);
         photoSeekBar = findViewById(R.id.photo_choose_seek_bar);
         photoSeekBar.setMax(counterManager.getFramesQuantity()-1);
         okButton = findViewById(R.id.ok_button);
         undisortButton = findViewById(R.id.undisort_button);
         framesQuantityEditText = findViewById(R.id.frames_quantity_edit_text);
+        showMatrixButton = findViewById(R.id.showCameraMatrixButton);
+        saveButton = findViewById(R.id.saveButton);
+        cameraMatrixTextView = findViewById(R.id.cameraMatrixTextView);
     }
 
     private void exqListeners() {
@@ -113,7 +116,9 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
                     wasFound = true;
                 } catch (Calibrator.NotEnoughChessboardsException e) {
                     e.printStackTrace();
-                    processInformationTextView.setText("Chessboards not on all photos :(");
+                    processInformationTextView.setText("Need to delete invalid photos");
+                    int newSize = calibrator.deleteInvalidImages();
+                    photoSeekBar.setMax(newSize-1);
                 }
                 if(wasFound) undisortButton.setVisibility(View.VISIBLE);
             }
@@ -122,8 +127,39 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
             @Override
             public void onClick(View view) {
                 calibrator.performUndisortion();
+                showMatrixButton.setVisibility(View.VISIBLE);
+                saveButton.setVisibility(View.VISIBLE);
             }
         });
+        showMatrixButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(cameraMatrixTextView.getVisibility() == View.GONE)
+                {
+                    hideFramesVerificationGUI();
+                    showMatrixGUI();
+                }
+                else
+                {
+                    showFramesVerificationGUI();
+                    hideMatrixGUI();
+                }
+            }
+        });
+    }
+
+    private void hideMatrixGUI()
+    {
+        cameraMatrixTextView.setVisibility(View.GONE);
+    }
+
+    private void showMatrixGUI() {
+        String cameraMatrix = calibrator.getCameraMatrix();
+        String diffParams = calibrator.getDiffParams();
+        cameraMatrixTextView.setVisibility(View.VISIBLE);
+        String message = cameraMatrix + "\n" + diffParams;
+        cameraMatrixTextView.setText(message);
+
     }
 
     private void initCamera() {
@@ -157,13 +193,6 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         return cameraID;
     }
 
-    private void initCapturer() {
-        String cameraType = cameraTypeSpinner.getSelectedItem().toString();
-
-        capturer = new ObservedSingleCameraFramesCapturer(this);
-        capturer.setCameraOrientation(getCameraIDFromString(cameraType),
-                                      getWindowManager().getDefaultDisplay().getRotation());
-    }
 
     private void initCalibration() {
         try
@@ -181,8 +210,14 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         updateVariablesAndGUI();
         createNewCalibrator();
         hideFramesVerificationGUI();
-        showCameraScreen();
+        hideCameraMatrixGUI();
+        initAndShowCameraScreen();
         counterManager.runNewCounter(handler, this);
+    }
+
+    private void hideCameraMatrixGUI() {
+        saveButton.setVisibility(View.GONE);
+        showMatrixButton.setVisibility(View.GONE);
     }
 
     private void createNewCalibrator() {
@@ -195,10 +230,21 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         photoSeekBar.setMax(counterManager.getFramesQuantity()-1);
     }
 
-    private void showCameraScreen() {
+    private void initAndShowCameraScreen() {
+        updateCapturerCameraIndex();
         javaCameraView.setCameraIndex(getCameraIndex());
+        showCameraScreen();
+    }
+
+    private void showCameraScreen() {
         javaCameraView.setVisibility(View.VISIBLE);
         javaCameraView.enableView();
+    }
+
+    private void updateCapturerCameraIndex()
+    {
+        capturer.setCameraOrientation(getCameraIndex(),
+                getWindowManager().getDefaultDisplay().getRotation());
     }
 
     private void hideFramesVerificationGUI() {

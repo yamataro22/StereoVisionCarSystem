@@ -155,4 +155,41 @@
             android:hint="hint"
             android:text="20" />
     </android.support.design.widget.TextInputLayout>
+
+    <Button
+        android:id="@+id/showCameraMatrixButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:text="Show matrix"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/ok_button"
+        app:layout_constraintEnd_toStartOf="@+id/ok_button" />
+
+    <Button
+        android:id="@+id/saveButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="Save"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/ok_button"
+        app:layout_constraintStart_toEndOf="@+id/ok_button" />
+
+    <TextView
+        android:id="@+id/cameraMatrixTextView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:textAlignment="center"
+        android:textSize="18sp"
+        android:visibility="gone"
+        android:gravity="center_vertical"
+        app:layout_constraintBottom_toTopOf="@+id/showCameraMatrixButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/calib_instruction_text_view" />
 </android.support.constraint.ConstraintLayout>

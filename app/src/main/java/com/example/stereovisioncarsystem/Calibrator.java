@@ -11,8 +11,6 @@ import org.opencv.calib3d.Calib3d;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.MatOfPoint3f;
-import org.opencv.core.Point3;
 import org.opencv.core.Size;
 import org.opencv.core.TermCriteria;
 import org.opencv.imgproc.Imgproc;
@@ -20,52 +18,69 @@ import org.opencv.imgproc.Imgproc;
 import java.util.ArrayList;
 import java.util.List;
 
-class Calibrator {
-    Mat[] colorFrames;
-    Mat[] grayFrames;
-    Mat[] undistortedFrames;
-    public static int HOW_MANY_FRAMES = 0;
 
-    private int index = 0;
-    int numCornersHor = 7;
-    int numCornersVer = 5;
-    private Size boardSize;
-    private MatOfPoint3f obj;
+class Calibrator {
+    List<Mat> colorFrames;
+    List<Mat> grayFrames;
+    List<Mat> undistortedFrames;
+
+
+    public int HOW_MANY_FRAMES;
+
+    private final Size patternSize = new Size(4, 11);
+    private final int numSquares = (int)(patternSize.width * patternSize.height);
+    private double squareSize = 0.0181;
+    private int flags;
+
+    List<Integer> invalidImagesIndexes;
     private MatOfPoint2f imageCorners;
     private Mat intrinsic;
     private Mat distCoeffs;
     private List<Mat> imagePoints;
     private List<Mat> objectPoints;
     private Mat tempSavedImage;
-
     private Filtr filtr;
-
-
     private boolean isCalibrated = false;
-
-
 
     public Calibrator(int howManyFrames)
     {
         HOW_MANY_FRAMES = howManyFrames;
-        colorFrames = new Mat[HOW_MANY_FRAMES];
-        grayFrames = new Mat[HOW_MANY_FRAMES];
-        undistortedFrames = new Mat[HOW_MANY_FRAMES];
+        colorFrames = new ArrayList<>(HOW_MANY_FRAMES);
+        undistortedFrames = new ArrayList<>(HOW_MANY_FRAMES);
+        grayFrames = new ArrayList<>(HOW_MANY_FRAMES);
+
+        invalidImagesIndexes = new ArrayList<>();
+
+        flags = Calib3d.CALIB_FIX_PRINCIPAL_POINT +
+                Calib3d.CALIB_ZERO_TANGENT_DIST +
+                Calib3d.CALIB_FIX_ASPECT_RATIO +
+                Calib3d.CALIB_FIX_K4 +
+                Calib3d.CALIB_FIX_K5;
 
         imageCorners = new MatOfPoint2f();
-        obj = new MatOfPoint3f();
         filtr = new GrayFiltr();
         imagePoints = new ArrayList<>();
         objectPoints = new ArrayList<>();
         intrinsic = new Mat(3, 3, CvType.CV_32FC1);
         distCoeffs = new Mat();
         tempSavedImage = new Mat();
-        boardSize = new Size(this.numCornersHor, this.numCornersVer);
+    }
 
-        int numSquares = this.numCornersHor * this.numCornersVer;
-        for (int j = 0; j < numSquares; j++)
-            obj.push_back(new MatOfPoint3f(new Point3(j / this.numCornersHor, j % this.numCornersVer, 0.0f)));
+    private void calcBoardCornerPositions(Mat corners) {
+        final int cn = 3;
+        float positions[] = new float[numSquares * cn];
 
+        for (int i = 0; i < patternSize.height; i++) {
+            for (int j = 0; j < patternSize.width * cn; j += cn) {
+                positions[(int) (i * patternSize.width * cn + j + 0)] =
+                        (2 * (j / cn) + i % 2) * (float) squareSize;
+                positions[(int) (i * patternSize.width * cn + j + 1)] =
+                        i * (float) squareSize;
+                positions[(int) (i * patternSize.width * cn + j + 2)] = 0;
+            }
+        }
+        corners.create(numSquares, 1, CvType.CV_32FC3);
+        corners.put(0, 0, positions);
     }
 
 
@@ -73,40 +88,37 @@ class Calibrator {
     {
         addFrameToColorFrames(frame);
         addFrameToGrayFrames(frame);
-        index++;
     }
 
     private void addFrameToColorFrames(Mat frame) {
-        colorFrames[index]=frame;
+        colorFrames.add(frame);
     }
-
 
     private void addFrameToGrayFrames(Mat frame) {
         Mat grayFrame;
 
         grayFrame = frame.clone();
         filtr.filtr(grayFrame);
-        grayFrames[index]=grayFrame;
+        grayFrames.add(grayFrame);
     }
-
 
     public Bitmap getColorPhotoByIndex(int index)
     {
-        if(index > colorFrames.length) return null;
-        if(!isCalibrated) return mat2Bitmap(colorFrames[index]);
-        else return mat2Bitmap(undistortedFrames[index]);
+        if(index > colorFrames.size()) return null;
+        if(!isCalibrated) return mat2Bitmap(colorFrames.get(index));
+        else return mat2Bitmap(undistortedFrames.get(index));
     }
 
     public Bitmap getGrayPhotoByIndex(int index)
     {
-        if(index > grayFrames.length) return null;
-        return mat2Bitmap(grayFrames[index]);
+        if(index > grayFrames.size()) return null;
+        return mat2Bitmap(grayFrames.get(index));
     }
 
     public Bitmap getUndistortedPhotoByIndex(int index)
     {
-        if(index > grayFrames.length) return null;
-        return mat2Bitmap(undistortedFrames[index]);
+        if(index > grayFrames.size()) return null;
+        return mat2Bitmap(undistortedFrames.get(index));
     }
 
     public void performUndisortion()
@@ -127,23 +139,41 @@ class Calibrator {
     private int findChessboards()
     {
         TermCriteria term = new TermCriteria(TermCriteria.EPS | TermCriteria.MAX_ITER, 30, 0.1);
-
+        imagePoints.clear();
+        invalidImagesIndexes.clear();
         int howManyFound = 0;
-        for(Mat frame : grayFrames)
+
+
+        for(int i = 0; i < grayFrames.size(); i++)
         {
-            boolean found = Calib3d.findChessboardCorners(frame, boardSize, imageCorners,
-                    Calib3d.CALIB_CB_ADAPTIVE_THRESH + Calib3d.CALIB_CB_NORMALIZE_IMAGE + Calib3d.CALIB_CB_FAST_CHECK);
+            boolean found = Calib3d.findCirclesGrid(grayFrames.get(i), patternSize,
+                    imageCorners, Calib3d.CALIB_CB_ASYMMETRIC_GRID);
             if(found)
             {
-                Log.d("serverLogs", "Znaleziono szachy");
-                Imgproc.cornerSubPix(frame, imageCorners, new Size(11, 11), new Size(-1, -1), term);
+                Imgproc.cornerSubPix(grayFrames.get(i), imageCorners, new Size(11, 11), new Size(-1, -1), term);
                 saveState();
-                frame.copyTo(tempSavedImage);
+                grayFrames.get(i).copyTo(tempSavedImage);
                 howManyFound++;
+            }
+            else
+            {
+                invalidImagesIndexes.add(i);
             }
         }
         return howManyFound;
     }
+
+    public int deleteInvalidImages()
+    {
+        for(int index = invalidImagesIndexes.size() - 1; index >= 0; index --)
+        {
+            grayFrames.remove((int)invalidImagesIndexes.get(index));
+            colorFrames.remove((int)invalidImagesIndexes.get(index));
+        }
+        HOW_MANY_FRAMES = grayFrames.size();
+        return HOW_MANY_FRAMES;
+    }
+
     public void drawChessboardsOnColorFrames() throws NotEnoughChessboardsException
     {
         findChessboards();
@@ -152,44 +182,65 @@ class Calibrator {
             throw new NotEnoughChessboardsException();
         else
         {
-            for(int i = 0; i < colorFrames.length; i++)
+            for(int i = 0; i < colorFrames.size(); i++)
             {
-                Calib3d.drawChessboardCorners(colorFrames[i], boardSize, (MatOfPoint2f) imagePoints.get(i),true);
+                Calib3d.drawChessboardCorners(colorFrames.get(i), patternSize, (MatOfPoint2f) imagePoints.get(i),true);
             }
         }
     }
     private void saveState() {
         imagePoints.add(imageCorners);
         imageCorners = new MatOfPoint2f();
-        objectPoints.add(obj);
     }
 
-    public void resetFrameIndex() {
-        index = 0;
-    }
 
     private void calculateCameraParameters()
     {
+        if(isCalibrated) return;
+        fillObjectPoints();
+
         List<Mat> rvecs = new ArrayList<>();
         List<Mat> tvecs = new ArrayList<>();
-        intrinsic.put(0, 0, 1);
-        intrinsic.put(1, 1, 1);
+        intrinsic.put(0,0,1);
+        intrinsic.put(1,1,1);
+        double error = Calib3d.calibrateCamera(objectPoints, imagePoints, tempSavedImage.size(), intrinsic, distCoeffs, rvecs, tvecs, flags);
+        isCalibrated = true;
+        Log.d("serverLogs", "Camera matrix: " + intrinsic.dump());
+        Log.d("serverLogs", "distCoeffs " + distCoeffs.dump());
+        Log.d("serverLogs", "error " + error);
+    }
 
-        Calib3d.calibrateCamera(objectPoints, imagePoints, tempSavedImage.size(), intrinsic, distCoeffs, rvecs, tvecs);
+    private void fillObjectPoints() {
+        objectPoints.add(Mat.zeros(numSquares, 1, CvType.CV_32FC3));
+        calcBoardCornerPositions(objectPoints.get(0));
+        for (int i = 1; i < imagePoints.size(); i++) {
+            objectPoints.add(objectPoints.get(0));
+        }
     }
 
     private void undistortImages()
     {
-        for(int i = 0; i < colorFrames.length; i++)
+        undistortedFrames.clear();
+        for(int i = 0; i < colorFrames.size(); i++)
         {
-            undistortedFrames[i] = new Mat();
-            Imgproc.undistort(colorFrames[i], undistortedFrames[i], intrinsic, distCoeffs);
+            undistortedFrames.add(i,new Mat(colorFrames.get(i).size(), colorFrames.get(i).type()));
+            Imgproc.undistort(colorFrames.get(i), undistortedFrames.get(i), intrinsic, distCoeffs);
         }
-        isCalibrated = true;
     }
+
+    public String getCameraMatrix()
+    {
+        return intrinsic.dump();
+    }
+
+    public String getDiffParams() {
+        return distCoeffs.dump();
+    }
+
 
     public class NotEnoughChessboardsException extends Exception
     {
 
     }
+
 }
