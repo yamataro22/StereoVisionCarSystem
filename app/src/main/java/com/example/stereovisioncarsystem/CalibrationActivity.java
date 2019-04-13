@@ -1,6 +1,5 @@
 package com.example.stereovisioncarsystem;
 
-import android.opengl.Visibility;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
@@ -27,7 +26,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
 
     private TextView statusTextView, processInformationTextView, cameraMatrixTextView;
     private EditText framesQuantityEditText;
-    private Button startCalibrationButton, okButton, undisortButton, showMatrixButton, saveButton;
+    private Button startCalibrationButton, showMatrixButton, saveButton;
     private Spinner cameraTypeSpinner;
     private Calibrator calibrator;
     private JavaCameraView javaCameraView;
@@ -71,10 +70,8 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         imageView = findViewById(R.id.image_preview);
         photoSeekBar = findViewById(R.id.photo_choose_seek_bar);
         photoSeekBar.setMax(counterManager.getFramesQuantity()-1);
-        okButton = findViewById(R.id.ok_button);
-        undisortButton = findViewById(R.id.undisort_button);
         framesQuantityEditText = findViewById(R.id.frames_quantity_edit_text);
-        showMatrixButton = findViewById(R.id.showCameraMatrixButton);
+        showMatrixButton = findViewById(R.id.saveButton);
         saveButton = findViewById(R.id.saveButton);
         cameraMatrixTextView = findViewById(R.id.cameraMatrixTextView);
     }
@@ -106,31 +103,8 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
 
             }
         });
-        okButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                boolean wasFound = false;
-                processInformationTextView.setText("I'm looking for chessboards");
-                try {
-                    calibrator.drawChessboardsOnColorFrames();
-                    wasFound = true;
-                } catch (Calibrator.NotEnoughChessboardsException e) {
-                    e.printStackTrace();
-                    processInformationTextView.setText("Need to delete invalid photos");
-                    int newSize = calibrator.deleteInvalidImages();
-                    photoSeekBar.setMax(newSize-1);
-                }
-                if(wasFound) undisortButton.setVisibility(View.VISIBLE);
-            }
-        });
-        undisortButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                calibrator.performUndisortion();
-                showMatrixButton.setVisibility(View.VISIBLE);
-                saveButton.setVisibility(View.VISIBLE);
-            }
-        });
+
+
         showMatrixButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -249,7 +223,6 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
 
     private void hideFramesVerificationGUI() {
         photoSeekBar.setVisibility(View.GONE);
-        okButton.setVisibility(View.GONE);
         imageView.setVisibility(View.GONE);
     }
 
@@ -260,7 +233,6 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
 
     private void showFramesVerificationGUI() {
         photoSeekBar.setVisibility(View.VISIBLE);
-        okButton.setVisibility(View.VISIBLE);
         imageView.setVisibility(View.VISIBLE);
         imageView.setImageBitmap(calibrator.getColorPhotoByIndex(0));
         processInformationTextView.setText("Capturing finished, check colorFrames");
@@ -288,7 +260,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
 
     @Override
     public void onUpdate(int seconds, int remaining) {
-        processInformationTextView.setText("Change position of chessboard on every photo, time: " + seconds +" ;" +
+        processInformationTextView.setText("capturing, time: " + seconds +" ;" +
         remaining+" remaining");
     }
 
@@ -297,6 +269,28 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         SystemClock.sleep(50);
         hideCameraScreen();
         showFramesVerificationGUI();
+        undisortImages();
+    }
+
+    private void undisortImages()
+    {
+        boolean wasFound = false;
+        processInformationTextView.setText("I'm looking for chessboards");
+        try {
+            calibrator.drawChessboardsOnColorFrames();
+            wasFound = true;
+        } catch (Calibrator.NotEnoughChessboardsException e) {
+            e.printStackTrace();
+            int newSize = calibrator.deleteInvalidImages();
+            photoSeekBar.setMax(newSize-1);
+            undisortImages();
+        }
+        if(wasFound)
+        {
+            calibrator.performUndisortion();
+            showMatrixButton.setVisibility(View.VISIBLE);
+            saveButton.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
