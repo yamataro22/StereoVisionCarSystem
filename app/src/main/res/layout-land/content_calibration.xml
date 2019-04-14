@@ -9,35 +9,6 @@
     tools:layout_editor_absoluteY="56dp"
     tools:showIn="@layout/activity_calibration">
 
-    <LinearLayout
-        android:id="@+id/linearLayout5"
-        android:layout_width="0dp"
-        android:layout_height="53dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:orientation="horizontal"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <TextView
-            android:id="@+id/textView3"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Calibration status:"
-            android:textSize="18sp" />
-
-        <TextView
-            android:id="@+id/calib_status_text_view"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Not started"
-            android:textAlignment="textEnd"
-            android:textSize="24sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
     <Button
         android:id="@+id/start_calibration_button"
         android:layout_width="wrap_content"
@@ -53,15 +24,17 @@
         android:id="@+id/calib_instruction_text_view"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        android:text="Chose camera type and start calibration"
+        android:text="Press start"
         android:textAlignment="center"
         android:textSize="30sp"
         app:layout_constraintBottom_toTopOf="@+id/textInputLayout"
-        app:layout_constraintEnd_toEndOf="@+id/linearLayout5"
-        app:layout_constraintStart_toStartOf="@+id/linearLayout5"
-        app:layout_constraintTop_toBottomOf="@+id/linearLayout5" />
+        app:layout_constraintEnd_toEndOf="@+id/start_calibration_button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Spinner
         android:id="@+id/camera_type_spinner"
@@ -94,10 +67,10 @@
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         android:visibility="visible"
-        app:layout_constraintBottom_toTopOf="@+id/saveButton"
+        app:layout_constraintBottom_toTopOf="@+id/showCameraMatrixButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/calib_instruction_text_view"
-        app:layout_constraintTop_toTopOf="@+id/linearLayout5" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <SeekBar
         android:id="@+id/photo_choose_seek_bar"
@@ -111,7 +84,7 @@
         android:progress="0"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@+id/start_calibration_button"
-        app:layout_constraintEnd_toStartOf="@+id/saveButton"
+        app:layout_constraintEnd_toStartOf="@+id/showCameraMatrixButton"
         app:layout_constraintStart_toEndOf="@+id/start_calibration_button" />
 
 
@@ -156,7 +129,7 @@
         android:textAlignment="center"
         android:textSize="24sp"
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@+id/saveButton"
+        app:layout_constraintBottom_toTopOf="@+id/showCameraMatrixButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/calib_instruction_text_view"
         app:layout_constraintTop_toTopOf="parent" />

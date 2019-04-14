@@ -174,12 +174,11 @@ class Calibrator {
         return HOW_MANY_FRAMES;
     }
 
-    public void drawChessboardsOnColorFrames() throws NotEnoughChessboardsException
-    {
+    public void drawChessboardsOnColorFrames() throws ChessboardsNotOnAllPhotosException, NotEnoughChessboardsException {
         findChessboards();
-
+        if(imagePoints.size() < 2) throw new NotEnoughChessboardsException();
         if(imagePoints.size() < HOW_MANY_FRAMES)
-            throw new NotEnoughChessboardsException();
+            throw new ChessboardsNotOnAllPhotosException();
         else
         {
             for(int i = 0; i < colorFrames.size(); i++)
@@ -228,19 +227,59 @@ class Calibrator {
         }
     }
 
-    public String getCameraMatrix()
+    public Mat getCameraMatrix()
     {
-        return intrinsic.dump();
+        return intrinsic.clone();
     }
 
-    public String getDiffParams() {
-        return distCoeffs.dump();
+    public Mat getDiffParams() {
+        return distCoeffs.clone();
     }
 
+    public String getFormattedCameraMatrix()
+    {
+        String output = "";
+        Double c00 = intrinsic.get(0,0)[0];
+        Double c01 = intrinsic.get(0,1)[0];
+        Double c02 = intrinsic.get(0,2)[0];
+        Double c10 = intrinsic.get(1,0)[0];
+        Double c11 = intrinsic.get(1,1)[0];
+        Double c12 = intrinsic.get(1,2)[0];
+        Double c20 = intrinsic.get(2,0)[0];
+        Double c21 = intrinsic.get(2,1)[0];
+        Double c22 = intrinsic.get(2,2)[0];
+
+        output += String.format("[%07.2f   %07.2f   %07.2f,\n", c00,c01,c02);
+        output += String.format(" %07.2f   %07.2f   %07.2f,\n", c10,c11,c12);
+        output += String.format(" %07.2f   %07.2f   %07.2f]\n", c20,c21,c22);
+
+        return output;
+    }
+
+    public String getFromatedDiffParams()
+    {
+        String output;
+
+        Double c00 = distCoeffs.get(0,0)[0];
+        Double c01 = distCoeffs.get(0,1)[0];
+        Double c02 = distCoeffs.get(0,2)[0];
+        Double c03 = distCoeffs.get(0,3)[0];
+        Double c04 = distCoeffs.get(0,4)[0];
+
+        output = String.format("[% 6.2f, % 6.2f, % 3.2f, % 3.2f, % 3.2f]", c00,c01,c02,c03,c04);
+        return output;
+    }
+
+
+    public class ChessboardsNotOnAllPhotosException extends Exception
+    {
+
+    }
 
     public class NotEnoughChessboardsException extends Exception
     {
 
     }
+
 
 }

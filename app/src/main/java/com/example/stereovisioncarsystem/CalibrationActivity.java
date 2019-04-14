@@ -24,7 +24,7 @@ import org.opencv.core.Mat;
 
 public class CalibrationActivity extends AppCompatActivity implements ObservedCameraFramesCapturer.CameraFrameConnector, Counter.CounterListener {
 
-    private TextView statusTextView, processInformationTextView, cameraMatrixTextView;
+    private TextView processInformationTextView, cameraMatrixTextView;
     private EditText framesQuantityEditText;
     private Button startCalibrationButton, showMatrixButton, saveButton;
     private Spinner cameraTypeSpinner;
@@ -61,7 +61,6 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     }
 
     private void initGUI() {
-        statusTextView = findViewById(R.id.calib_status_text_view);
         processInformationTextView = findViewById(R.id.calib_instruction_text_view);
         startCalibrationButton = findViewById(R.id.start_calibration_button);
         javaCameraView = findViewById(R.id.camera_view);
@@ -71,7 +70,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         photoSeekBar = findViewById(R.id.photo_choose_seek_bar);
         photoSeekBar.setMax(counterManager.getFramesQuantity()-1);
         framesQuantityEditText = findViewById(R.id.frames_quantity_edit_text);
-        showMatrixButton = findViewById(R.id.saveButton);
+        showMatrixButton = findViewById(R.id.showCameraMatrixButton);
         saveButton = findViewById(R.id.saveButton);
         cameraMatrixTextView = findViewById(R.id.cameraMatrixTextView);
     }
@@ -128,8 +127,8 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     }
 
     private void showMatrixGUI() {
-        String cameraMatrix = calibrator.getCameraMatrix();
-        String diffParams = calibrator.getDiffParams();
+        String cameraMatrix = calibrator.getFormattedCameraMatrix();
+        String diffParams = calibrator.getFromatedDiffParams();
         cameraMatrixTextView.setVisibility(View.VISIBLE);
         String message = cameraMatrix + "\n" + diffParams;
         cameraMatrixTextView.setText(message);
@@ -260,7 +259,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
 
     @Override
     public void onUpdate(int seconds, int remaining) {
-        processInformationTextView.setText("capturing, time: " + seconds +" ;" +
+        processInformationTextView.setText("time: " + seconds +" ;" +
         remaining+" remaining");
     }
 
@@ -268,7 +267,6 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     public void onFinish() {
         SystemClock.sleep(50);
         hideCameraScreen();
-        showFramesVerificationGUI();
         undisortImages();
     }
 
@@ -279,15 +277,21 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         try {
             calibrator.drawChessboardsOnColorFrames();
             wasFound = true;
-        } catch (Calibrator.NotEnoughChessboardsException e) {
+        } catch (Calibrator.ChessboardsNotOnAllPhotosException e) {
             e.printStackTrace();
             int newSize = calibrator.deleteInvalidImages();
             photoSeekBar.setMax(newSize-1);
             undisortImages();
+        } catch (Calibrator.NotEnoughChessboardsException e)
+        {
+            Toast.makeText(this,"Less than 2 photos:(", Toast.LENGTH_SHORT).show();
+            imageView.setVisibility(View.VISIBLE);
+            imageView.setImageResource(R.drawable.pig);
         }
         if(wasFound)
         {
             calibrator.performUndisortion();
+            showFramesVerificationGUI();
             showMatrixButton.setVisibility(View.VISIBLE);
             saveButton.setVisibility(View.VISIBLE);
         }
