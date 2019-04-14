@@ -16,12 +16,10 @@ class Counter implements Runnable {
     CounterListener listener;
     Handler handler;
 
-
     public void interrupt() {
         isInterrupted = true;
         isTimerRunning = false;
     }
-
 
     public interface CounterListener
     {

@@ -1,19 +1,31 @@
 package com.example.stereovisioncarsystem;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SettingsActivity extends AppCompatActivity {
 
-    Button calibrationButton;
-
+    Button calibrationButton, loadCalibrationButton;
+    TextView calibrationTextView, deviceNameTextView;
+    Spinner cameraSpinner;
+    String deviceName = Build.MODEL;
+    String cameraMatrix = "";
+    String distCoeffs = "";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,6 +44,11 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void init() {
         calibrationButton = findViewById(R.id.calibrate_button);
+        loadCalibrationButton = findViewById(R.id.loadCalibrationButton);
+        calibrationTextView = findViewById(R.id.cameraMatrixTextView);
+        deviceNameTextView = findViewById(R.id.deviceNameTextView);
+        deviceNameTextView.setText(deviceName);
+        cameraSpinner = findViewById(R.id.camera_type_spinner);
     }
 
     private void exqListeners() {
@@ -42,6 +59,43 @@ public class SettingsActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+        loadCalibrationButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                loadSavedCalibration("server","back");
+            }
+        });
+    }
+
+    private void loadSavedCalibration(String server, String back)
+    {
+        String filename = createFileName();
+
+        try {
+            FileInputStream fileInputStream = openFileInput(filename);
+            int read = -1;
+            StringBuffer buffer = new StringBuffer();
+            while((read=fileInputStream.read())!=-1)
+            {
+                buffer.append((char)read);
+            }
+            String data = buffer.toString();
+            String[] pos = data.split("%");
+            cameraMatrix = pos[0];
+            distCoeffs = pos[1];
+            calibrationTextView.setText(cameraMatrix + "\n\n" + distCoeffs);
+            fileInputStream.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String createFileName()
+    {
+        return Build.MODEL+"_"+cameraSpinner.getSelectedItem().toString();
     }
 
 
