@@ -121,9 +121,9 @@ class Calibrator {
         return mat2Bitmap(undistortedFrames.get(index));
     }
 
-    public void performUndisortion()
+    public void performUndisortion() throws ChessboardsNotOnAllPhotosException, NotEnoughChessboardsException
     {
-        //findChessboards();
+        drawChessboardsOnColorFrames();
         calculateCameraParameters();
         undistortImages();
     }
@@ -136,14 +136,38 @@ class Calibrator {
     }
 
 
+    public int deleteInvalidImages()
+    {
+        for(int index = invalidImagesIndexes.size() - 1; index >= 0; index --)
+        {
+            grayFrames.remove((int)invalidImagesIndexes.get(index));
+            colorFrames.remove((int)invalidImagesIndexes.get(index));
+        }
+        HOW_MANY_FRAMES = grayFrames.size();
+        return HOW_MANY_FRAMES;
+    }
+
+    public void drawChessboardsOnColorFrames() throws ChessboardsNotOnAllPhotosException, NotEnoughChessboardsException {
+        findChessboards();
+
+        if(imagePoints.size() < 2) throw new NotEnoughChessboardsException();
+        if(imagePoints.size() < HOW_MANY_FRAMES) throw new ChessboardsNotOnAllPhotosException();
+
+        for(int i = 0; i < colorFrames.size(); i++)
+        {
+            Calib3d.drawChessboardCorners(colorFrames.get(i), patternSize, (MatOfPoint2f) imagePoints.get(i),true);
+        }
+    }
+
     private int findChessboards()
     {
         TermCriteria term = new TermCriteria(TermCriteria.EPS | TermCriteria.MAX_ITER, 30, 0.1);
+
         imagePoints.clear();
         invalidImagesIndexes.clear();
+
+
         int howManyFound = 0;
-
-
         for(int i = 0; i < grayFrames.size(); i++)
         {
             boolean found = Calib3d.findCirclesGrid(grayFrames.get(i), patternSize,
@@ -163,30 +187,7 @@ class Calibrator {
         return howManyFound;
     }
 
-    public int deleteInvalidImages()
-    {
-        for(int index = invalidImagesIndexes.size() - 1; index >= 0; index --)
-        {
-            grayFrames.remove((int)invalidImagesIndexes.get(index));
-            colorFrames.remove((int)invalidImagesIndexes.get(index));
-        }
-        HOW_MANY_FRAMES = grayFrames.size();
-        return HOW_MANY_FRAMES;
-    }
 
-    public void drawChessboardsOnColorFrames() throws ChessboardsNotOnAllPhotosException, NotEnoughChessboardsException {
-        findChessboards();
-        if(imagePoints.size() < 2) throw new NotEnoughChessboardsException();
-        if(imagePoints.size() < HOW_MANY_FRAMES)
-            throw new ChessboardsNotOnAllPhotosException();
-        else
-        {
-            for(int i = 0; i < colorFrames.size(); i++)
-            {
-                Calib3d.drawChessboardCorners(colorFrames.get(i), patternSize, (MatOfPoint2f) imagePoints.get(i),true);
-            }
-        }
-    }
     private void saveState() {
         imagePoints.add(imageCorners);
         imageCorners = new MatOfPoint2f();

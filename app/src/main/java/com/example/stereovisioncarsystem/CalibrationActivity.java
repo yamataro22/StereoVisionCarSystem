@@ -79,16 +79,17 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         startCalibrationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                initCalibration();
+                tryToInitCalibration();
             }
         });
+
         photoSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
                 if(calibrator!=null)
                 {
                     imageView.setImageBitmap(calibrator.getColorPhotoByIndex(i));
-                    processInformationTextView.setText("Photo nb " + (i + 1));
+                    showMessageToUser("Photo nb " + (i + 1));
                 }
             }
 
@@ -103,22 +104,31 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
             }
         });
 
-
         showMatrixButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(cameraMatrixTextView.getVisibility() == View.GONE)
-                {
-                    hideFramesVerificationGUI();
-                    showMatrixGUI();
-                }
-                else
-                {
-                    showFramesVerificationGUI();
-                    hideMatrixGUI();
-                }
+                switchViewInCalibrationVerificationScreen();
             }
         });
+    }
+
+    private void switchViewInCalibrationVerificationScreen() {
+        if(isCameraMatrixVisible())
+        {
+            hideMatrixGUI();
+            setPhotosPreviewVisibility(View.VISIBLE);
+            showMatrixButton.setText("Show matrix");
+        }
+        else
+        {
+            setPhotosPreviewVisibility(View.GONE);
+            showMatrixGUI();
+            showMatrixButton.setText("Hide matrix");
+        }
+    }
+
+    private boolean isCameraMatrixVisible() {
+        return cameraMatrixTextView.getVisibility() == View.VISIBLE;
     }
 
     private void hideMatrixGUI()
@@ -126,13 +136,21 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         cameraMatrixTextView.setVisibility(View.GONE);
     }
 
-    private void showMatrixGUI() {
+    private void showMatrixGUI()
+    {
+        cameraMatrixTextView.setVisibility(View.VISIBLE);
+        cameraMatrixTextView.setText(getCameraParametersAndFormat());
+    }
+
+    private String getCameraParametersAndFormat() {
         String cameraMatrix = calibrator.getFormattedCameraMatrix();
         String diffParams = calibrator.getFromatedDiffParams();
-        cameraMatrixTextView.setVisibility(View.VISIBLE);
-        String message = cameraMatrix + "\n" + diffParams;
-        cameraMatrixTextView.setText(message);
+        return cameraMatrix + "\n" + diffParams;
+    }
 
+    private void setPhotosPreviewVisibility(int visibility) {
+        photoSeekBar.setVisibility(visibility);
+        imageView.setVisibility(visibility);
     }
 
     private void initCamera() {
@@ -166,8 +184,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         return cameraID;
     }
 
-
-    private void initCalibration() {
+    private void tryToInitCalibration() {
         try
         {
             initCounterAndUpdateGUI();
@@ -183,15 +200,10 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         updateVariablesAndGUI();
         createNewCalibrator();
         hideFramesVerificationGUI();
-        hideCameraMatrixGUI();
         initAndShowCameraScreen();
         counterManager.runNewCounter(handler, this);
     }
 
-    private void hideCameraMatrixGUI() {
-        saveButton.setVisibility(View.GONE);
-        showMatrixButton.setVisibility(View.GONE);
-    }
 
     private void createNewCalibrator() {
         calibrator = null;
@@ -221,8 +233,13 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     }
 
     private void hideFramesVerificationGUI() {
-        photoSeekBar.setVisibility(View.GONE);
-        imageView.setVisibility(View.GONE);
+        setPhotosPreviewVisibility(View.GONE);
+        if(isCameraMatrixVisible())
+        {
+            hideMatrixGUI();
+        }
+        saveButton.setVisibility(View.GONE);
+        showMatrixButton.setVisibility(View.GONE);
     }
 
     private void hideCameraScreen() {
@@ -231,19 +248,11 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     }
 
     private void showFramesVerificationGUI() {
-        photoSeekBar.setVisibility(View.VISIBLE);
-        imageView.setVisibility(View.VISIBLE);
+        setPhotosPreviewVisibility(View.VISIBLE);
         imageView.setImageBitmap(calibrator.getColorPhotoByIndex(0));
-        processInformationTextView.setText("Capturing finished, check colorFrames");
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // handle arrow click here
-        if (item.getItemId() == android.R.id.home) {
-            finish(); // close this activity and return to preview activity (if there is any)
-        }
-        return super.onOptionsItemSelected(item);
+        showMessageToUser("Check frames :)");
+        saveButton.setVisibility(View.VISIBLE);
+        showMatrixButton.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -259,41 +268,35 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
 
     @Override
     public void onUpdate(int seconds, int remaining) {
-        processInformationTextView.setText("time: " + seconds +" ;" +
-        remaining+" remaining");
+        showMessageToUser("time: " + seconds +" ;" +
+                remaining+" remaining");
+    }
+
+    private void showMessageToUser(String message) {
+        processInformationTextView.setText(message);
     }
 
     @Override
     public void onFinish() {
         SystemClock.sleep(50);
         hideCameraScreen();
-        undisortImages();
+        tryToUndisortImages();
     }
 
-    private void undisortImages()
+    private void tryToUndisortImages()
     {
-        boolean wasFound = false;
-        processInformationTextView.setText("I'm looking for chessboards");
         try {
-            calibrator.drawChessboardsOnColorFrames();
-            wasFound = true;
-        } catch (Calibrator.ChessboardsNotOnAllPhotosException e) {
-            e.printStackTrace();
-            int newSize = calibrator.deleteInvalidImages();
-            photoSeekBar.setMax(newSize-1);
-            undisortImages();
-        } catch (Calibrator.NotEnoughChessboardsException e)
-        {
-            Toast.makeText(this,"Less than 2 photos:(", Toast.LENGTH_SHORT).show();
-            imageView.setVisibility(View.VISIBLE);
-            imageView.setImageResource(R.drawable.pig);
-        }
-        if(wasFound)
-        {
             calibrator.performUndisortion();
             showFramesVerificationGUI();
-            showMatrixButton.setVisibility(View.VISIBLE);
-            saveButton.setVisibility(View.VISIBLE);
+        } catch (Calibrator.ChessboardsNotOnAllPhotosException e) {
+            int newSize = calibrator.deleteInvalidImages();
+            photoSeekBar.setMax(newSize-1);
+            tryToUndisortImages();
+        } catch (Calibrator.NotEnoughChessboardsException e)
+        {
+            showMessageToUser("Less than 2 photos:(");
+            imageView.setVisibility(View.VISIBLE);
+            imageView.setImageResource(R.drawable.pig);
         }
     }
 
@@ -307,6 +310,15 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     private void showStartupScreen() {
         hideFramesVerificationGUI();
         hideCameraScreen();
-        processInformationTextView.setText("Press calibrate to start");
+        showMessageToUser("Press calibrate to start");
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // handle arrow click here
+        if (item.getItemId() == android.R.id.home) {
+            finish(); // close this activity and return to preview activity (if there is any)
+        }
+        return super.onOptionsItemSelected(item);
     }
 }

@@ -49,6 +49,7 @@ class Counter implements Runnable {
 
     @Override
     public void run() {
+        manager.updateStatus(isTimerRunning);
         if(!isInterrupted)
         {
             if(seconds == 0)
