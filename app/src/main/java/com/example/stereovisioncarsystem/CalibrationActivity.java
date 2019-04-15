@@ -127,28 +127,22 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     }
 
     private void tryToSaveCameraMatrix() {
-        String deviceName = Build.MODEL;
 
-        FileOutputStream fileOutputStream = null;
-        File file = null;
-        try {
-            file = getFilesDir();
-            fileOutputStream = openFileOutput(Build.MODEL+"_"+cameraTypeSpinner.getSelectedItem().toString(), Context.MODE_PRIVATE);
-            fileOutputStream.write(calibrator.getFormattedCameraMatrix().getBytes());
-            fileOutputStream.write("%".getBytes());
-            fileOutputStream.write(calibrator.getFromatedDiffParams().getBytes());
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }finally {
-            try {
-                fileOutputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+
+        CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(), getChosenCameraFacing());
+        try
+        {
+            messager.save(calibrator.getFormattedCameraMatrix(), calibrator.getFromatedDiffParams());
         }
-        Toast.makeText(this,"Saved to " + file, Toast.LENGTH_LONG).show();
+        catch (CameraParametersMessager.SavingException e)
+        {
+            Toast.makeText(this,"Saving didn't work", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    public CameraFacing getChosenCameraFacing()
+        {
+        return CameraFacing.getCameraFacing(cameraTypeSpinner.getSelectedItem().toString());
     }
 
     private void switchViewInCalibrationVerificationScreen() {

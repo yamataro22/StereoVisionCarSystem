@@ -69,34 +69,17 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void loadSavedCalibration(String server, String back)
     {
-        String filename = createFileName();
-
+        String facing = cameraSpinner.getSelectedItem().toString();
+        CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(),CameraFacing.getCameraFacing(facing));
         try {
-            FileInputStream fileInputStream = openFileInput(filename);
-            int read = -1;
-            StringBuffer buffer = new StringBuffer();
-            while((read=fileInputStream.read())!=-1)
-            {
-                buffer.append((char)read);
-            }
-            String data = buffer.toString();
-            String[] pos = data.split("%");
-            cameraMatrix = pos[0];
-            distCoeffs = pos[1];
+            messager.read();
+            cameraMatrix = messager.getCameraMatrix();
+            distCoeffs = messager.getDistCoeff();
             calibrationTextView.setText(cameraMatrix + "\n\n" + distCoeffs);
-            fileInputStream.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+        } catch (CameraParametersMessager.SavingException e) {
             Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+        }    }
 
-    private String createFileName()
-    {
-        return Build.MODEL+"_"+cameraSpinner.getSelectedItem().toString();
-    }
 
 
     @Override
