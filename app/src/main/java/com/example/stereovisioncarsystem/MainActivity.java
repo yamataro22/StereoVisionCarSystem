@@ -66,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
             createAndStartIntent(ReceiveFramesActivity.class);
         }
         else if(id == R.id.action_server_dual_communication) {
-            createAndStartIntent(ServerDualCameraActivity.class);
+            createAndStartIntent(ServerDualCameraCalibrationActivity.class);
         }
         else if(id == R.id.action_client_dual_communication) {
             createAndStartIntent(ClientDualCameraActivity.class);

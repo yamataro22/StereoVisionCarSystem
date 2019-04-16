@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:opencv="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ServerDualCameraCalibrationActivity"
+    android:id="@+id/dual_calibration_whole">
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Connect"
+        android:id="@+id/connect_button"
+        android:layout_margin="10dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Disonnect"
+        android:id="@+id/disconnect_button"
+        android:layout_margin="10dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:layout_centerHorizontal="true"
+        android:text="no connection"
+        android:id="@+id/connection_status_text_view"
+        android:layout_alignBottom="@id/connect_button"
+        />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/connection_status_text_view"
+        android:orientation="vertical">
+
+
+        <org.opencv.android.JavaCameraView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:id="@+id/self_server_camera_view"
+            android:layout_margin="10dp"
+            android:layout_weight="5"
+            android:visibility="gone"
+            opencv:camera_id="any"/>
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_weight="5"
+            android:layout_height="0dp"
+            android:layout_margin="10dp"
+            android:id="@+id/serwer_camera_view"/>
+
+
+    </LinearLayout>
+
+</RelativeLayout>

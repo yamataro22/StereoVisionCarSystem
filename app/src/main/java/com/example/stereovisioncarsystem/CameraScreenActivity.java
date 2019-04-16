@@ -40,7 +40,6 @@ public class CameraScreenActivity extends CameraBasicActivity {
             filters = new boolean[VisionParameters.FILTERS_QUANTITY];
         }*/
 
-        CameraInfo.getCameraInfo("cameraInfo");
 
         mOpenCvCameraView = findViewById(R.id.HelloOpenCvView);
         mOpenCvCameraView.enableView();
