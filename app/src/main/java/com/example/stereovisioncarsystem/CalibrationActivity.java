@@ -1,7 +1,5 @@
 package com.example.stereovisioncarsystem;
 
-import android.content.Context;
-import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
@@ -24,18 +22,13 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.JavaCameraView;
 import org.opencv.core.Mat;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
 public class CalibrationActivity extends AppCompatActivity implements ObservedCameraFramesCapturer.CameraFrameConnector, Counter.CounterListener {
 
     private TextView processInformationTextView, cameraMatrixTextView;
     private EditText framesQuantityEditText;
     private Button startCalibrationButton, showMatrixButton, saveButton;
     private Spinner cameraTypeSpinner;
-    private Calibrator calibrator;
+    private SingleCameraCalibrator singleCameraCalibrator;
     private JavaCameraView javaCameraView;
     private ImageView imageView;
     private SeekBar photoSeekBar;
@@ -93,9 +86,9 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         photoSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                if(calibrator!=null)
+                if(singleCameraCalibrator !=null)
                 {
-                    imageView.setImageBitmap(calibrator.getColorPhotoByIndex(i));
+                    imageView.setImageBitmap(singleCameraCalibrator.getColorPhotoByIndex(i));
                     showMessageToUser("Photo nb " + (i + 1));
                 }
             }
@@ -132,7 +125,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(), getChosenCameraFacing());
         try
         {
-            messager.save(calibrator.getFormattedCameraMatrix(), calibrator.getFromatedDiffParams());
+            messager.save(singleCameraCalibrator.getFormattedCameraMatrix(), singleCameraCalibrator.getFromatedDiffParams());
         }
         catch (CameraParametersMessager.SavingException e)
         {
@@ -176,8 +169,8 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     }
 
     private String getCameraParametersAndFormat() {
-        String cameraMatrix = calibrator.getFormattedCameraMatrix();
-        String diffParams = calibrator.getFromatedDiffParams();
+        String cameraMatrix = singleCameraCalibrator.getFormattedCameraMatrix();
+        String diffParams = singleCameraCalibrator.getFromatedDiffParams();
         return cameraMatrix + "\n" + diffParams;
     }
 
@@ -239,8 +232,8 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
 
 
     private void createNewCalibrator() {
-        calibrator = null;
-        calibrator = new Calibrator(counterManager.getFramesQuantity());
+        singleCameraCalibrator = null;
+        singleCameraCalibrator = new SingleCameraCalibrator(counterManager.getFramesQuantity());
     }
 
     private void updateVariablesAndGUI(){
@@ -282,7 +275,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
 
     private void showFramesVerificationGUI() {
         setPhotosPreviewVisibility(View.VISIBLE);
-        imageView.setImageBitmap(calibrator.getColorPhotoByIndex(0));
+        imageView.setImageBitmap(singleCameraCalibrator.getColorPhotoByIndex(0));
         showMessageToUser("Check frames :)");
         saveButton.setVisibility(View.VISIBLE);
         showMatrixButton.setVisibility(View.VISIBLE);
@@ -291,7 +284,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     @Override
     public void sendFrame(Mat frame)
     {
-        calibrator.processFrame(frame);
+        singleCameraCalibrator.processFrame(frame);
     }
 
     @Override
@@ -319,13 +312,13 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     private void tryToUndisortImages()
     {
         try {
-            calibrator.performUndisortion();
+            singleCameraCalibrator.performUndisortion();
             showFramesVerificationGUI();
-        } catch (Calibrator.ChessboardsNotOnAllPhotosException e) {
-            int newSize = calibrator.deleteInvalidImages();
+        } catch (SingleCameraCalibrator.ChessboardsNotOnAllPhotosException e) {
+            int newSize = singleCameraCalibrator.deleteInvalidImages();
             photoSeekBar.setMax(newSize-1);
             tryToUndisortImages();
-        } catch (Calibrator.NotEnoughChessboardsException e)
+        } catch (SingleCameraCalibrator.NotEnoughChessboardsException e)
         {
             showMessageToUser("Less than 2 photos:(");
             imageView.setVisibility(View.VISIBLE);

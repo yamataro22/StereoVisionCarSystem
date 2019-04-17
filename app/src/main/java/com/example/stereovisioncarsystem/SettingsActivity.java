@@ -78,7 +78,8 @@ public class SettingsActivity extends AppCompatActivity {
             calibrationTextView.setText(cameraMatrix + "\n\n" + distCoeffs);
         } catch (CameraParametersMessager.SavingException e) {
             Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
-        }    }
+        }
+    }
 
 
 

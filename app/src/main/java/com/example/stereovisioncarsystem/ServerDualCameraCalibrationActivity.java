@@ -1,7 +1,6 @@
 package com.example.stereovisioncarsystem;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -17,24 +16,26 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.stereovisioncarsystem.CameraCapturers.CameraFramesCapturer;
+import com.example.stereovisioncarsystem.CameraCapturers.ObservedCameraFramesCapturer;
+import com.example.stereovisioncarsystem.CameraCapturers.ObservedSingleCameraFramesCapturer;
 
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.Utils;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
-public class ServerDualCameraCalibrationActivity extends CommunicationBasicActivity implements View.OnTouchListener{
+public class ServerDualCameraCalibrationActivity extends CommunicationBasicActivity implements View.OnTouchListener, ObservedCameraFramesCapturer.CameraFrameConnector {
 
-    Button connectButton, disconnectButton;
+    Button connectButton, skipFramesButton;
     TextView statusTextView;
     ImageView im;
     public static final int MESSAGE_READ = 1;
-    CameraFramesCapturer capturer;
+    ObservedSingleCameraFramesCapturer capturer;
     protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
     protected CameraBridgeViewBase mOpenCvCameraView;
     private boolean isCameraViewDisabledOnClient = true;
-
-    Mat[] matBuffer;
-    int index = 0;
+    private DualCameraCalibrator calibrator;
+    Mat matBuffer;
 
 
     @Override
@@ -43,7 +44,7 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
         setContentView(R.layout.activity_server_dual_camera_calibration);
         View contentView = findViewById(R.id.dual_calibration_whole);
         contentView.setOnTouchListener(this);
-        capturer = new CameraFramesCapturer();
+        capturer = new ObservedSingleCameraFramesCapturer(this);
         enableWiFi();
 
         if (checkSelfPermission(Manifest.permission.CAMERA)
@@ -68,14 +69,30 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
 
     private void init() {
         connectButton = findViewById(R.id.connect_button);
-        disconnectButton = findViewById(R.id.disconnect_button);
+        skipFramesButton = findViewById(R.id.skip_frames_button);
         statusTextView = findViewById(R.id.connection_status_text_view);
         im = findViewById(R.id.serwer_camera_view);
         Log.d("serverLogs", "DualScreen, init");
         mOpenCvCameraView = findViewById(R.id.self_server_camera_view);
 
-        matBuffer = new Mat[20];
+        matBuffer = new Mat();
+        calibrator = new DualCameraCalibrator();
+
+
     }
+
+//    private void loadSavedCalibration(String server, String back)
+//    {
+//        CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(),CameraFacing.Back);
+//        try {
+//            messager.read();
+//            calibrator.setServerCameraParameters(messager.getCameraMatrix(), messager.getDistCoeff());
+//            distCoeffs = messager.getDistCoeff();
+//            calibrationTextView.setText(cameraMatrix + "\n\n" + distCoeffs);
+//        } catch (CameraParametersMessager.SavingException e) {
+//            Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
+//        }
+//    }
 
     private void exqListeners() {
         connectButton.setOnClickListener(new View.OnClickListener() {
@@ -85,6 +102,13 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
                 discoverPeers();
             }
         });
+        skipFramesButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                serverClass.sendMsgToClient();
+            }
+        });
+
 
     }
 
@@ -158,19 +182,12 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
 
                 byte[] readBuffer = (byte[]) msg.obj;
 
-                Mat mat = new Mat(msg.arg1,msg.arg2,0);
+                Mat mat = new Mat(msg.arg1,msg.arg2, CvType.CV_8U);
                 mat.put(0,0,readBuffer);
                 Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(),Bitmap.Config.ARGB_8888);
                 Utils.matToBitmap(mat,btm);
                 im.setImageBitmap(btm);
-                matBuffer[index++] = mat;
-                Log.d("serverBuffor", "index = " + index);
-                if(index == 20)
-                {
-                    index = 0;
-                    Log.d("serverBuffor", "index = " + index);
-                }
-                Log.d("serverLogs", "activity; próbuję wysłać wiadomość do klienta");
+                matBuffer = mat;
         }
         return true;
     }
@@ -220,13 +237,18 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
 
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
-        Log.d("actionEvents", "otrzymano: " + motionEvent.getAction());
         if(motionEvent.getAction() == MotionEvent.ACTION_DOWN)
         {
             Log.d("actionEvents", "wysyłam wiadomośc do klienta");
-            serverClass.sendMsgToClient();
+            capturer.getSingleFrameToBeProcessed();
         }
 
         return true;
+    }
+
+    @Override
+    public void sendFrame(Mat frame) {
+        Log.d("actionEvents", "wysyłam klatki do kalibratora");
+        calibrator.processFrames(frame,matBuffer);
     }
 }
