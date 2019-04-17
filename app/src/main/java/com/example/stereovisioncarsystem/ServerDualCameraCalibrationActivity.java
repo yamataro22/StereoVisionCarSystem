@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
+import android.util.LogPrinter;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
@@ -151,6 +152,7 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
 
     @Override
     protected boolean processMessage(Message msg) {
+        messageHandler.dump(new LogPrinter(Log.DEBUG, "HandlerDump"), "");
         switch (msg.what) {
             case MESSAGE_READ:
 
@@ -168,6 +170,7 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
                     index = 0;
                     Log.d("serverBuffor", "index = " + index);
                 }
+                Log.d("serverLogs", "activity; próbuję wysłać wiadomość do klienta");
         }
         return true;
     }
@@ -217,7 +220,13 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
 
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
-        Toast.makeText(this,"Touch event occured",Toast.LENGTH_SHORT).show();
+        Log.d("actionEvents", "otrzymano: " + motionEvent.getAction());
+        if(motionEvent.getAction() == MotionEvent.ACTION_DOWN)
+        {
+            Log.d("actionEvents", "wysyłam wiadomośc do klienta");
+            serverClass.sendMsgToClient();
+        }
+
         return true;
     }
 }

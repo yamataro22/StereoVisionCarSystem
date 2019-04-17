@@ -1,12 +1,17 @@
 package com.example.stereovisioncarsystem;
 
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -16,12 +21,53 @@ public class ServerReceiver extends Thread {
     ServerSocket serverSocket;
     Handler handler;
     InputStream inputStream;
+    OutputStream outputStream;
     boolean shouldIFinish = false;
     DataInputStream dis;
 
     public ServerReceiver(Handler handler) {
         this.handler = handler;
     }
+
+    public void sendMsgToClient()
+    {
+        new AsyncTask<Void,Void,Void>()
+        {
+
+            @Override
+            protected Void doInBackground(Void... voids) {
+
+                try {
+                    Log.d("sendMsgToClient", "Server; Próbuję się połączyć z outputStreamem!");
+                    outputStream = socket.getOutputStream();
+                    final DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(outputStream));
+                    String message = (String)"x";
+                    Log.d("sendMsgToClient", "ClientSender; Wysyłam wiadomośc "+ message);
+                    byte[] byteArray = message.getBytes();
+                    Log.d("sendMsgToClient", "ClientSender; Wysyłam wiadomośc długości "+ byteArray.length);
+                    dos.writeInt(byteArray.length);
+                    dos.writeInt(1);
+                    Log.d("sendMsgToClient", "ClientSender; Metoda writeInt zwróciła "+ byteArray.length);
+                    dos.write(message.getBytes());
+                    dos.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPreExecute() {
+                Log.d("sendMsgToClient", "on post execute");
+                super.onPreExecute();
+            }
+        }.execute();
+
+
+        Log.d("serverLogs", "server, niby wysłane!");
+}
+
+
 
     @Override
     public void run() {

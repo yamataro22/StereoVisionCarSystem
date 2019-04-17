@@ -1,14 +1,17 @@
 package com.example.stereovisioncarsystem;
 
 import android.annotation.SuppressLint;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
 import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -19,7 +22,8 @@ public class ClientSender extends Thread {
     String hostAddress;
     public Handler clientMsgHandler;
     OutputStream outputStream;
-
+    InputStream inputStream;
+    boolean shouldISkipSomeFrames = false;
     public static int PHOTO_MESSAGE_TYPE = 0;
     public static int STRING_MESSAGE_TYPE = 1;
 
@@ -42,6 +46,9 @@ public class ClientSender extends Thread {
 
             socket.connect(new InetSocketAddress(hostAddress, 3333), 500);
             outputStream = socket.getOutputStream();
+            inputStream = socket.getInputStream();
+            Log.d("receiveTask", "próbuję uruchomić receive taska");
+            new ReceiveTask().execute();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -50,19 +57,20 @@ public class ClientSender extends Thread {
 
 
 
-
         clientMsgHandler = new Handler() {
             public void handleMessage(Message msg) {
 
                 if (msg.what == PHOTO_MESSAGE_TYPE) {
-                    try {
-                        byte[] photoArray = (byte[])msg.obj;
-                        dos.writeInt(msg.arg1);
-                        dos.writeInt(msg.arg2);
-                        dos.write(photoArray);
-                        dos.flush();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    if(!shouldISkipSomeFrames) {
+                        try {
+                            byte[] photoArray = (byte[]) msg.obj;
+                            dos.writeInt(msg.arg1);
+                            dos.writeInt(msg.arg2);
+                            dos.write(photoArray);
+                            dos.flush();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
                 else if(msg.what == STRING_MESSAGE_TYPE)
@@ -88,6 +96,52 @@ public class ClientSender extends Thread {
 
         Looper.loop();
         Log.d("serverLogs", "ClientSender; Jestem już poza loopem");
+    }
+
+    private class ReceiveTask extends AsyncTask<Void,Void,Void>
+    {
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            try {
+
+                Log.d("receiveTask", "Uruchomiono nowy async task");
+                DataInputStream dis = new DataInputStream(inputStream);
+
+                Log.d("receiveTask", "SerwerClass; Czekam na przeczytanie inta!");
+
+                int rows = dis.readInt();
+                int cols = dis.readInt();
+
+                Log.d("receiveTask", "Przeczytano inta o wartości:" + rows);
+                int length = rows * cols;
+                byte[] buffImg = new byte[rows*cols];
+                dis.readFully(buffImg,0,length);
+
+                if(rows == 1)
+                {
+                    String msg = new String(buffImg, 0, rows);
+                    Log.d("receiveTask", "SerwerClass; otrzymano specjalną wiadomość: " + msg);
+                    shouldISkipSomeFrames = shouldISkipSomeFrames ? false : true;
+                }
+                else
+                {
+                    Log.d("receiveTask", "SerwerClass; Length: "+ length);
+
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            if(socket == null) return;
+            if(!socket.isClosed()) new ReceiveTask().execute();
+        }
     }
 
 
