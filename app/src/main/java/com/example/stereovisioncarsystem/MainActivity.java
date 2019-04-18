@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             messager.read();
             messager.getCameraMatrixMat();
+            messager.getDistCoeffsMat();
         } catch (CameraParametersMessager.SavingException e) {
             e.printStackTrace();
         }
