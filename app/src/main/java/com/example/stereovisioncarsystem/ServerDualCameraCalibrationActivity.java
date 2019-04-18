@@ -77,22 +77,20 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
 
         matBuffer = new Mat();
         calibrator = new DualCameraCalibrator();
-
+        loadSavedCalibration();
 
     }
 
-//    private void loadSavedCalibration(String server, String back)
-//    {
-//        CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(),CameraFacing.Back);
-//        try {
-//            messager.read();
-//            calibrator.setServerCameraParameters(messager.getCameraMatrixString(), messager.getDistCoeffString());
-//            distCoeffs = messager.getDistCoeffString();
-//            calibrationTextView.setText(cameraMatrix + "\n\n" + distCoeffs);
-//        } catch (CameraParametersMessager.SavingException e) {
-//            Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
-//        }
-//    }
+    private void loadSavedCalibration()
+    {
+        CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(),CameraFacing.Back);
+        try {
+            messager.read();
+            calibrator.setServerCameraParameters(messager.getCameraMatrixMat(),messager.getDistCoeffsMat());
+        } catch (CameraParametersMessager.SavingException e) {
+            Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
+        }
+    }
 
     private void exqListeners() {
         connectButton.setOnClickListener(new View.OnClickListener() {
@@ -108,8 +106,6 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
                 serverClass.sendMsgToClient();
             }
         });
-
-
     }
 
     private void initCamera()

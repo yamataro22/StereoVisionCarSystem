@@ -42,14 +42,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(),CameraFacing.Back);
-        try {
-            messager.read();
-            messager.getCameraMatrixMat();
-            messager.getDistCoeffsMat();
-        } catch (CameraParametersMessager.SavingException e) {
-            e.printStackTrace();
-        }
     }
 
     @Override

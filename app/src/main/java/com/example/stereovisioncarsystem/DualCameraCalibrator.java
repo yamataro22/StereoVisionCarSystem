@@ -15,6 +15,7 @@ import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class DualCameraCalibrator extends Calibrator
 {
@@ -134,22 +135,33 @@ public class DualCameraCalibrator extends Calibrator
         Mat E = new Mat();
         Mat F = new Mat();
 
+        if(serverCameraMatrix == null)
+        {
+            Log.d(TAG, "Server matrixes null");
+            serverCameraMatrix = new Mat(3, 3, CvType.CV_32FC1);
+            tempFillMatrix(serverCameraMatrix);
+            tempFillDistCoeffs(serverDistCoeffs);
+        }
+        else
+        {
+            Log.d(TAG, "Server matrixes not null");
+        }
+
         clientCameraMatrix = new Mat(3, 3, CvType.CV_32FC1);
         tempFillMatrix(clientCameraMatrix);
-        serverCameraMatrix = new Mat(3, 3, CvType.CV_32FC1);
-        tempFillMatrix(serverCameraMatrix);
         clientDistCoeffs = new Mat();
-        serverDistCoeffs = new Mat();
         tempFillDistCoeffs(clientDistCoeffs);
 
 
+        Log.d(TAG, "Server matrix"+serverCameraMatrix.dump());
+        Log.d(TAG, "Client matrix"+clientCameraMatrix.dump());
         double error = Calib3d.stereoCalibrate(objectPoints,clientImagePoints,serverImagePoints,clientCameraMatrix,clientDistCoeffs,serverCameraMatrix,serverDistCoeffs,tempSavedImage.size(),
                 R,T,E,F,flags);
 
         Log.d(TAG, "R: " + R.dump());
-        Log.d(TAG, "T: " + R.dump());
-        Log.d(TAG, "E: " + R.dump());
-        Log.d(TAG, "F: " + R.dump());
+        Log.d(TAG, "T: " + T.dump());
+        Log.d(TAG, "E: " + E.dump());
+        Log.d(TAG, "F: " + F.dump());
         Log.d(TAG, "error " + error);
     }
 
@@ -254,6 +266,12 @@ public class DualCameraCalibrator extends Calibrator
         serverImagePoints.add(serverImageCorners);
         serverImageCorners = new MatOfPoint2f();
 
+    }
+
+    public void setServerCameraParameters(Mat cameraMatrixMat, Mat distCoeffsMat)
+    {
+        serverCameraMatrix = cameraMatrixMat;
+        serverDistCoeffs = distCoeffsMat;
     }
 
 
