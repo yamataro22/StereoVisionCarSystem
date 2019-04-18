@@ -2,12 +2,20 @@ package com.example.stereovisioncarsystem;
 
 import android.content.Context;
 import android.os.Build;
+import android.util.Log;
 import android.widget.Toast;
+
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 class CameraParametersMessager {
     Context appContext;
@@ -43,6 +51,7 @@ class CameraParametersMessager {
             }
         }
     }
+
 
 
 
@@ -83,12 +92,64 @@ class CameraParametersMessager {
         return Build.MODEL+"_"+facing;
     }
 
-    public String getCameraMatrix() {
+    public String getCameraMatrixString() {
         return cameraMatrix;
     }
 
-    public String getDistCoeff() {
+    public String getDistCoeffString() {
         return distCoeffs;
+    }
+
+    public Mat getCameraMatrixMat()
+    {
+        Pattern pattern = Pattern.compile("[0-9]{4},[0-9]{2}");
+        Matcher matcher = pattern.matcher(cameraMatrix);
+
+        List<String> matches = createListFromMatches(matcher);
+        matches = replaceComasWithDots(matches);
+        Double[] parametersList = converStringToDoubleArray(matches);
+
+        return createMatFromDoubleArray(parametersList);
+    }
+
+    private List<String> createListFromMatches(Matcher matcher) {
+        List<String> matches = new ArrayList<>(9);
+        while(matcher.find())
+        {
+            matches.add(matcher.group());
+        }
+        return matches;
+    }
+
+    private Double[] converStringToDoubleArray(List<String> matches) {
+        Double[] parametersList = new Double[9];
+        for(int i = 0; i < matches.size(); i++)
+        {
+            parametersList[i] = Double.parseDouble(matches.get(i));
+        }
+        return parametersList;
+    }
+
+    private Mat createMatFromDoubleArray(Double[] parametersList) {
+        Mat mat = new Mat(3, 3, CvType.CV_32FC1);
+        int k = 0;
+        for(int i = 0; i < 3; i++)
+        {
+            for(int j = 0; j < 3; j++)
+            {
+                mat.put(i,j,parametersList[k++]);
+            }
+        }
+        return mat;
+    }
+
+    private List<String> replaceComasWithDots(List<String> matches) {
+        List<String> matchesDot = new ArrayList<>(9);
+        for(String x : matches)
+        {
+            matchesDot.add( x.replace(',','.'));
+        }
+        return matchesDot;
     }
 
     public class SavingException extends Exception {

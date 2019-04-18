@@ -12,12 +12,6 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 public class SettingsActivity extends AppCompatActivity {
 
     Button calibrationButton, loadCalibrationButton;
@@ -73,8 +67,8 @@ public class SettingsActivity extends AppCompatActivity {
         CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(),CameraFacing.getCameraFacing(facing));
         try {
             messager.read();
-            cameraMatrix = messager.getCameraMatrix();
-            distCoeffs = messager.getDistCoeff();
+            cameraMatrix = messager.getCameraMatrixString();
+            distCoeffs = messager.getDistCoeffString();
             calibrationTextView.setText(cameraMatrix + "\n\n" + distCoeffs);
         } catch (CameraParametersMessager.SavingException e) {
             Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();

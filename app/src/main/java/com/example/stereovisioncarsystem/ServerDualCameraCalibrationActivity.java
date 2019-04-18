@@ -86,8 +86,8 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
 //        CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(),CameraFacing.Back);
 //        try {
 //            messager.read();
-//            calibrator.setServerCameraParameters(messager.getCameraMatrix(), messager.getDistCoeff());
-//            distCoeffs = messager.getDistCoeff();
+//            calibrator.setServerCameraParameters(messager.getCameraMatrixString(), messager.getDistCoeffString());
+//            distCoeffs = messager.getDistCoeffString();
 //            calibrationTextView.setText(cameraMatrix + "\n\n" + distCoeffs);
 //        } catch (CameraParametersMessager.SavingException e) {
 //            Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
