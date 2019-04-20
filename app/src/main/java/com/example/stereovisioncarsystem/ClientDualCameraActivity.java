@@ -1,11 +1,11 @@
 package com.example.stereovisioncarsystem;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.os.Bundle;
 import android.os.Message;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
@@ -27,7 +27,7 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
     private boolean isCameraViewDisabledOnClient = false;
     protected ObservedRotatedCameraFramesCapturer capturer;
     protected CameraBridgeViewBase mOpenCvCameraView;
-
+    private String savedCameraMatrix;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,7 +39,20 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
         exqListeners();
         checkPermissions();
 
+        getSavedCameraMatrix();
+    }
 
+    private void getSavedCameraMatrix()
+    {
+        CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(),CameraFacing.Back);
+        try {
+            messager.read();
+            savedCameraMatrix = messager.getCameraMatrixString();
+            Log.d("camMatrixSender", "odczytano macierz: " + savedCameraMatrix);
+        } catch (CameraParametersMessager.SavingException e) {
+            Log.d("camMatrixSender", "wyjątek przy odczytywaniu :(");
+            e.printStackTrace();
+        }
     }
 
     private void checkPermissions()
@@ -55,6 +68,7 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
             }
         }
     }
+
 
     private void init() {
         capturer = new ObservedRotatedCameraFramesCapturer(this);
@@ -82,7 +96,6 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
                 mOpenCvCameraView.setCameraIndex(CameraBridgeViewBase.CAMERA_ID_BACK);
                 capturer.setCameraOrientation(CameraBridgeViewBase.CAMERA_ID_BACK, getWindowManager().getDefaultDisplay().getRotation());
                 mOpenCvCameraView.setCvCameraViewListener(capturer);
-                //mOpenCvCameraView.setMaxFrameSize(400,400);
                 mOpenCvCameraView.enableView();
             }
         });
@@ -152,7 +165,14 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
     protected void onClientConnected() {
         statusTextView.setText("client");
         isConnected = true;
+        Log.i("receiveTask", "MainActiviy, jestem przed wywołaniem super");
         super.onClientConnected();
+        Log.i("receiveTask", "MainActiviy, jestem po wywołaniu super");
+        clientClass.setCameraMatrix(savedCameraMatrix);
+
+        SystemClock.sleep(400);
+        clientClass.sendReadyMessage();
+
     }
 
     @Override

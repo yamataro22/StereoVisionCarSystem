@@ -26,12 +26,22 @@ public class ClientSender extends Thread {
     boolean shouldISkipSomeFrames = false;
     public static int PHOTO_MESSAGE_TYPE = 0;
     public static int STRING_MESSAGE_TYPE = 1;
+    private String cameraMatrix = "";
+
+
+    public void setCameraMatrix(String mat)
+    {
+        Log.i("receiveTask", "clientSender; ustawiono macierz" + cameraMatrix);
+        cameraMatrix = mat;
+    }
+
 
 
     public ClientSender(InetAddress hostAddress) {
         Log.d("serverLogs", "ClientSender; Tworzę nowego clientServera!");
         socket = new Socket();
         this.hostAddress = hostAddress.getHostAddress();
+
 
 
     }
@@ -75,15 +85,15 @@ public class ClientSender extends Thread {
                 }
                 else if(msg.what == STRING_MESSAGE_TYPE)
                 {
-                    Log.d("serverLogs", "ClientSender; Jestem w handlerze, what jest równe 0!");
+                    Log.i("receiveTask", "ClientSender; Jestem w handlerze, what jest równe 0!");
                     try {
                         String message = (String)msg.obj;
-                        Log.d("serverLogs", "ClientSender; Wysyłam wiadomośc "+ message);
+                        Log.i("receiveTask", "ClientSender; Wysyłam wiadomośc "+ message);
                         byte[] byteArray = message.getBytes();
-                        Log.d("serverLogs", "ClientSender; Wysyłam wiadomośc długości "+ byteArray.length);
+                        Log.i("receiveTask", "ClientSender; Wysyłam wiadomośc długości "+ byteArray.length);
                         dos.writeInt(byteArray.length);
                         dos.writeInt(1);
-                        Log.d("serverLogs", "ClientSender; Metoda writeInt zwróciła "+ byteArray.length);
+                        Log.i("receiveTask", "ClientSender; Metoda writeInt zwróciła "+ byteArray.length);
                         dos.write(message.getBytes());
                         dos.flush();
                     } catch (IOException e) {
@@ -98,6 +108,12 @@ public class ClientSender extends Thread {
         Log.d("serverLogs", "ClientSender; Jestem już poza loopem");
     }
 
+    public void sendReadyMessage()
+    {
+        Log.i("receiveTask", "Client, wysyłam wiadomość że jestem gotowy");
+        sendMessage(STRING_MESSAGE_TYPE,"r");
+    }
+
     private class ReceiveTask extends AsyncTask<Void,Void,Void>
     {
 
@@ -105,15 +121,15 @@ public class ClientSender extends Thread {
         protected Void doInBackground(Void... voids) {
             try {
 
-                Log.d("receiveTask", "Uruchomiono nowy async task");
+                Log.i("receiveTask", "ClientSender; Uruchomiono nowy async task");
                 DataInputStream dis = new DataInputStream(inputStream);
 
-                Log.d("receiveTask", "SerwerClass; Czekam na przeczytanie inta!");
+                Log.i("receiveTask", "ClientSender; SerwerClass; Czekam na przeczytanie inta!");
 
                 int rows = dis.readInt();
                 int cols = dis.readInt();
 
-                Log.d("receiveTask", "Przeczytano inta o wartości:" + rows);
+                Log.i("receiveTask", "ClientSender; Przeczytano inta o wartości:" + rows);
                 int length = rows * cols;
                 byte[] buffImg = new byte[rows*cols];
                 dis.readFully(buffImg,0,length);
@@ -121,13 +137,20 @@ public class ClientSender extends Thread {
                 if(rows == 1)
                 {
                     String msg = new String(buffImg, 0, rows);
-                    Log.d("receiveTask", "SerwerClass; otrzymano specjalną wiadomość: " + msg);
-                    shouldISkipSomeFrames = shouldISkipSomeFrames ? false : true;
+                    if(msg.equals("x"))
+                    {
+                        Log.i("receiveTask", "ClientSender; otrzymano specjalną wiadomość: " + msg);
+                        shouldISkipSomeFrames = shouldISkipSomeFrames ? false : true;
+                    }
+                    else if(msg.equals("y"))
+                    {
+                        Log.i("receiveTask", "ClientSender; otrzymano specjalną wiadomość: " + msg);
+                        sendMessage(STRING_MESSAGE_TYPE,cameraMatrix);
+                    }
                 }
                 else
                 {
                     Log.d("receiveTask", "SerwerClass; Length: "+ length);
-
                 }
 
             } catch (IOException e) {
@@ -188,6 +211,7 @@ public class ClientSender extends Thread {
     {
         if(clientMsgHandler!=null)
         {
+            Log.i("receiveTask", "Client, sendMessage, handler!=null, obtainuje wiadomosc " + message);
             Message msg = clientMsgHandler.obtainMessage(what, message);
             clientMsgHandler.sendMessage(msg);
         }

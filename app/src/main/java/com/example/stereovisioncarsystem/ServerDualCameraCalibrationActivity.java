@@ -37,6 +37,7 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
     private DualCameraCalibrator calibrator;
     Mat matBuffer;
 
+    public final static int SPECIAL_MESSAGE = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -103,7 +104,7 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
         skipFramesButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                serverClass.sendMsgToClient();
+                serverClass.sendMsgToClient("x");
             }
         });
     }
@@ -151,6 +152,7 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
         super.onServerConnected();
         initCamera();
         enableView();
+
     }
 
     @Override
@@ -171,19 +173,35 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
     }
 
     @Override
-    protected boolean processMessage(Message msg) {
+    protected boolean processMessage(Message msg)
+    {
         messageHandler.dump(new LogPrinter(Log.DEBUG, "HandlerDump"), "");
         switch (msg.what) {
-            case MESSAGE_READ:
-
+            case MESSAGE_READ: {
                 byte[] readBuffer = (byte[]) msg.obj;
 
-                Mat mat = new Mat(msg.arg1,msg.arg2, CvType.CV_8U);
-                mat.put(0,0,readBuffer);
-                Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(),Bitmap.Config.ARGB_8888);
-                Utils.matToBitmap(mat,btm);
+                Mat mat = new Mat(msg.arg1, msg.arg2, CvType.CV_8U);
+                mat.put(0, 0, readBuffer);
+                Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
+                Utils.matToBitmap(mat, btm);
                 im.setImageBitmap(btm);
                 matBuffer = mat;
+                break;
+            }
+            case SPECIAL_MESSAGE:
+            {
+                String message = (String)msg.obj;
+                Log.d("receiveTask", "SerwerClass, wysyłam zapytanie o macierze, msg.obj="+message);
+                if(message.equals("r"))
+                {
+                    serverClass.sendMsgToClient("y");
+                }
+                else
+                {
+                    Log.d("receiveTask", "SerwerClass, Finito, otrzymano macierz");
+                }
+            }
+
         }
         return true;
     }

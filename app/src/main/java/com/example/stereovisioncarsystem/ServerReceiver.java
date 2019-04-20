@@ -1,5 +1,6 @@
 package com.example.stereovisioncarsystem;
 
+import android.annotation.SuppressLint;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
@@ -29,19 +30,18 @@ public class ServerReceiver extends Thread {
         this.handler = handler;
     }
 
-    public void sendMsgToClient()
+    @SuppressLint("StaticFieldLeak")
+    public void sendMsgToClient(String message)
     {
-        new AsyncTask<Void,Void,Void>()
+        new AsyncTask<String,Void,Void>()
         {
-
             @Override
-            protected Void doInBackground(Void... voids) {
-
+            protected Void doInBackground(String... strings) {
                 try {
                     Log.d("sendMsgToClient", "Server; Próbuję się połączyć z outputStreamem!");
                     outputStream = socket.getOutputStream();
                     final DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(outputStream));
-                    String message = (String)"x";
+                    String message = strings[0];
                     Log.d("sendMsgToClient", "ClientSender; Wysyłam wiadomośc "+ message);
                     byte[] byteArray = message.getBytes();
                     Log.d("sendMsgToClient", "ClientSender; Wysyłam wiadomośc długości "+ byteArray.length);
@@ -61,8 +61,7 @@ public class ServerReceiver extends Thread {
                 Log.d("sendMsgToClient", "on post execute");
                 super.onPreExecute();
             }
-        }.execute();
-
+        }.execute(message);
 
         Log.d("serverLogs", "server, niby wysłane!");
 }
@@ -98,7 +97,8 @@ public class ServerReceiver extends Thread {
                     Log.d("serverLogs", "SerwerClass; Jestem w pętli");
                     int rows = dis.readInt();
                     int cols = dis.readInt();
-                    Log.d("serverLogs", "SerwerClass; Jestem za dis.readInt, length: " + rows*cols);
+                    Log.d("serverLogs", "SerwerClass; Jestem za dis.readInt, rows: " + rows);
+                    Log.d("serverLogs", "SerwerClass; Jestem za dis.readInt, cols: " + cols);
                     if  ( Thread.interrupted() )
                     {
                         shouldIFinish = true;
@@ -110,7 +110,7 @@ public class ServerReceiver extends Thread {
                     byte[] buffImg = new byte[rows*cols];
                     dis.readFully(buffImg,0,length);
 
-                    if(rows == 1)
+                    if(cols == 1)
                     {
                         String msg = new String(buffImg, 0, rows);
                         Log.d("serverLogs", "SerwerClass; otrzymano specjalną wiadomość: " + msg);
@@ -124,14 +124,26 @@ public class ServerReceiver extends Thread {
                             Log.d("serverLogs", "SerwerClass; kończymy wątek");
                             shouldIFinish = true;
                         }
+                        else if(msg.equals("r"))
+                        {
+                            Log.d("receiveTask", "SerwerClass, otrzymano sygnał, że client jest gotowy");
+                            Message m = Message.obtain(handler, ServerDualCameraCalibrationActivity.SPECIAL_MESSAGE, "r");
+                            handler.sendMessage(m);
+                        }
+                        else
+                        {
+                            Log.d("receiveTask", "SerwerClass, otrzymano macierz!");
+                            Message m = Message.obtain(handler, ServerDualCameraCalibrationActivity.SPECIAL_MESSAGE, msg);
+                            handler.sendMessage(m);
+                        }
                     }
                     else
                     {
                         Log.d("serverLogs", "SerwerClass; Length: "+ length);
-
+                        Message m = Message.obtain(handler, CommunicationTestActivity.MESSAGE_READ, rows, cols, buffImg);
+                        handler.sendMessage(m);
                     }
-                    Message m = Message.obtain(handler, CommunicationTestActivity.MESSAGE_READ, rows, cols, buffImg);
-                    handler.sendMessage(m);
+
                 }
                 Log.d("serverLogs", "SerwerClass; wyszedłem z pętli");
             }
