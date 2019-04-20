@@ -24,13 +24,12 @@ public class ClientSender extends Thread {
     OutputStream outputStream;
     InputStream inputStream;
     boolean shouldISkipSomeFrames = false;
-    private String cameraMatrix = "";
+    private CameraData cameraData;
     public final static String TAG = "serverClientCom";
 
-    public void setCameraMatrix(String mat)
+    public void setCameraData(CameraData mat)
     {
-        Log.i(TAG, "clientSender; ustawiono macierz" + cameraMatrix);
-        cameraMatrix = mat;
+        cameraData = mat;
     }
 
 
@@ -145,7 +144,7 @@ public class ClientSender extends Thread {
                         break;
                     case ClientServerMessages.GET_CAMERA_DATA:
                         Log.i(TAG, "ClientAsyncReceive; otrzymano specjalną wiadomość: GET_CAMERA_DATA");
-                        sendMessageToHandler(ClientHandlerMsg.SPECIAL_MSG,cameraMatrix);
+                        sendMessageToHandler(ClientHandlerMsg.SPECIAL_MSG, cameraData.toString());
                 }
 
 

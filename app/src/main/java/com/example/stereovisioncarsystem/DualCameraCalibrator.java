@@ -15,7 +15,6 @@ import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 public class DualCameraCalibrator extends Calibrator
 {
@@ -42,10 +41,8 @@ public class DualCameraCalibrator extends Calibrator
     Filtr grayFiltr;
     private Mat tempSavedImage;
     private List<Integer> invalidImagesIndexes;
-    private Mat clientCameraMatrix;
-    private Mat clientDistCoeffs;
-    private Mat serverCameraMatrix;
-    private Mat serverDistCoeffs;
+    private CameraData serverCameraData;
+    private CameraData clientCameraData;
 
     public DualCameraCalibrator() {
         init();
@@ -135,56 +132,15 @@ public class DualCameraCalibrator extends Calibrator
         Mat E = new Mat();
         Mat F = new Mat();
 
-        if(serverCameraMatrix == null)
-        {
-            Log.d(TAG, "Server matrixes null");
-            serverCameraMatrix = new Mat(3, 3, CvType.CV_32FC1);
-            tempFillMatrix(serverCameraMatrix);
-            tempFillDistCoeffs(serverDistCoeffs);
-        }
-        else
-        {
-            Log.d(TAG, "Server matrixes not null");
-        }
-
-        clientCameraMatrix = new Mat(3, 3, CvType.CV_32FC1);
-        tempFillMatrix(clientCameraMatrix);
-        clientDistCoeffs = new Mat();
-        tempFillDistCoeffs(clientDistCoeffs);
-
-
-        Log.d(TAG, "Server matrix"+serverCameraMatrix.dump());
-        Log.d(TAG, "Client matrix"+clientCameraMatrix.dump());
-        double error = Calib3d.stereoCalibrate(objectPoints,clientImagePoints,serverImagePoints,clientCameraMatrix,clientDistCoeffs,serverCameraMatrix,serverDistCoeffs,tempSavedImage.size(),
-                R,T,E,F,flags);
+        double error = Calib3d.stereoCalibrate(objectPoints,clientImagePoints,serverImagePoints,
+                        serverCameraData.getCameraMatrixMat(),serverCameraData.getDistCoeffsMat(),clientCameraData.getCameraMatrixMat(),clientCameraData.getDistCoeffsMat(),
+                        tempSavedImage.size(), R, T, E, F, flags);
 
         Log.d(TAG, "R: " + R.dump());
         Log.d(TAG, "T: " + T.dump());
         Log.d(TAG, "E: " + E.dump());
         Log.d(TAG, "F: " + F.dump());
         Log.d(TAG, "error " + error);
-    }
-
-    private void tempFillDistCoeffs(Mat clientDistCoeffs)
-    {
-        clientDistCoeffs.put(0,0,0.32);
-        clientDistCoeffs.put(0,1,-1.39);
-        clientDistCoeffs.put(0,2,0);
-        clientDistCoeffs.put(0,3,0);
-        clientDistCoeffs.put(0,4,0);
-    }
-
-    private void tempFillMatrix(Mat clientCameraMatrix)
-    {
-        clientCameraMatrix.put(0,0,1182);
-        clientCameraMatrix.put(0,1,0);
-        clientCameraMatrix.put(0,2,540);
-        clientCameraMatrix.put(1,0,0);
-        clientCameraMatrix.put(1,1,1182);
-        clientCameraMatrix.put(1,2,540);
-        clientCameraMatrix.put(2,0,0);
-        clientCameraMatrix.put(2,1,0);
-        clientCameraMatrix.put(2,2,1);
     }
 
     private void fillObjectPoints() {
@@ -268,16 +224,20 @@ public class DualCameraCalibrator extends Calibrator
 
     }
 
-    public void setServerCameraParameters(Mat cameraMatrixMat, Mat distCoeffsMat)
+    public void setServerCameraParameters(CameraData serverCameraData)
     {
-        serverCameraMatrix = cameraMatrixMat;
-        serverDistCoeffs = distCoeffsMat;
+        this.serverCameraData = serverCameraData;
+
+        Log.d(TAG, "Ustawiono parametry kamery serwera:\n" +
+                serverCameraData.getCameraMatrixMat().dump() + '\n' + serverCameraData.getDistCoeffsMat().dump());
     }
 
 
-//    public void setServerCameraParameters(String cameraMatrix, String distCoeff)
-//    {
-//        serverCameraMatrix = cameraMatrix;
-//        serverDistCoeffs = distCoeff;
-//    }
+    public void setClientCameraParameters(CameraData clientCameraData)
+    {
+        this.clientCameraData = clientCameraData;
+
+        Log.d(TAG, "Ustawiono parametry kamery klienta:\n" +
+                clientCameraData.getCameraMatrixMat().dump() + '\n' + clientCameraData.getDistCoeffsMat().dump());
+    }
 }

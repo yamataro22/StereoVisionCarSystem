@@ -3,13 +3,6 @@ package com.example.stereovisioncarsystem;
 import android.content.Context;
 import android.os.Build;
 import android.widget.Toast;
-
-import com.example.stereovisioncarsystem.StringMatConverters.StringToMatCamMatrixCoverter;
-import com.example.stereovisioncarsystem.StringMatConverters.StringToMatConverter;
-import com.example.stereovisioncarsystem.StringMatConverters.StringToMatDistCoeffsConverter;
-
-import org.opencv.core.Mat;
-
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -89,25 +82,13 @@ class CameraParametersMessager {
         return Build.MODEL+"_"+facing;
     }
 
-    public String getCameraMatrixString() {
-        return cameraMatrix;
-    }
-
-    public String getDistCoeffString() {
-        return distCoeffs;
-    }
-
-    public Mat getDistCoeffsMat()
+    public CameraData getCameraData()
     {
-        StringToMatConverter converter = new StringToMatDistCoeffsConverter(1,5);
-        return converter.convert(distCoeffs);
+        return new CameraData(cameraMatrix,distCoeffs);
     }
-    public Mat getCameraMatrixMat()
-    {
-        StringToMatConverter converter = new StringToMatCamMatrixCoverter();
-        return converter.convert(cameraMatrix);
 
-    }
+
+
 
 
 

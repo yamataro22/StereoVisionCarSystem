@@ -268,7 +268,7 @@ class SingleCameraCalibrator extends Calibrator{
         Double c03 = distCoeffs.get(0,3)[0];
         Double c04 = distCoeffs.get(0,4)[0];
 
-        output = String.format("[% 6.2f, % 6.2f, % 3.2f, % 3.2f, % 3.2f]", c00,c01,c02,c03,c04);
+        output = String.format("[%04.2f, %04.2f, %03.2f, %03.2f, %03.2f]", c00,c01,c02,c03,c04);
         return output;
     }
 

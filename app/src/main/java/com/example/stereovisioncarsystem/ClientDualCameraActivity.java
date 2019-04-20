@@ -27,8 +27,10 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
     private boolean isCameraViewDisabledOnClient = false;
     protected ObservedRotatedCameraFramesCapturer capturer;
     protected CameraBridgeViewBase mOpenCvCameraView;
-    private String savedCameraMatrix;
+    CameraData cameraData;
+
     public final static String TAG = "serverClientCom";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,8 +50,8 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
         CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(),CameraFacing.Back);
         try {
             messager.read();
-            savedCameraMatrix = messager.getCameraMatrixString();
-            Log.d("camMatrixSender", "odczytano macierz: " + savedCameraMatrix);
+            cameraData = messager.getCameraData();
+            Log.d("camMatrixSender", "odczytano macierz: " + cameraData);
         } catch (CameraParametersMessager.SavingException e) {
             Log.d("camMatrixSender", "wyjątek przy odczytywaniu :(");
             e.printStackTrace();
@@ -169,7 +171,7 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
         Log.i(TAG, "MainActiviy, jestem przed wywołaniem super");
         super.onClientConnected();
         Log.i(TAG, "MainActiviy, jestem po wywołaniu super");
-        clientClass.setCameraMatrix(savedCameraMatrix);
+        clientClass.setCameraData(cameraData);
 
         SystemClock.sleep(400);
         clientClass.sendReadyMessageToHandler();

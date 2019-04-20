@@ -18,8 +18,6 @@ public class SettingsActivity extends AppCompatActivity {
     TextView calibrationTextView, deviceNameTextView;
     Spinner cameraSpinner;
     String deviceName = Build.MODEL;
-    String cameraMatrix = "";
-    String distCoeffs = "";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,20 +54,19 @@ public class SettingsActivity extends AppCompatActivity {
         loadCalibrationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                loadSavedCalibration("server","back");
+                loadSavedCalibration();
             }
         });
     }
 
-    private void loadSavedCalibration(String server, String back)
+    private void loadSavedCalibration()
     {
         String facing = cameraSpinner.getSelectedItem().toString();
         CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(),CameraFacing.getCameraFacing(facing));
         try {
             messager.read();
-            cameraMatrix = messager.getCameraMatrixString();
-            distCoeffs = messager.getDistCoeffString();
-            calibrationTextView.setText(cameraMatrix + "\n\n" + distCoeffs);
+            CameraData cameraData = messager.getCameraData();
+            calibrationTextView.setText(cameraData.getCameraMatrix() + "\n\n" + cameraData.getDistCoeffs());
         } catch (CameraParametersMessager.SavingException e) {
             Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
         }

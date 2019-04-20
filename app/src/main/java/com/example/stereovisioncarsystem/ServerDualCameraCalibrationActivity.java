@@ -86,7 +86,7 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
         CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(),CameraFacing.Back);
         try {
             messager.read();
-            calibrator.setServerCameraParameters(messager.getCameraMatrixMat(),messager.getDistCoeffsMat());
+            calibrator.setServerCameraParameters(messager.getCameraData());
         } catch (CameraParametersMessager.SavingException e) {
             Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
         }
@@ -194,7 +194,10 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
             }
             case ServerHandlerMsg.CAMERA_DATA_RECEIVED_MSG:
             {
-                Log.d(TAG, "SerwerActivity, Finito, otrzymano macierz");
+                String cameraParameters = (String)msg.obj;
+                CameraData cameraData = new CameraData(cameraParameters);
+                Log.d(TAG,"ServerActivity, CameraData stworzony: \n" + cameraData.getCameraMatrix() + cameraData.getDistCoeffs());
+                calibrator.setClientCameraParameters(cameraData);
             }
         }
         return true;
