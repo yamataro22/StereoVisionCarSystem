@@ -289,7 +289,7 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
         if(clientClass != null)
         {
             Log.d("serverLogs", "On Pause; Staram się usunąć klienta");
-            clientClass.sendBreakMessage();
+            clientClass.sendBreakMessageToHandler();
             SystemClock.sleep(40);
             clientClass.clear();
             clientClass = null;

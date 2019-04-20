@@ -29,15 +29,14 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
     Button connectButton, skipFramesButton;
     TextView statusTextView;
     ImageView im;
-    public static final int MESSAGE_READ = 1;
     ObservedSingleCameraFramesCapturer capturer;
     protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
     protected CameraBridgeViewBase mOpenCvCameraView;
     private boolean isCameraViewDisabledOnClient = true;
     private DualCameraCalibrator calibrator;
     Mat matBuffer;
+    public final static String TAG = "serverClientCom";
 
-    public final static int SPECIAL_MESSAGE = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -175,9 +174,8 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
     @Override
     protected boolean processMessage(Message msg)
     {
-        messageHandler.dump(new LogPrinter(Log.DEBUG, "HandlerDump"), "");
         switch (msg.what) {
-            case MESSAGE_READ: {
+            case ServerHandlerMsg.FRAME_MSG: {
                 byte[] readBuffer = (byte[]) msg.obj;
 
                 Mat mat = new Mat(msg.arg1, msg.arg2, CvType.CV_8U);
@@ -188,20 +186,16 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
                 matBuffer = mat;
                 break;
             }
-            case SPECIAL_MESSAGE:
+            case ServerHandlerMsg.CLIENT_READY_MSG:
             {
-                String message = (String)msg.obj;
-                Log.d("receiveTask", "SerwerClass, wysyłam zapytanie o macierze, msg.obj="+message);
-                if(message.equals("r"))
-                {
-                    serverClass.sendMsgToClient("y");
-                }
-                else
-                {
-                    Log.d("receiveTask", "SerwerClass, Finito, otrzymano macierz");
-                }
+                Log.d(TAG, "SerwerActivity, wysyłam zapytanie o macierze");
+                serverClass.sendMsgToClient(ClientServerMessages.GET_CAMERA_DATA);
+                break;
             }
-
+            case ServerHandlerMsg.CAMERA_DATA_RECEIVED_MSG:
+            {
+                Log.d(TAG, "SerwerActivity, Finito, otrzymano macierz");
+            }
         }
         return true;
     }

@@ -15,8 +15,6 @@ import android.widget.TextView;
 
 public class CommunicationTestActivity extends CommunicationBasicActivity {
 
-    public static final int MESSAGE_READ = 1;
-
     Button btnOnOff, btnDiscover, btnSend;
     ListView listView;
     TextView readMsgBox, connectionStatus;
@@ -125,7 +123,7 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
     protected boolean processMessage(Message msg) {
         Log.d("serverLogs", "Jestem w handlerze"+msg.toString());
         switch (msg.what) {
-            case MESSAGE_READ:
+            case ClientHandlerMsg.SPECIAL_MSG:
                 Log.d("serverLogs", "Jestem w handlerze, spróbuję nadpisac wiadomość");
                 byte[] readBuffer = (byte[]) msg.obj;
                 String tempMsg = new String(readBuffer, 0, msg.arg1);
@@ -156,7 +154,7 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
     {
         if (clientClass.clientMsgHandler != null) {
             Log.d("serverLogs", "Handler różny od nulla");
-            Message msg = clientClass.clientMsgHandler.obtainMessage(ClientSender.STRING_MESSAGE_TYPE, message);
+            Message msg = clientClass.clientMsgHandler.obtainMessage(ClientHandlerMsg.SPECIAL_MSG, message);
             Log.d("serverLogs", "Wysyłam wiadomość: " + message);
             clientClass.clientMsgHandler.sendMessage(msg);
         }

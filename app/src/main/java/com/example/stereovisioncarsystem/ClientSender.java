@@ -24,26 +24,21 @@ public class ClientSender extends Thread {
     OutputStream outputStream;
     InputStream inputStream;
     boolean shouldISkipSomeFrames = false;
-    public static int PHOTO_MESSAGE_TYPE = 0;
-    public static int STRING_MESSAGE_TYPE = 1;
     private String cameraMatrix = "";
-
+    public final static String TAG = "serverClientCom";
 
     public void setCameraMatrix(String mat)
     {
-        Log.i("receiveTask", "clientSender; ustawiono macierz" + cameraMatrix);
+        Log.i(TAG, "clientSender; ustawiono macierz" + cameraMatrix);
         cameraMatrix = mat;
     }
 
 
 
     public ClientSender(InetAddress hostAddress) {
-        Log.d("serverLogs", "ClientSender; Tworzę nowego clientServera!");
+        Log.i(TAG, "ClientSender; Tworzę nowego clientServera!");
         socket = new Socket();
         this.hostAddress = hostAddress.getHostAddress();
-
-
-
     }
 
     @SuppressLint("HandlerLeak")
@@ -52,12 +47,11 @@ public class ClientSender extends Thread {
 
         Looper.prepare();
         try {
-            Log.d("serverLogs", "ClientSender; Próbuję się połączyć z outputStreamem!");
+            Log.i(TAG, "ClientSender; Próbuję się połączyć z outputStreamem!");
 
             socket.connect(new InetSocketAddress(hostAddress, 3333), 500);
             outputStream = socket.getOutputStream();
             inputStream = socket.getInputStream();
-            Log.d("receiveTask", "próbuję uruchomić receive taska");
             new ReceiveTask().execute();
         } catch (IOException e) {
             e.printStackTrace();
@@ -69,35 +63,18 @@ public class ClientSender extends Thread {
 
         clientMsgHandler = new Handler() {
             public void handleMessage(Message msg) {
-
-                if (msg.what == PHOTO_MESSAGE_TYPE) {
-                    if(!shouldISkipSomeFrames) {
-                        try {
-                            byte[] photoArray = (byte[]) msg.obj;
-                            dos.writeInt(msg.arg1);
-                            dos.writeInt(msg.arg2);
-                            dos.write(photoArray);
-                            dos.flush();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-                else if(msg.what == STRING_MESSAGE_TYPE)
+                Log.i(TAG, "ClientSender; Jestem w handlerze");
+                switch (msg.what)
                 {
-                    Log.i("receiveTask", "ClientSender; Jestem w handlerze, what jest równe 0!");
-                    try {
-                        String message = (String)msg.obj;
-                        Log.i("receiveTask", "ClientSender; Wysyłam wiadomośc "+ message);
-                        byte[] byteArray = message.getBytes();
-                        Log.i("receiveTask", "ClientSender; Wysyłam wiadomośc długości "+ byteArray.length);
-                        dos.writeInt(byteArray.length);
-                        dos.writeInt(1);
-                        Log.i("receiveTask", "ClientSender; Metoda writeInt zwróciła "+ byteArray.length);
-                        dos.write(message.getBytes());
-                        dos.flush();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    case ClientHandlerMsg.FRAME_MSG:
+                        if(shouldISkipSomeFrames) return;
+                        Log.i(TAG, "ClientSender; Jestem w handlerze; wysyłam frame");
+                        tryToSendFrame(dos,msg);
+                        break;
+                    case ClientHandlerMsg.SPECIAL_MSG:
+                    {
+                        Log.i(TAG, "ClientSender; Jestem w handlerze; wysyłam wiadomość specjalną");
+                        tryToSendSpecialMessage(dos,msg);
                     }
                 }
             }
@@ -105,13 +82,41 @@ public class ClientSender extends Thread {
 
 
         Looper.loop();
-        Log.d("serverLogs", "ClientSender; Jestem już poza loopem");
+        Log.d(TAG, "ClientSender; Jestem już poza loopem");
     }
 
-    public void sendReadyMessage()
+    private void tryToSendFrame(DataOutputStream dos, Message msg) {
+        Log.d(TAG, "ClientSender; próbuję wysłać frame");
+        try {
+            byte[] photoArray = (byte[]) msg.obj;
+            sendMessage(dos,photoArray,msg.arg1,msg.arg2);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    private void tryToSendSpecialMessage(DataOutputStream dos, Message msg) {
+        String messageTagString = (String) msg.obj;
+        byte[] messageTagBytes = messageTagString.getBytes();
+
+        try {
+            sendMessage(dos,messageTagBytes,messageTagBytes.length,1);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendMessage(DataOutputStream dos, byte[] obj, int arg1, int arg2) throws IOException {
+        dos.writeInt(arg1);
+        dos.writeInt(arg2);
+        dos.write(obj);
+        dos.flush();
+    }
+
+
+    public void sendReadyMessageToHandler()
     {
-        Log.i("receiveTask", "Client, wysyłam wiadomość że jestem gotowy");
-        sendMessage(STRING_MESSAGE_TYPE,"r");
+        Log.i(TAG, "ClientSender, wysyłam wiadomość że jestem gotowy");
+        sendMessageToHandler(ClientHandlerMsg.SPECIAL_MSG,ClientServerMessages.CLIENT_READY);
     }
 
     private class ReceiveTask extends AsyncTask<Void,Void,Void>
@@ -121,37 +126,28 @@ public class ClientSender extends Thread {
         protected Void doInBackground(Void... voids) {
             try {
 
-                Log.i("receiveTask", "ClientSender; Uruchomiono nowy async task");
+                Log.i(TAG, "ClientAsyncReceive; Uruchomiono nowy async task");
                 DataInputStream dis = new DataInputStream(inputStream);
+                int length = dis.readInt();
 
-                Log.i("receiveTask", "ClientSender; SerwerClass; Czekam na przeczytanie inta!");
+                Log.i(TAG, "ClientAsyncReceive; Przeczytano inta o wartości:" + length);
 
-                int rows = dis.readInt();
-                int cols = dis.readInt();
-
-                Log.i("receiveTask", "ClientSender; Przeczytano inta o wartości:" + rows);
-                int length = rows * cols;
-                byte[] buffImg = new byte[rows*cols];
+                byte[] buffImg = new byte[length];
                 dis.readFully(buffImg,0,length);
+                if(length!=1) return null;
 
-                if(rows == 1)
+                String msg = new String(buffImg, 0, length);
+                switch (msg)
                 {
-                    String msg = new String(buffImg, 0, rows);
-                    if(msg.equals("x"))
-                    {
-                        Log.i("receiveTask", "ClientSender; otrzymano specjalną wiadomość: " + msg);
+                    case ClientServerMessages.SKIP_FRAMES:
+                        Log.i(TAG, "ClientAsyncReceive; otrzymano specjalną wiadomość: SKIP_FRAMES");
                         shouldISkipSomeFrames = shouldISkipSomeFrames ? false : true;
-                    }
-                    else if(msg.equals("y"))
-                    {
-                        Log.i("receiveTask", "ClientSender; otrzymano specjalną wiadomość: " + msg);
-                        sendMessage(STRING_MESSAGE_TYPE,cameraMatrix);
-                    }
+                        break;
+                    case ClientServerMessages.GET_CAMERA_DATA:
+                        Log.i(TAG, "ClientAsyncReceive; otrzymano specjalną wiadomość: GET_CAMERA_DATA");
+                        sendMessageToHandler(ClientHandlerMsg.SPECIAL_MSG,cameraMatrix);
                 }
-                else
-                {
-                    Log.d("receiveTask", "SerwerClass; Length: "+ length);
-                }
+
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -175,43 +171,43 @@ public class ClientSender extends Thread {
 
     public void clear()
     {
-        Log.d("serverLogs", "ClientSender; Jestem w clear!");
+        Log.i(TAG, "ClientSender; Jestem w clear!");
         if(socket.isConnected())
         {
             try {
-                Log.d("serverLogs", "ClientSender; staram się wszystko pozamykać");
-                Log.d("serverLogs", "ClientSender; socket: " + socket.isClosed());
+                Log.d(TAG, "ClientSender; staram się wszystko pozamykać");
+                Log.d(TAG, "ClientSender; socket: " + socket.isClosed());
 
                 outputStream.close();
                 socket.close();
                 clientMsgHandler.getLooper().quit();
                 this.interrupt();
 
-                Log.d("serverLogs", "ClientSender; socket: " + socket.isClosed());
-                Log.d("serverLogs", "ClientSender; kończę wątek klienta! ");
+                Log.d(TAG, "ClientSender; socket: " + socket.isClosed());
+                Log.d(TAG, "ClientSender; kończę wątek klienta! ");
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public void sendBreakMessage()
+    public void sendBreakMessageToHandler()
     {
-        Log.d("serverLogs", "ReceiveFramesActivity; SendEmptyMessage; Wysyłam żeby zakończyć komuniakcję");
-        sendMessage(STRING_MESSAGE_TYPE, "b");
+        Log.i(TAG, "ClientSender; Wysyłam żeby przerwać komuniakcję");
+        sendMessageToHandler(ClientHandlerMsg.SPECIAL_MSG, ClientServerMessages.CLIENT_DISCONNECED);
     }
 
     public void sendEndMessage()
     {
-        Log.d("serverLogs", "ReceiveFramesActivity; SendEmptyMessage; Wysyłam żeby zakończyć komuniakcję");
-        sendMessage(STRING_MESSAGE_TYPE,"e");
+        Log.i(TAG, "ClientSender; SendEmptyMessage; Wysyłam żeby zakończyć komuniakcję");
+        sendMessageToHandler(ClientHandlerMsg.SPECIAL_MSG,ClientServerMessages.CONNECTION_FINISHED);
     }
 
-    public void sendMessage(int what, String message)
+    public void sendMessageToHandler(int what, String message)
     {
         if(clientMsgHandler!=null)
         {
-            Log.i("receiveTask", "Client, sendMessage, handler!=null, obtainuje wiadomosc " + message);
+            Log.i(TAG, "Client, sendMessageToHandler, handler!=null, obtainuje wiadomosc " + message);
             Message msg = clientMsgHandler.obtainMessage(what, message);
             clientMsgHandler.sendMessage(msg);
         }

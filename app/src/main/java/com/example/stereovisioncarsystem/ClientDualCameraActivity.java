@@ -28,6 +28,7 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
     protected ObservedRotatedCameraFramesCapturer capturer;
     protected CameraBridgeViewBase mOpenCvCameraView;
     private String savedCameraMatrix;
+    public final static String TAG = "serverClientCom";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,9 +116,9 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
         if(clientClass == null) throw new ClientDualCameraActivity.NullClientException();
         if(clientClass.clientMsgHandler == null) throw new ClientDualCameraActivity.NullClientException();
 
-        Log.d("serverLogs", "Wysyłam wiadomość");
+        Log.i(TAG, "Wysyłam wiadomość do serwera");
         FrameParameters params = (FrameParameters) message;
-        Message msg = clientClass.clientMsgHandler.obtainMessage(0, params.rows,params.cols,params.bytes);
+        Message msg = clientClass.clientMsgHandler.obtainMessage(ClientHandlerMsg.FRAME_MSG, params.rows,params.cols,params.bytes);
         clientClass.clientMsgHandler.sendMessage(msg);
     }
 
@@ -165,13 +166,13 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
     protected void onClientConnected() {
         statusTextView.setText("client");
         isConnected = true;
-        Log.i("receiveTask", "MainActiviy, jestem przed wywołaniem super");
+        Log.i(TAG, "MainActiviy, jestem przed wywołaniem super");
         super.onClientConnected();
-        Log.i("receiveTask", "MainActiviy, jestem po wywołaniu super");
+        Log.i(TAG, "MainActiviy, jestem po wywołaniu super");
         clientClass.setCameraMatrix(savedCameraMatrix);
 
         SystemClock.sleep(400);
-        clientClass.sendReadyMessage();
+        clientClass.sendReadyMessageToHandler();
 
     }
 
