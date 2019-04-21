@@ -17,6 +17,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.example.stereovisioncarsystem.ServerClientCommunication.ClientSender;
+import com.example.stereovisioncarsystem.ServerClientCommunication.ServerReceiver;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;

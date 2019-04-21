@@ -1,4 +1,4 @@
-package com.example.stereovisioncarsystem;
+package com.example.stereovisioncarsystem.ServerClientCommunication;
 
 import android.annotation.SuppressLint;
 import android.os.AsyncTask;
@@ -156,7 +156,7 @@ public class ServerReceiver extends Thread {
         }
     }
 
-    void closeServer() throws IOException {
+    public void closeServer() throws IOException {
         Log.d("serverLogs", "ServerReceive; On Destroy; Usuwam serwer");
         try {
             if (inputStream != null)

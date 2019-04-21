@@ -13,6 +13,8 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.example.stereovisioncarsystem.ServerClientCommunication.ClientHandlerMsg;
+
 public class CommunicationTestActivity extends CommunicationBasicActivity {
 
     Button btnOnOff, btnDiscover, btnSend;

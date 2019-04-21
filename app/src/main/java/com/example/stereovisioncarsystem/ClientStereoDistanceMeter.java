@@ -3,9 +3,10 @@ package com.example.stereovisioncarsystem;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.net.wifi.p2p.WifiP2pDevice;
-import android.os.Bundle;
 import android.os.Message;
 import android.os.SystemClock;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
@@ -14,30 +15,36 @@ import android.widget.TextView;
 
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedRotatedCameraFramesCapturer;
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedSingleCameraFramesCapturer;
+import com.example.stereovisioncarsystem.Filtr.Filtr;
+import com.example.stereovisioncarsystem.Filtr.GrayFiltr;
 import com.example.stereovisioncarsystem.ServerClientCommunication.ClientHandlerMsg;
 
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.core.Mat;
 
-public class ClientDualCameraActivity extends CommunicationBasicActivity implements ObservedRotatedCameraFramesCapturer.CameraFrameConnector {
-    protected Button connectButton, disconnectButton, startCapturingButton;
+import java.io.FilterReader;
+
+public class ClientStereoDistanceMeter extends CommunicationBasicActivity implements ObservedRotatedCameraFramesCapturer.CameraFrameConnector {
+    protected Button connectButton, captureButton, startCapturingButton;
     protected TextView statusTextView;
     protected final String clientDeviceName = "OnePlus 6T";
     protected boolean isConnected = false;
     protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
 
     protected boolean isCameraViewDisabledOnClient = false;
-    protected ObservedRotatedCameraFramesCapturer capturer;
+    protected ObservedSingleCameraFramesCapturer capturer;
     protected CameraBridgeViewBase mOpenCvCameraView;
     protected CameraData cameraData;
 
     public final static String TAG = "serverClientCom";
 
+    Filtr f;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_client_dual_camera);
+        setContentView(R.layout.activity_client_stereo_distance_meter);
 
         enableWiFi();
         init();
@@ -76,13 +83,15 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
 
 
     protected void init() {
-        capturer = new ObservedRotatedCameraFramesCapturer(this);
+        capturer = new ObservedSingleCameraFramesCapturer(this);
 
         connectButton = findViewById(R.id.connect_button);
-        disconnectButton = findViewById(R.id.disconnect_button);
+        captureButton = findViewById(R.id.disconnect_button);
         statusTextView = findViewById(R.id.connection_status_text_view);
         startCapturingButton = findViewById(R.id.start_capturing_button);
         mOpenCvCameraView = findViewById(R.id.camera_view);
+
+        f = new GrayFiltr();
     }
 
     protected void exqListeners() {
@@ -104,6 +113,12 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
                 mOpenCvCameraView.enableView();
             }
         });
+        captureButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                capturer.getSingleFrameToBeProcessed();
+            }
+        });
     }
 
     protected void checkClientStatusAndSendMessage(Object message)
@@ -121,12 +136,12 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
         if(clientClass.clientMsgHandler == null) throw new ClientDualCameraActivity.NullClientException();
 
         Log.i(TAG, "Wysyłam wiadomość do serwera");
-        FrameParameters params = (FrameParameters) message;
+        ClientStereoDistanceMeter.FrameParameters params = (ClientStereoDistanceMeter.FrameParameters) message;
         Message msg = clientClass.clientMsgHandler.obtainMessage(ClientHandlerMsg.FRAME_MSG, params.rows,params.cols,params.bytes);
         clientClass.clientMsgHandler.sendMessage(msg);
     }
 
-    public FrameParameters mat2Byte(Mat img)
+    public ClientStereoDistanceMeter.FrameParameters mat2Byte(Mat img)
     {
         int total_bytes = img.cols()*img.rows();
         Log.d("serverLogs", "Wysyłam wiadomość długości: " + total_bytes);
@@ -135,7 +150,7 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
         Log.d("serverLogs", "typ: " + img.type());
         byte[] returnByte = new byte[total_bytes];
         img.get(0,0,returnByte);
-        return new FrameParameters(returnByte, img.rows(), img.cols());
+        return new ClientStereoDistanceMeter.FrameParameters(returnByte, img.rows(), img.cols());
     }
 
     protected class FrameParameters
@@ -153,7 +168,7 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
 
     @Override
     public void sendFrame(Mat frame) {
-        Log.d("serverLogs", "Otrzymano klatkę");
+        f.filtr(frame);
         checkClientStatusAndSendMessage(mat2Byte(frame));
     }
 
@@ -170,14 +185,11 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
     protected void onClientConnected() {
         statusTextView.setText("client");
         isConnected = true;
-        Log.i(TAG, "MainActiviy, jestem przed wywołaniem super");
         super.onClientConnected();
-        Log.i(TAG, "MainActiviy, jestem po wywołaniu super");
-        clientClass.setCameraData(cameraData);
 
+        clientClass.setCameraData(cameraData);
         SystemClock.sleep(400);
         clientClass.sendReadyMessageToHandler();
-
     }
 
     @Override
@@ -282,7 +294,7 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
         }
     }
 
-    public static class NullClientException extends Exception
+    private class NullClientException extends Exception
     {
 
         @Override

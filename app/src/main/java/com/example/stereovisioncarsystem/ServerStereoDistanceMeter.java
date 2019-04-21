@@ -3,8 +3,10 @@ package com.example.stereovisioncarsystem;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.os.Bundle;
 import android.os.Message;
+import android.support.constraint.solver.widgets.Rectangle;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
@@ -24,7 +26,7 @@ import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
-public class ServerDualCameraCalibrationActivity extends CommunicationBasicActivity implements View.OnTouchListener, ObservedCameraFramesCapturer.CameraFrameConnector {
+public class ServerStereoDistanceMeter extends CommunicationBasicActivity implements View.OnTouchListener, ObservedCameraFramesCapturer.CameraFrameConnector {
 
     Button connectButton, skipFramesButton;
     TextView statusTextView;
@@ -37,12 +39,13 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
     Mat matBuffer;
     public final static String TAG = "serverClientCom";
 
+    
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_server_dual_camera_calibration);
-        View contentView = findViewById(R.id.dual_calibration_whole);
+        setContentView(R.layout.activity_server_stereo_distance_meter);
+        View contentView = findViewById(R.id.server_stereo_xml);
         contentView.setOnTouchListener(this);
         capturer = new ObservedSingleCameraFramesCapturer(this);
         enableWiFi();
@@ -104,7 +107,7 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
         skipFramesButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                serverClass.sendMsgToClient("x");
+                serverClass.sendMsgToClient(ClientServerMessages.SKIP_FRAMES);
             }
         });
     }
@@ -178,8 +181,9 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
     {
         switch (msg.what) {
             case ServerHandlerMsg.FRAME_MSG: {
-                byte[] readBuffer = (byte[]) msg.obj;
+                capturer.getSingleFrameToBeProcessed();
 
+                byte[] readBuffer = (byte[]) msg.obj;
                 Mat mat = new Mat(msg.arg1, msg.arg2, CvType.CV_8U);
                 mat.put(0, 0, readBuffer);
                 Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
@@ -252,16 +256,16 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
     public boolean onTouch(View view, MotionEvent motionEvent) {
         if(motionEvent.getAction() == MotionEvent.ACTION_DOWN)
         {
-            if(calibrator.isCalibrated)
-            {
-
-                Mat mat = calibrator.showDisparity();
-                Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
-                Utils.matToBitmap(mat, btm);
-                disparityImageView.setImageBitmap(btm);
-            }
-            Log.d("actionEvents", "wysyłam wiadomośc do klienta");
-            capturer.getSingleFrameToBeProcessed();
+//            if(calibrator.isCalibrated)
+//            {
+//
+//                Mat mat = calibrator.showDisparity();
+//                Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
+//                Utils.matToBitmap(mat, btm);
+//                disparityImageView.setImageBitmap(btm);
+//            }
+//            Log.d("actionEvents", "wysyłam wiadomośc do klienta");
+//            capturer.getSingleFrameToBeProcessed();
         }
 
         return true;
@@ -270,6 +274,25 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
     @Override
     public void sendFrame(Mat frame) {
         Log.d("actionEvents", "wysyłam klatki do kalibratora");
-        calibrator.processFrames(frame,matBuffer);
+
+        //RectangleFinder finder = new RectangleFinder();
+        //finder.findRectangles(frame);
+
+        Bitmap btm = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(frame, btm);
+        setImage(disparityImageView,btm);
+
+        //calibrator.processFrames(frame,matBuffer);
     }
+
+    private void setImage(final ImageView image,final Bitmap btm){
+            runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                image.setImageBitmap(btm);
+            }
+        });
+    }
+
+
 }

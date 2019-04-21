@@ -5,6 +5,8 @@
     <string name="test_camera_communication">Test wysyłania zdjęć</string>
     <string name="server_dual_communication">Dual serwer</string>
     <string name="client_dual_communication">Dual client</string>
+    <string name="client_stereo_meter">Stereo client</string>
+    <string name="server_stereo_meter">Stereo server</string>
 
     <array name="camera_types">
         <item>Front</item>

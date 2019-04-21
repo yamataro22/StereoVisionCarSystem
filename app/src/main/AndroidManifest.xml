@@ -34,7 +34,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".ServerDualCameraCalibrationActivity"></activity>
+        <activity android:name=".ClientStereoDistanceMeter"></activity>
+        <activity android:name=".ServerStereoDistanceMeter" />
+        <activity android:name=".ServerDualCameraCalibrationActivity" />
         <activity android:name=".ExternalCalibrator.CameraCalibrationActivity2" />
         <activity
             android:name=".CameraCalibrationActivity"

@@ -6,15 +6,22 @@ import com.example.stereovisioncarsystem.Filtr.Filtr;
 import com.example.stereovisioncarsystem.Filtr.GrayFiltr;
 
 import org.opencv.calib3d.Calib3d;
+import org.opencv.calib3d.StereoBM;
+import org.opencv.calib3d.StereoMatcher;
+import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.Point3;
 import org.opencv.core.Size;
 import org.opencv.core.TermCriteria;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.opencv.core.CvType.CV_64F;
+import static org.opencv.core.CvType.CV_8U;
 
 public class DualCameraCalibrator extends Calibrator
 {
@@ -44,6 +51,25 @@ public class DualCameraCalibrator extends Calibrator
     private CameraData serverCameraData;
     private CameraData clientCameraData;
 
+
+    private Mat R = new Mat();
+    private Mat T = new Mat();
+    private Mat E = new Mat();
+    private Mat F = new Mat();
+
+    Mat R1 = new Mat(3, 3, CV_64F);
+    Mat R2 = new Mat(3, 3, CV_64F);
+    Mat P1 = new Mat(3, 4, CV_64F);
+    Mat P2 = new Mat(3, 4, CV_64F);
+    Mat qMatrix = new Mat(4, 4, CV_64F);
+
+    Mat map1s;
+    Mat map2s;
+    Mat unrectified;
+
+    public boolean isCalibrated = false;
+
+
     public DualCameraCalibrator() {
         init();
     }
@@ -69,6 +95,14 @@ public class DualCameraCalibrator extends Calibrator
                 Calib3d.CALIB_FIX_K4 +
                 Calib3d.CALIB_FIX_K5;
 
+        R = new Mat();
+        T = new Mat();
+        E = new Mat();
+        F = new Mat();
+
+        map1s=new Mat();
+        map2s=new Mat();
+
     }
 
     public void processFrames(Mat serverMat, Mat clientMat)
@@ -80,6 +114,12 @@ public class DualCameraCalibrator extends Calibrator
         {
             howManyFramesToCalibration = 5;
             performUndisortion();
+        }
+        else if(grayServerFrames.size()>5)
+        {
+            unrectified = new Mat();
+            Imgproc.remap(colorServerFrames.get(colorServerFrames.size()-1), unrectified,
+                    map1s,map2s, Imgproc.INTER_LINEAR);
         }
     }
 
@@ -127,20 +167,25 @@ public class DualCameraCalibrator extends Calibrator
     {
         fillObjectPoints();
 
-        Mat R = new Mat();
-        Mat T = new Mat();
-        Mat E = new Mat();
-        Mat F = new Mat();
-
         double error = Calib3d.stereoCalibrate(objectPoints,clientImagePoints,serverImagePoints,
                         serverCameraData.getCameraMatrixMat(),serverCameraData.getDistCoeffsMat(),clientCameraData.getCameraMatrixMat(),clientCameraData.getDistCoeffsMat(),
-                        tempSavedImage.size(), R, T, E, F, flags);
+                        tempSavedImage.size(), R, T, E, F, Calib3d.CALIB_FIX_INTRINSIC|Calib3d.CALIB_FIX_PRINCIPAL_POINT);
 
-        Log.d(TAG, "R: " + R.dump());
-        Log.d(TAG, "T: " + T.dump());
-        Log.d(TAG, "E: " + E.dump());
-        Log.d(TAG, "F: " + F.dump());
+        Calib3d.stereoRectify(serverCameraData.getCameraMatrixMat(),serverCameraData.getDistCoeffsMat(),clientCameraData.getCameraMatrixMat(),clientCameraData.getDistCoeffsMat(),
+                                tempSavedImage.size(),R,T,R1,R2,P1,P2,qMatrix, Calib3d.CALIB_ZERO_DISPARITY);
+
+        Imgproc.initUndistortRectifyMap(serverCameraData.getCameraMatrixMat(),serverCameraData.getDistCoeffsMat(),R,P1,tempSavedImage.size(),CvType.CV_32FC1, map1s, map2s);
+        isCalibrated = true;
+        
+
+        Log.d(TAG, "R: \n" + R.dump());
+        Log.d(TAG, "T: \n" + T.dump());
+        Log.d(TAG, "E: \n" + E.dump());
+        Log.d(TAG, "F: \n" + F.dump());
         Log.d(TAG, "error " + error);
+        Log.d(TAG, "Q \n" + qMatrix.dump());
+        Log.d(TAG, "map1s: \n" + map1s.dump());
+        Log.d(TAG, "map2s: \n" + map2s.dump());
     }
 
     private void fillObjectPoints() {
@@ -185,7 +230,7 @@ public class DualCameraCalibrator extends Calibrator
 
         //clientImagePoints.clear();
         //serverImagePoints.clear();
-        //invalidImagesIndexes.clear();
+        invalidImagesIndexes.clear();
 
         Log.d(TAG, "grayClientFrame[0] size: "+grayClientFrames.get(0).size());
         Log.d(TAG, "grayServerFrame[0] size: "+grayServerFrames.get(0).size());
@@ -239,5 +284,16 @@ public class DualCameraCalibrator extends Calibrator
 
         Log.d(TAG, "Ustawiono parametry kamery klienta:\n" +
                 clientCameraData.getCameraMatrixMat().dump() + '\n' + clientCameraData.getDistCoeffsMat().dump());
+    }
+
+    public Mat showDisparity()
+    {
+//        Mat disparity = new Mat(grayClientFrames.get(0).rows(),grayClientFrames.get(0).cols(), CV_64F);
+//        Mat disparityNormalized = new Mat(grayClientFrames.get(0).rows(),grayClientFrames.get(0).cols(), CV_8U);
+//        StereoBM bm = StereoBM.create(16,15);
+//        bm.compute(grayServerFrames.get(0),grayClientFrames.get(0),disparity);
+//
+//        Core.normalize(disparity, disparityNormalized, 0, 255, Core.NORM_MINMAX, CV_8U);
+        return unrectified;
     }
 }

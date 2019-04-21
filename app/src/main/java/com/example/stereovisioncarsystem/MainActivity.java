@@ -76,6 +76,12 @@ public class MainActivity extends AppCompatActivity {
         else if(id == R.id.opencvcalib) {
             createAndStartIntent(CameraCalibrationActivity2.class);
         }
+        else if(id == R.id.action_client_stereo_distance_meter) {
+            createAndStartIntent(ClientStereoDistanceMeter.class);
+        }
+        else if(id == R.id.action_server_stereo_distance_meter) {
+            createAndStartIntent(ServerStereoDistanceMeter.class);
+        }
         return super.onOptionsItemSelected(item);
     }
 

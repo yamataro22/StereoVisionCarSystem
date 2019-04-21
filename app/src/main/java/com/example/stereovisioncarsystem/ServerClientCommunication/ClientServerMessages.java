@@ -1,4 +1,4 @@
-package com.example.stereovisioncarsystem;
+package com.example.stereovisioncarsystem.ServerClientCommunication;
 
 public class ClientServerMessages {
 

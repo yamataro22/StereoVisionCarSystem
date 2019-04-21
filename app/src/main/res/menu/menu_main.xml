@@ -30,6 +30,16 @@
         android:title="@string/client_dual_communication"
         ></item>
     <item
+        android:id="@+id/action_client_stereo_distance_meter"
+        android:orderInCategory="20"
+        android:title="@string/client_stereo_meter"
+        ></item>
+    <item
+        android:id="@+id/action_server_stereo_distance_meter"
+        android:orderInCategory="20"
+        android:title="@string/server_stereo_meter"
+        ></item>
+    <item
         android:id="@+id/opencvcalib"
         android:orderInCategory="20"
         android:title="opencvcalib"

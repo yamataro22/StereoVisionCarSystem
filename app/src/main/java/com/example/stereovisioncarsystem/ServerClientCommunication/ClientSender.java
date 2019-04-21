@@ -1,4 +1,4 @@
-package com.example.stereovisioncarsystem;
+package com.example.stereovisioncarsystem.ServerClientCommunication;
 
 import android.annotation.SuppressLint;
 import android.os.AsyncTask;
@@ -6,6 +6,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
+
+import com.example.stereovisioncarsystem.CameraData;
 
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;

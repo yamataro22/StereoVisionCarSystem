@@ -225,7 +225,7 @@ class SingleCameraCalibrator extends Calibrator{
         for(int i = 0; i < colorFrames.size(); i++)
         {
             undistortedFrames.add(i,new Mat(colorFrames.get(i).size(), colorFrames.get(i).type()));
-            Imgproc.undistort(colorFrames.get(i), undistortedFrames.get(i), intrinsic, distCoeffs);
+                                Imgproc.undistort(colorFrames.get(i), undistortedFrames.get(i), intrinsic, distCoeffs);
         }
     }
 
