@@ -46,8 +46,11 @@
         <activity android:name=".CalibrationActivity" />
         <activity android:name=".ClientDualCameraActivity" />
         <activity android:name=".ServerDualCameraActivity" />
-        <activity android:name=".CommunicationBasicActivity" />
         <activity android:name=".ReceiveFramesActivity" />
+        <activity android:name=".FilterCalibration.FilterSettingsActivity" />
+        <activity android:name=".FilterCalibration.ThreshCalibrationActivity" />
+        <activity android:name=".FilterCalibration.GaussCalibrationActivity" />
+
 
         <uses-library
             android:name="org.apache.http.legacy"

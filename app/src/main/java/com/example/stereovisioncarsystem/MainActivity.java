@@ -14,6 +14,8 @@ import android.view.MenuItem;
 import org.opencv.android.OpenCVLoader;
 
 import com.example.stereovisioncarsystem.ExternalCalibrator.CameraCalibrationActivity2;
+import com.example.stereovisioncarsystem.FilterCalibration.FilterCalibrationActivity;
+import com.example.stereovisioncarsystem.FilterCalibration.FilterSettingsActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -81,6 +83,9 @@ public class MainActivity extends AppCompatActivity {
         }
         else if(id == R.id.action_server_stereo_distance_meter) {
             createAndStartIntent(ServerStereoDistanceMeter.class);
+        }
+        else if(id == R.id.filters_parameters_calibration) {
+            createAndStartIntent(FilterSettingsActivity.class);
         }
         return super.onOptionsItemSelected(item);
     }

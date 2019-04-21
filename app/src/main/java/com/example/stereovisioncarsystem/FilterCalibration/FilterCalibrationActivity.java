@@ -1,20 +1,22 @@
-package com.example.stereovisioncarsystem;
-
+package com.example.stereovisioncarsystem.FilterCalibration;
 
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.SurfaceView;
 import android.view.View;
+
+import com.example.stereovisioncarsystem.CameraBasicActivity;
+import com.example.stereovisioncarsystem.R;
+
 import org.opencv.core.Mat;
 
-
-abstract public class CameraCalibActivity extends  CameraBasicActivity implements View.OnTouchListener {
+abstract public class FilterCalibrationActivity extends CameraBasicActivity implements View.OnTouchListener {
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_camera_calibration);
+        setContentView(R.layout.activity_filter_calibration);
         mOpenCvCameraView = findViewById(R.id.calibrationOpencvView);
         mOpenCvCameraView.enableView();
         mOpenCvCameraView.enableFpsMeter();

@@ -275,8 +275,8 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
     public void sendFrame(Mat frame) {
         Log.d("actionEvents", "wysyłam klatki do kalibratora");
 
-        //RectangleFinder finder = new RectangleFinder();
-        //finder.findRectangles(frame);
+        RectangleFinder finder = new RectangleFinder();
+        finder.findRectangles(frame);
 
         Bitmap btm = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(frame, btm);

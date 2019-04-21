@@ -17,7 +17,7 @@ public class BinaryThreshFiltr extends Filtr {
         this.binaryThreshParam = binaryThreshParam;
     }
 
-    void setBinaryThreshParam(int newParam)
+    public void setBinaryThreshParam(int newParam)
     {
         binaryThreshParam  = newParam;
     }

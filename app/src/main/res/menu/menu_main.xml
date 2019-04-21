@@ -45,6 +45,11 @@
         android:title="opencvcalib"
         ></item>
 
+    <item
+        android:id="@+id/filters_parameters_calibration"
+        android:orderInCategory="20"
+        android:title="Filters calibration"
+        ></item>
 
 
 

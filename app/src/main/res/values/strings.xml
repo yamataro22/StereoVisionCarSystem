@@ -17,6 +17,18 @@
         <item>Client</item>
     </array>
 
+    <string-array name="gauss_spinner">
+        <item>3</item>
+        <item>5</item>
+        <item>7</item>
+        <item>9</item>
+        <item>11</item>
+        <item>13</item>
+        <item>17</item>
+        <item>25</item>
+        <item>35</item>
+        <item>45</item>
+    </string-array>
 
     <string name="action_calibrate">Calibrate</string>
     <string name="calibration">Calibration</string>

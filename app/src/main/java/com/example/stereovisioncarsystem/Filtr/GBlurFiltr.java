@@ -17,7 +17,7 @@ public class GBlurFiltr extends Filtr {
         this.gBlurMatrixSize = gBlurMatrixSize;
     }
 
-    void setgBlurMatrixSize(int newParam)
+    public void setgBlurMatrixSize(int newParam)
     {
         gBlurMatrixSize = newParam;
     }
