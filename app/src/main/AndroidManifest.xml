@@ -67,7 +67,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".CommunicationTestActivity" />
-        <activity android:name=".CameraScreenActivity" />
+        <activity android:name=".CameraScreenTestingActivity" />
         <activity android:name=".SettingsActivity" />
 
         <receiver android:name=".CommunicationTestActivity" />

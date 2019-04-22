@@ -18,7 +18,13 @@ import android.widget.Toast;
 
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedCameraFramesCapturer;
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedSingleCameraFramesCapturer;
+import com.example.stereovisioncarsystem.FilterCalibration.ContourCreator;
 import com.example.stereovisioncarsystem.FilterCalibration.InternalMemoryDataManager;
+import com.example.stereovisioncarsystem.Filtr.BinaryThreshFiltr;
+import com.example.stereovisioncarsystem.Filtr.CannyFiltr;
+import com.example.stereovisioncarsystem.Filtr.Filtr;
+import com.example.stereovisioncarsystem.Filtr.GBlurFiltr;
+import com.example.stereovisioncarsystem.Filtr.GrayFiltr;
 import com.example.stereovisioncarsystem.ServerClientCommunication.ClientServerMessages;
 import com.example.stereovisioncarsystem.ServerClientCommunication.ServerHandlerMsg;
 
@@ -26,6 +32,9 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ServerStereoDistanceMeter extends CommunicationBasicActivity implements View.OnTouchListener, ObservedCameraFramesCapturer.CameraFrameConnector {
 
@@ -40,7 +49,10 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
     Mat matBuffer;
     public final static String TAG = "serverClientCom";
 
-    
+    int threshVal = 120;
+    int gaussVal = 3;
+    StereoPhotoParser stereoPhotoParser;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +63,26 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
         capturer = new ObservedSingleCameraFramesCapturer(this);
         enableWiFi();
 
+        checkPermissions();
+        readParametersFromMemory();
+
+        init();
+        exqListeners();
+    }
+
+    private void readParametersFromMemory() {
+        InternalMemoryDataManager dataManager = new InternalMemoryDataManager(getApplicationContext());
+        try {
+            threshVal = Integer.parseInt(dataManager.read(FilterParameterTag.Thresh));
+            gaussVal = Integer.parseInt(dataManager.read(FilterParameterTag.Gauss));
+        } catch (InternalMemoryDataManager.SavingException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Nie udało się odczytać z pamięci", Toast.LENGTH_SHORT).show();
+        }
+
+    }
+
+    private void checkPermissions() {
         if (checkSelfPermission(Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
 
@@ -61,14 +93,7 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
                         MY_PERMISSIONS_REQUEST_CAMERA);
             }
         }
-        Log.d("serverLogs", "DualScreen, orientation: " + getResources().getConfiguration().orientation);
-        Log.d("serverLogs", "DualScreen, rotetion: " + getWindowManager().getDefaultDisplay().getRotation());
-
-        init();
-
-        exqListeners();
     }
-
 
 
     private void init() {
@@ -84,6 +109,7 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
         calibrator = new DualCameraCalibrator();
         loadSavedCalibration();
 
+        stereoPhotoParser = new StereoPhotoParser();
     }
 
     private void loadSavedCalibration()
@@ -157,7 +183,6 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
         super.onServerConnected();
         initCamera();
         enableView();
-
     }
 
     @Override
@@ -187,6 +212,13 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
                 byte[] readBuffer = (byte[]) msg.obj;
                 Mat mat = new Mat(msg.arg1, msg.arg2, CvType.CV_8U);
                 mat.put(0, 0, readBuffer);
+
+                applyFilters(mat);
+                stereoPhotoParser.addClientFrame(mat);
+                stereoPhotoParser.drawObjectOnClientFrame(mat);
+
+
+
                 Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
                 Utils.matToBitmap(mat, btm);
                 im.setImageBitmap(btm);
@@ -214,7 +246,6 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
     protected void onConnectionFail() {
         statusTextView.setText("Rozłączono");
         super.onConnectionFail();
-
     }
 
 
@@ -276,14 +307,30 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
     public void sendFrame(Mat frame) {
         Log.d("actionEvents", "wysyłam klatki do kalibratora");
 
-        RectangleFinder finder = new RectangleFinder();
-        finder.findRectangles(frame);
+        applyFilters(frame);
+        stereoPhotoParser.addServerFrame(frame);
+        stereoPhotoParser.drawObjectOnServerFrame(frame);
+        stereoPhotoParser.findDistanceBetweenObjects();
 
         Bitmap btm = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(frame, btm);
         setImage(disparityImageView,btm);
 
         //calibrator.processFrames(frame,matBuffer);
+    }
+
+    private void applyFilters(Mat frame) {
+        List<Filtr> filters = new ArrayList<>();
+        if(frame.channels() > 1) filters.add(new GrayFiltr());
+        filters.add(new GBlurFiltr(gaussVal));
+        filters.add(new BinaryThreshFiltr(threshVal));
+        filters.add(new CannyFiltr());
+
+
+        for(Filtr f : filters)
+        {
+            f.filtr(frame);
+        }
     }
 
     private void setImage(final ImageView image,final Bitmap btm){

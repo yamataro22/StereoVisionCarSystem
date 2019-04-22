@@ -22,7 +22,7 @@ abstract public class CameraBasicActivity extends Activity  implements CameraBri
 
     protected CameraBridgeViewBase mOpenCvCameraView;
 
-    protected static final String  TAG = "CameraScreenActivity";
+    protected static final String  TAG = "CameraTestingActivity";
     protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
 
     @Override
