@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.SurfaceView;
 
 import com.example.stereovisioncarsystem.CameraBasicActivity;
+import com.example.stereovisioncarsystem.Filtr.BinaryThreshFiltr;
 import com.example.stereovisioncarsystem.Filtr.Filtr;
 import com.example.stereovisioncarsystem.Filtr.GBlurFiltr;
 import com.example.stereovisioncarsystem.Filtr.GrayFiltr;
@@ -15,9 +16,13 @@ import org.opencv.core.Mat;
 public class GaussCalibrationActivity extends CameraBasicActivity {
 
     int gaussValue;
+
     public static final String GAUSS_VALUE = "m1";
+    public static final String THRESH_VALUE = "m2";
+    private int threshVal;
 
 
+    BinaryThreshFiltr thresh = new BinaryThreshFiltr();
     GBlurFiltr gauss = new GBlurFiltr();
     Filtr gray = new GrayFiltr();
 
@@ -28,6 +33,8 @@ public class GaussCalibrationActivity extends CameraBasicActivity {
         Intent intent = getIntent();
 
         gaussValue = intent.getIntExtra(GAUSS_VALUE, 3);
+        threshVal = intent.getIntExtra(THRESH_VALUE,120);
+        thresh.setBinaryThreshParam(threshVal);
         mOpenCvCameraView = findViewById(R.id.HelloOpenCvView);
         mOpenCvCameraView.enableView();
         mOpenCvCameraView.enableFpsMeter();
@@ -48,6 +55,7 @@ public class GaussCalibrationActivity extends CameraBasicActivity {
     @Override
     public Mat onCameraFrame(Mat inputFrame) {
         gray.filtr(inputFrame);
+        thresh.filtr(inputFrame);
         gauss.setgBlurMatrixSize(gaussValue);
         gauss.filtr(inputFrame);
         return inputFrame;

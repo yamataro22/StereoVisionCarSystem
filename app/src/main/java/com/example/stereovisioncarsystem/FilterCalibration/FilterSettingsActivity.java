@@ -3,53 +3,101 @@ package com.example.stereovisioncarsystem.FilterCalibration;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 
-import com.example.stereovisioncarsystem.FilterCalibration.GaussCalibrationActivity;
-import com.example.stereovisioncarsystem.FilterCalibration.ThreshCalibrationActivity;
+import com.example.stereovisioncarsystem.FilterParameterTag;
 import com.example.stereovisioncarsystem.R;
 
 public class FilterSettingsActivity extends Activity {
 
-    public static final String MAIN_SETTINGS = "ms1";
-    public static final String SETTINGS_MAIN_THRESH = "ms2";
-    public static final String SETTINGS_MAIN_GAUSS = "ms3";
-    private int threshValue;
-    private int gaussValue;
+    EditText threshEdittext;
+    Spinner gaussSpinner;
+    Button saveButton;
 
+    private int threshValue = 120;
+    private int gaussValue = 3;
+
+    private final String TAG = "dataIO";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.filter_settings);
 
-        Intent intent = getIntent();
-        threshValue = intent.getIntExtra(MAIN_SETTINGS, 120);
-        EditText editText = findViewById(R.id.threshEditText);
-        editText.setText(threshValue+"");
-        Log.i("thresh","W settings: "+threshValue);
+        init();
+        exqListeners();
+        readParameters();
+    }
+
+    private void readParameters() {
+        InternalMemoryDataManager dataManager = new InternalMemoryDataManager(getApplicationContext());
+
+        try {
+            threshValue = Integer.parseInt(dataManager.read(FilterParameterTag.Thresh));
+            threshEdittext.setText(threshValue+"");
+            gaussValue = Integer.parseInt(dataManager.read(FilterParameterTag.Gauss));
+            gaussSpinner.setSelection(getSpinnerIndex(gaussSpinner,gaussValue+""));
+        } catch (InternalMemoryDataManager.SavingException e) {
+            e.printStackTrace();
+            threshEdittext.setText(threshValue+"");
+            gaussSpinner.setSelection(getSpinnerIndex(gaussSpinner,gaussValue+""));
+        }
+
+    }
+
+    private int getSpinnerIndex(Spinner spinner, String myString){
+        for (int i=0;i<spinner.getCount();i++){
+            if (spinner.getItemAtPosition(i).toString().equalsIgnoreCase(myString)){
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    private void init() {
+        threshEdittext = findViewById(R.id.threshEditText);
+        threshEdittext.setText(threshValue+"");
+
+        gaussSpinner = findViewById(R.id.gaussSpinner);
+
+        saveButton = findViewById(R.id.save_settings_button);
+    }
+
+    private void exqListeners() {
+        saveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                InternalMemoryDataManager dataManager = new InternalMemoryDataManager(getApplicationContext());
+                try {
+                    dataManager.save(FilterParameterTag.Thresh, threshEdittext.getText().toString());
+                    dataManager.save(FilterParameterTag.Gauss, gaussSpinner.getSelectedItem().toString());
+                } catch (InternalMemoryDataManager.SavingException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     public void onClickCalibrateThresh(View v)
     {
-        EditText editText = findViewById(R.id.threshEditText);
-        threshValue = Integer.parseInt(editText.getText().toString());
+        threshValue = Integer.parseInt(threshEdittext.getText().toString());
         Intent intent = new Intent(this, ThreshCalibrationActivity.class);
         intent.putExtra(ThreshCalibrationActivity.THRESH_1, threshValue);
-        int requestCode = 1; // Or dowolny
+        int requestCode = 1;
         startActivityForResult(intent, requestCode);
     }
 
     public void onClickCalibrateGauss(View view) {
-        Spinner spinner = findViewById(R.id.gaussSpinner);
-        String value = spinner.getSelectedItem().toString();
+
+        String value = gaussSpinner.getSelectedItem().toString();
         gaussValue = Integer.parseInt(value);
-        Log.i("dupa", value);
+
+
         Intent intent = new Intent(this, GaussCalibrationActivity.class);
         intent.putExtra(GaussCalibrationActivity.GAUSS_VALUE, gaussValue);
+        intent.putExtra(GaussCalibrationActivity.THRESH_VALUE, threshValue);
         startActivity(intent);
     }
 
@@ -58,33 +106,8 @@ public class FilterSettingsActivity extends Activity {
         if(requestCode == 1)
         {
             threshValue = data.getIntExtra(ThreshCalibrationActivity.THRESH_2, 100);
-            EditText editText = findViewById(R.id.threshEditText);
-            editText.setText(threshValue+"");
+            threshEdittext.setText(threshValue+"");
         }
-    }
-
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event)  {
-        if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
-
-            EditText editText = findViewById(R.id.threshEditText);
-            String val = editText.getText().toString();
-            threshValue = Integer.parseInt(val);
-
-            Spinner spinner = findViewById(R.id.gaussSpinner);
-            String value = spinner.getSelectedItem().toString();
-            gaussValue = Integer.parseInt(value);
-
-            Intent intent = new Intent();
-            intent.putExtra(SETTINGS_MAIN_THRESH, threshValue);
-            intent.putExtra(SETTINGS_MAIN_GAUSS, gaussValue);
-
-
-            setResult(RESULT_OK, intent);
-            finish();
-            return true;
-        }
-        return false;
     }
 
 

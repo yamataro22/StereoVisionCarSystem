@@ -114,5 +114,12 @@
             />
     </LinearLayout>
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/save_settings_button"
+        android:text="Save"
+        android:layout_margin="10dp"
+        android:layout_gravity="right"/>
 
 </LinearLayout>

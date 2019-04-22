@@ -24,6 +24,7 @@ class CameraParametersMessager {
     {
         FileOutputStream fileOutputStream = null;
         try {
+
             fileOutputStream = appContext.openFileOutput(Build.MODEL+"_"+facing, Context.MODE_PRIVATE);
             fileOutputStream.write(formattedCameraMatrix.getBytes());
             fileOutputStream.write("%".getBytes());
