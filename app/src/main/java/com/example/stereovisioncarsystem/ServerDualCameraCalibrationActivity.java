@@ -16,6 +16,7 @@ import android.widget.Toast;
 
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedCameraFramesCapturer;
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedSingleCameraFramesCapturer;
+import com.example.stereovisioncarsystem.FilterCalibration.InternalMemoryDataManager;
 import com.example.stereovisioncarsystem.ServerClientCommunication.ClientServerMessages;
 import com.example.stereovisioncarsystem.ServerClientCommunication.ServerHandlerMsg;
 
@@ -88,7 +89,7 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
         try {
             messager.read();
             calibrator.setServerCameraParameters(messager.getCameraData());
-        } catch (CameraParametersMessager.SavingException e) {
+        } catch (InternalMemoryDataManager.SavingException e) {
             Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
         }
     }

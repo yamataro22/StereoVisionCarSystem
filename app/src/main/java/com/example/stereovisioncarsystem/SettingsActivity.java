@@ -12,6 +12,8 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.stereovisioncarsystem.FilterCalibration.InternalMemoryDataManager;
+
 public class SettingsActivity extends AppCompatActivity {
 
     Button calibrationButton, loadCalibrationButton;
@@ -67,7 +69,7 @@ public class SettingsActivity extends AppCompatActivity {
             messager.read();
             CameraData cameraData = messager.getCameraData();
             calibrationTextView.setText(cameraData.getCameraMatrix() + "\n\n" + cameraData.getDistCoeffs());
-        } catch (CameraParametersMessager.SavingException e) {
+        } catch (InternalMemoryDataManager.SavingException e) {
             Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
         }
     }

@@ -15,6 +15,7 @@ import android.widget.TextView;
 
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedRotatedCameraFramesCapturer;
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedSingleCameraFramesCapturer;
+import com.example.stereovisioncarsystem.FilterCalibration.InternalMemoryDataManager;
 import com.example.stereovisioncarsystem.Filtr.Filtr;
 import com.example.stereovisioncarsystem.Filtr.GrayFiltr;
 import com.example.stereovisioncarsystem.ServerClientCommunication.ClientHandlerMsg;
@@ -61,7 +62,7 @@ public class ClientStereoDistanceMeter extends CommunicationBasicActivity implem
             messager.read();
             cameraData = messager.getCameraData();
             Log.d("camMatrixSender", "odczytano macierz: " + cameraData);
-        } catch (CameraParametersMessager.SavingException e) {
+        } catch (InternalMemoryDataManager.SavingException e) {
             Log.d("camMatrixSender", "wyjątek przy odczytywaniu :(");
             e.printStackTrace();
         }

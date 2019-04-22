@@ -54,6 +54,7 @@ public class InternalMemoryDataManager
             throwException();
         } finally {
             try {
+                if(fileOutputStream == null) throwException();
                 fileOutputStream.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -76,6 +77,35 @@ public class InternalMemoryDataManager
             String data = buffer.toString();
             Log.d(TAG, "Otrzymano dane: " + data);
             return data;
+
+        } catch (Exception e) {
+            Log.d(TAG, "Otrzymano exception wewnątrz read");
+            throwException();
+            e.printStackTrace();
+
+        } finally {
+            try {
+                if(fileInputStream== null) throwException();
+                fileInputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+                throwException();
+            }
+        }
+        return "";
+    }
+
+    public String read(String filename) throws SavingException {
+        FileInputStream fileInputStream = null;
+        try {
+            fileInputStream = context.openFileInput(filename);
+            int read;
+            StringBuffer buffer = new StringBuffer();
+            while((read=fileInputStream.read())!=-1)
+            {
+                buffer.append((char)read);
+            }
+            return buffer.toString();
 
         } catch (Exception e) {
             Log.d(TAG, "Otrzymano exception wewnątrz read");

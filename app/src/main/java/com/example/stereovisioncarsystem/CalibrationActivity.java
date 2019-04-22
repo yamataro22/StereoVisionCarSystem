@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedCameraFramesCapturer;
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedSingleCameraFramesCapturer;
+import com.example.stereovisioncarsystem.FilterCalibration.InternalMemoryDataManager;
 
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.JavaCameraView;
@@ -127,7 +128,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         {
             messager.save(singleCameraCalibrator.getFormattedCameraMatrix(), singleCameraCalibrator.getFromatedDiffParams());
         }
-        catch (CameraParametersMessager.SavingException e)
+        catch (InternalMemoryDataManager.SavingException e)
         {
             Toast.makeText(this,"Saving didn't work", Toast.LENGTH_LONG).show();
         }

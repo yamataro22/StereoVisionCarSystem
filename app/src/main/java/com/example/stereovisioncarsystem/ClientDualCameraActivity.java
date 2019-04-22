@@ -14,6 +14,7 @@ import android.widget.TextView;
 
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedRotatedCameraFramesCapturer;
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedSingleCameraFramesCapturer;
+import com.example.stereovisioncarsystem.FilterCalibration.InternalMemoryDataManager;
 import com.example.stereovisioncarsystem.ServerClientCommunication.ClientHandlerMsg;
 
 import org.opencv.android.CameraBridgeViewBase;
@@ -54,7 +55,7 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
             messager.read();
             cameraData = messager.getCameraData();
             Log.d("camMatrixSender", "odczytano macierz: " + cameraData);
-        } catch (CameraParametersMessager.SavingException e) {
+        } catch (InternalMemoryDataManager.SavingException e) {
             Log.d("camMatrixSender", "wyjątek przy odczytywaniu :(");
             e.printStackTrace();
         }
