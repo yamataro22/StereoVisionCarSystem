@@ -1,10 +1,13 @@
 package com.example.stereovisioncarsystem;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -36,7 +39,8 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     private ObservedSingleCameraFramesCapturer capturer;
     private CounterManager counterManager;
     private Handler handler;
-
+    protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
+    private String TAG = "clientCalibration";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,10 +50,27 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         counterManager = new CounterManager();
         handler = new Handler(getMainLooper());
         initToolbar();
+        checkPermissions();
         initGUI();
         exqListeners();
         initCamera();
     }
+
+
+    protected void checkPermissions()
+    {
+        if (checkSelfPermission(Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
+                // Show an explanation to the user *asynchronously* -- don't block
+            } else {
+                requestPermissions(new String[]{Manifest.permission.CAMERA},
+                        MY_PERMISSIONS_REQUEST_CAMERA);
+            }
+        }
+    }
+
 
     private void initToolbar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -214,6 +235,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     private void tryToInitCalibration() {
         try
         {
+            Log.i(TAG, "try to init calibration");
             initCounterAndUpdateGUI();
         } catch (CounterManager.CounterRunningException e) {
             Toast.makeText(this,"Counter already running",Toast.LENGTH_SHORT).show();
@@ -228,6 +250,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         createNewCalibrator();
         hideFramesVerificationGUI();
         initAndShowCameraScreen();
+        Log.i(TAG, "init and show camera screen");
         counterManager.runNewCounter(handler, this);
     }
 
@@ -240,6 +263,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     private void updateVariablesAndGUI(){
         counterManager.changeConfig(Integer.parseInt(framesQuantityEditText.getText().toString()));
         photoSeekBar.setMax(counterManager.getFramesQuantity()-1);
+        Log.i(TAG, "update variables and gui");
     }
 
     private void initAndShowCameraScreen() {

@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,9 +18,14 @@ import com.example.stereovisioncarsystem.FilterCalibration.InternalMemoryDataMan
 
 public class SettingsActivity extends AppCompatActivity {
 
+    private final String serverDeviceName = "ONEPLUS A6013";
+    private final String clientDeviceName = "GRACE";
+
+
     Button calibrationButton, loadCalibrationButton, saveButton;
+    Button stereoCalibrationButton;
     TextView calibrationTextView, deviceNameTextView;
-    Spinner cameraSpinner;
+    Spinner cameraSpinner, deviceTypeSpinner;
     EditText framesNbEditText;
     String deviceName = Build.MODEL;
     @Override
@@ -37,7 +43,7 @@ public class SettingsActivity extends AppCompatActivity {
         init();
         exqListeners();
         loadPreviousSettings();
-
+        updateClientServerSpinner();
     }
 
     private void init() {
@@ -49,6 +55,8 @@ public class SettingsActivity extends AppCompatActivity {
         cameraSpinner = findViewById(R.id.camera_type_spinner);
         saveButton = findViewById(R.id.save_button);
         framesNbEditText = findViewById(R.id.nb_of_frames_edit_text);
+        deviceTypeSpinner = findViewById(R.id.device_type_spinner);
+        stereoCalibrationButton = findViewById(R.id.calibrate_stereo_button);
     }
 
     private void exqListeners() {
@@ -78,7 +86,43 @@ public class SettingsActivity extends AppCompatActivity {
                 }
             }
         });
+        stereoCalibrationButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switch (deviceTypeSpinner.getSelectedItem().toString())
+                {
+                    case "Server":
+                        createAndStartIntent(ServerDualCameraCalibrationActivity.class);
+                        break;
+                    case "Client":
+                        createAndStartIntent(ClientDualCameraActivity.class);
+                }
+            }
+        });
     }
+
+    private void createAndStartIntent(Class<?> cls)
+    {
+        Intent intent = new Intent(this,cls);
+        startActivity(intent);
+    }
+
+    private void updateClientServerSpinner()
+    {
+        int pos = 0;
+        if(deviceName.equalsIgnoreCase(serverDeviceName))
+        {
+            pos = Tools.getSpinnerIndex(deviceTypeSpinner, "server");
+
+        }
+        else if(deviceName.equalsIgnoreCase(clientDeviceName))
+        {
+            pos = Tools.getSpinnerIndex(deviceTypeSpinner, "client");
+        }
+
+        deviceTypeSpinner.setSelection(pos);
+    }
+
 
     private void loadPreviousSettings() {
         InternalMemoryDataManager dataManager = new InternalMemoryDataManager(getApplicationContext());

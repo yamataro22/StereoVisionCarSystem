@@ -116,7 +116,7 @@ public class DualCameraCalibrator extends Calibrator
         {
             performUndisortion();
         }
-        else if(grayServerFrames.size()> && isCalibrated)
+        else if(grayServerFrames.size()>framesQuantity && isCalibrated)
         {
             unrectified = new Mat();
             Imgproc.remap(colorServerFrames.get(colorServerFrames.size()-1), unrectified,

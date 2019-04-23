@@ -19,6 +19,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
+        android:id="@+id/start_capturing_button"
         android:layout_centerHorizontal="true"
         android:layout_below="@id/helloTextView"
         android:paddingTop="10px"
@@ -30,6 +31,7 @@
         />
 
     <TextView
+        android:id="@+id/make_by_adam"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
@@ -37,4 +39,5 @@
         android:text="made by Adam"
         android:padding="10dp"
         />
+
 </RelativeLayout>

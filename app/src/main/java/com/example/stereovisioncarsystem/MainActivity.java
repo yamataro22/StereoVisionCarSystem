@@ -62,12 +62,6 @@ public class MainActivity extends AppCompatActivity {
         if (id == R.id.action_settings) {
             createAndStartIntent(SettingsActivity.class);
         }
-        else if(id == R.id.action_server_stereo_calibration) {
-            createAndStartIntent(ServerDualCameraCalibrationActivity.class);
-        }
-        else if(id == R.id.action_client_stereo_calibration) {
-            createAndStartIntent(ClientDualCameraActivity.class);
-        }
         else if(id == R.id.action_server_dual_communication) {
             createAndStartIntent(ServerDualCameraCalibrationActivity.class);
         }
