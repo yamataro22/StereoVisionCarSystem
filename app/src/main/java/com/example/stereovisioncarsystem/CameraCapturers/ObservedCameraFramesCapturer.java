@@ -9,7 +9,7 @@ public class ObservedCameraFramesCapturer extends CameraFramesCapturer {
 
     public interface CameraFrameConnector
     {
-        void sendFrame(Mat frame);
+        void processServerFrame(Mat frame);
     }
     public ObservedCameraFramesCapturer(CameraFrameConnector connector)
     {

@@ -283,7 +283,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
     }
 
     @Override
-    public void sendFrame(Mat frame)
+    public void processServerFrame(Mat frame)
     {
         singleCameraCalibrator.processFrame(frame);
     }

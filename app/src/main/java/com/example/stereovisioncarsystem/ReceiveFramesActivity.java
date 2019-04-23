@@ -139,7 +139,7 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
     }
 
     @Override
-    public void sendFrame(Mat frame) {
+    public void processServerFrame(Mat frame) {
         Log.d("serverLogs", "Otrzymano klatkę");
         checkClientStatusAndSendMessage(mat2Byte(frame));
     }
@@ -182,7 +182,7 @@ public class ReceiveFramesActivity extends CommunicationBasicActivity implements
     }
 
     @Override
-    protected boolean processMessage(Message msg) {
+    protected boolean processMessageFromClient(Message msg) {
         switch (msg.what) {
             case MESSAGE_READ:
 

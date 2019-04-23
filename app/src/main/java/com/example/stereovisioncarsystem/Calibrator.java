@@ -13,4 +13,9 @@ public abstract class Calibrator
     {
 
     }
+
+    public class CalibFailed extends Exception
+    {
+
+    }
 }

@@ -141,7 +141,7 @@ public class ServerDualCameraActivity extends CommunicationBasicActivity{
     }
 
     @Override
-    protected boolean processMessage(Message msg) {
+    protected boolean processMessageFromClient(Message msg) {
         switch (msg.what) {
             case MESSAGE_READ:
 

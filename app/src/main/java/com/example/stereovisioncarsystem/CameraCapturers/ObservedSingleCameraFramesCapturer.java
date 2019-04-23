@@ -22,7 +22,7 @@ public class ObservedSingleCameraFramesCapturer extends ObservedCameraFramesCapt
         super.onCameraFrame(inputFrame);
         if(shouldBeSent)
         {
-            connector.sendFrame(rgbaMat.clone());
+            connector.processServerFrame(rgbaMat.clone());
             shouldBeSent = false;
         }
         return rgbaMat;

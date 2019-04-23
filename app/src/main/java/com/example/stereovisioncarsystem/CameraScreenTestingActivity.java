@@ -37,8 +37,8 @@ public class CameraScreenTestingActivity extends CameraBasicActivity {
     private void readSavedValues() {
         InternalMemoryDataManager dataManager = new InternalMemoryDataManager(getApplicationContext());
         try {
-            threshVal = Integer.parseInt(dataManager.read(FilterParameterTag.Thresh));
-            gaussVal = Integer.parseInt(dataManager.read(FilterParameterTag.Gauss));
+            threshVal = Integer.parseInt(dataManager.read(SavedParametersTags.Thresh));
+            gaussVal = Integer.parseInt(dataManager.read(SavedParametersTags.Gauss));
         } catch (InternalMemoryDataManager.SavingException e) {
             e.printStackTrace();
         }

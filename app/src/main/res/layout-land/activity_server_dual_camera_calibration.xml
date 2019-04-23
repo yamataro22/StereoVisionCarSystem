@@ -42,7 +42,7 @@
                     android:layout_below="@id/skip_frames_button"
                     android:layout_alignParentRight="true"
                     android:layout_margin="1dp"
-                    android:text="Conn" />
+                    android:text="Cap" />
 
                 <TextView
                     android:id="@+id/connection_status_text_view"

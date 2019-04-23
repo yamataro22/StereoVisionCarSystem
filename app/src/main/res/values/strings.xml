@@ -1,8 +1,11 @@
 <resources>
     <string name="app_name">StereoVisionCarSystem</string>
     <string name="action_settings">Ustawienia</string>
-    <string name="test_connection">Komunikacja</string>
-    <string name="test_camera_communication">Test wysyłania zdjęć</string>
+
+    <string name="server_stereo_calibration">Server stereo calib</string>
+    <string name="client_stereo_calibration">Client stereo calib</string>
+
+
     <string name="server_dual_communication">Dual serwer</string>
     <string name="client_dual_communication">Dual client</string>
     <string name="client_stereo_meter">Stereo client</string>
@@ -42,4 +45,5 @@
     <string name="please_wait">Please, wait</string>
     <string name="original">Original</string>
     <string name="undistorted">Undistorted</string>
+
 </resources>

@@ -153,7 +153,7 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
     }
 
     @Override
-    public void sendFrame(Mat frame) {
+    public void processServerFrame(Mat frame) {
         Log.d("serverLogs", "Otrzymano klatkę");
         checkClientStatusAndSendMessage(mat2Byte(frame));
     }
@@ -241,7 +241,7 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
     }
 
     @Override
-    protected boolean processMessage(Message msg) {
+    protected boolean processMessageFromClient(Message msg) {
         return false;
     }
 

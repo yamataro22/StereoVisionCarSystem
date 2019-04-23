@@ -5,9 +5,7 @@ import com.example.stereovisioncarsystem.Filtr.Filtr;
 import com.example.stereovisioncarsystem.Filtr.GrayFiltr;
 
 import org.opencv.android.*;
-import org.opencv.core.Core;
 import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
 
 
 public class ObservedRotatedCameraFramesCapturer extends ObservedCameraFramesCapturer {
@@ -29,7 +27,7 @@ public class ObservedRotatedCameraFramesCapturer extends ObservedCameraFramesCap
     {
         super.onCameraFrame(inputFrame);
         gray.filtr(rgbaMat);
-        connector.sendFrame(rgbaMat);
+        connector.processServerFrame(rgbaMat);
         SystemClock.sleep(freshRate);
         return rgbaMat;
     }

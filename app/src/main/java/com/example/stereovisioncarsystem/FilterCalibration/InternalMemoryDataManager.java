@@ -5,7 +5,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 
-import com.example.stereovisioncarsystem.FilterParameterTag;
+import com.example.stereovisioncarsystem.SavedParametersTags;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -20,7 +20,7 @@ public class InternalMemoryDataManager
         this.context = context;
     }
 
-    public void save(FilterParameterTag tag, String parameter) throws SavingException
+    public void save(SavedParametersTags tag, String parameter) throws SavingException
     {
         FileOutputStream fileOutputStream = null;
         try {
@@ -63,7 +63,7 @@ public class InternalMemoryDataManager
         }
     }
 
-    public String read(FilterParameterTag tag) throws SavingException {
+    public String read(SavedParametersTags tag) throws SavingException {
         FileInputStream fileInputStream = null;
         try {
             String fileTag = tag.name() + "_" + "value";

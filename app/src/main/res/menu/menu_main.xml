@@ -9,15 +9,15 @@
         app:showAsAction="never" />
 
     <item
-        android:id="@+id/action_text_communication"
+        android:id="@+id/action_server_stereo_calibration"
         android:orderInCategory="20"
-        android:title="@string/test_connection"
+        android:title="@string/server_stereo_calibration"
         ></item>
 
     <item
-        android:id="@+id/action_photo_communication"
+        android:id="@+id/action_client_stereo_calibration"
         android:orderInCategory="20"
-        android:title="@string/test_camera_communication"
+        android:title="@string/client_stereo_calibration"
         ></item>
     <item
         android:id="@+id/action_server_dual_communication"

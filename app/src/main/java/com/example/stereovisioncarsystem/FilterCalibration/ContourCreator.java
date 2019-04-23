@@ -229,4 +229,8 @@ public class ContourCreator {
     {
         return objectShape.getAnchorPoint();
     }
+
+    public boolean isEmpty() {
+        return objectShape == null ? true : false;
+    }
 }

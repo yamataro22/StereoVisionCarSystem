@@ -25,10 +25,13 @@ import static org.opencv.core.CvType.CV_8U;
 
 public class DualCameraCalibrator extends Calibrator
 {
+    private int framesQuantity = 5;
+
+
     private final Size patternSize = new Size(4, 11);
     private final int numSquares = (int)(patternSize.width * patternSize.height);
     private double squareSize = 0.0181;
-    private int howManyFramesToCalibration;
+
     private int flags;
 
     private String TAG = "dualCalibration";
@@ -105,17 +108,15 @@ public class DualCameraCalibrator extends Calibrator
 
     }
 
-    public void processFrames(Mat serverMat, Mat clientMat)
-    {
+    public void processFrames(Mat serverMat, Mat clientMat) throws NotEnoughChessboardsException, ChessboardsNotOnAllPhotosException {
         addLeftFrame(serverMat);
         addRightFrame(clientMat);
 
-        if(grayServerFrames.size()==5)
+        if(grayServerFrames.size()==framesQuantity)
         {
-            howManyFramesToCalibration = 5;
             performUndisortion();
         }
-        else if(grayServerFrames.size()>5)
+        else if(grayServerFrames.size()> && isCalibrated)
         {
             unrectified = new Mat();
             Imgproc.remap(colorServerFrames.get(colorServerFrames.size()-1), unrectified,
@@ -139,27 +140,24 @@ public class DualCameraCalibrator extends Calibrator
 
 
     @Override
-    public void performUndisortion()
-    {
+    public void performUndisortion() throws NotEnoughChessboardsException, ChessboardsNotOnAllPhotosException {
         try {
             findChessboards();
+            calculateCameraParameters();
         } catch (ChessboardsNotOnAllPhotosException e)
         {
             Log.d(TAG, "Didn't found chessboards on both pictures, invalid; " + invalidImagesIndexes.size());
             deleteInvalidImages();
-            try {
-                findChessboards();
-            } catch (ChessboardsNotOnAllPhotosException e1) {
-                e1.printStackTrace();
-            } catch (NotEnoughChessboardsException e1) {
-                e1.printStackTrace();
-            }
+
+            findChessboards();
+            calculateCameraParameters();
+
             e.printStackTrace();
         } catch (NotEnoughChessboardsException e) {
             e.printStackTrace();
         }
         Log.d(TAG, "Found checkers on both Mats :)");
-        calculateCameraParameters();
+
 
     }
 
@@ -215,26 +213,37 @@ public class DualCameraCalibrator extends Calibrator
 
     public void deleteInvalidImages()
     {
+        Log.d(TAG, "deleteInvalidImages; deleting "+invalidImagesIndexes.size());
         for(int index = invalidImagesIndexes.size() - 1; index >= 0; index --)
         {
             grayClientFrames.remove((int)invalidImagesIndexes.get(index));
             grayServerFrames.remove((int)invalidImagesIndexes.get(index));
             colorServerFrames.remove((int)invalidImagesIndexes.get(index));
         }
-        howManyFramesToCalibration = grayClientFrames.size();
+        Log.d(TAG, "za delete, grayFramesQuantity "+grayClientFrames.size());
+        framesQuantity = grayClientFrames.size();
     }
 
     protected void findChessboards() throws ChessboardsNotOnAllPhotosException, NotEnoughChessboardsException
     {
         TermCriteria term = new TermCriteria(TermCriteria.EPS | TermCriteria.MAX_ITER, 30, 0.1);
 
-        //clientImagePoints.clear();
-        //serverImagePoints.clear();
+        clientImagePoints.clear();
+        serverImagePoints.clear();
         invalidImagesIndexes.clear();
+
+        if(grayClientFrames.size() < 2)
+        {
+            throw new NotEnoughChessboardsException();
+        }
+
 
         Log.d(TAG, "grayClientFrame[0] size: "+grayClientFrames.get(0).size());
         Log.d(TAG, "grayServerFrame[0] size: "+grayServerFrames.get(0).size());
         Log.d(TAG, "patternSize: "+patternSize);
+
+
+
         int howManyFound = 0;
         for(int i = 0; i < grayClientFrames.size(); i++)
         {
@@ -255,7 +264,7 @@ public class DualCameraCalibrator extends Calibrator
                 invalidImagesIndexes.add(i);
             }
         }
-        if(howManyFound != howManyFramesToCalibration)
+        if(howManyFound != framesQuantity)
             throw new ChessboardsNotOnAllPhotosException();
     }
 
@@ -295,5 +304,10 @@ public class DualCameraCalibrator extends Calibrator
 //
 //        Core.normalize(disparity, disparityNormalized, 0, 255, Core.NORM_MINMAX, CV_8U);
         return unrectified;
+    }
+
+    public void setFramesQuantity(int i) {
+        framesQuantity = i;
+        Log.d(TAG, "frames quantity set to "+ i);
     }
 }

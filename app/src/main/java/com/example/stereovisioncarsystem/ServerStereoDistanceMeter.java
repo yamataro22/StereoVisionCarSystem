@@ -4,8 +4,6 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Message;
-import android.support.constraint.solver.widgets.Rectangle;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -18,7 +16,6 @@ import android.widget.Toast;
 
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedCameraFramesCapturer;
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedSingleCameraFramesCapturer;
-import com.example.stereovisioncarsystem.FilterCalibration.ContourCreator;
 import com.example.stereovisioncarsystem.FilterCalibration.InternalMemoryDataManager;
 import com.example.stereovisioncarsystem.Filtr.BinaryThreshFiltr;
 import com.example.stereovisioncarsystem.Filtr.CannyFiltr;
@@ -73,8 +70,8 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
     private void readParametersFromMemory() {
         InternalMemoryDataManager dataManager = new InternalMemoryDataManager(getApplicationContext());
         try {
-            threshVal = Integer.parseInt(dataManager.read(FilterParameterTag.Thresh));
-            gaussVal = Integer.parseInt(dataManager.read(FilterParameterTag.Gauss));
+            threshVal = Integer.parseInt(dataManager.read(SavedParametersTags.Thresh));
+            gaussVal = Integer.parseInt(dataManager.read(SavedParametersTags.Gauss));
         } catch (InternalMemoryDataManager.SavingException e) {
             e.printStackTrace();
             Toast.makeText(this, "Nie udało się odczytać z pamięci", Toast.LENGTH_SHORT).show();
@@ -203,7 +200,7 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
     }
 
     @Override
-    protected boolean processMessage(Message msg)
+    protected boolean processMessageFromClient(Message msg)
     {
         switch (msg.what) {
             case ServerHandlerMsg.FRAME_MSG: {
@@ -299,12 +296,11 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
 //            Log.d("actionEvents", "wysyłam wiadomośc do klienta");
 //            capturer.getSingleFrameToBeProcessed();
         }
-
         return true;
     }
 
     @Override
-    public void sendFrame(Mat frame) {
+    public void processServerFrame(Mat frame) {
         Log.d("actionEvents", "wysyłam klatki do kalibratora");
 
         applyFilters(frame);

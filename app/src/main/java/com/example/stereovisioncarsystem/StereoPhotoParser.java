@@ -43,6 +43,8 @@ class StereoPhotoParser {
     }
 
     public void findDistanceBetweenObjects() {
+        if(clientContourCreator.isEmpty() || serverContourCreator.isEmpty()) return;
+
         Point clientPoint = clientContourCreator.getAnchorPoint();
         Point serverPoint = serverContourCreator.getAnchorPoint();
 

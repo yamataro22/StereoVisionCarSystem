@@ -122,7 +122,7 @@ public class CommunicationTestActivity extends CommunicationBasicActivity {
     }
 
     @Override
-    protected boolean processMessage(Message msg) {
+    protected boolean processMessageFromClient(Message msg) {
         Log.d("serverLogs", "Jestem w handlerze"+msg.toString());
         switch (msg.what) {
             case ClientHandlerMsg.SPECIAL_MSG:

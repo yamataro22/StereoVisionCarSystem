@@ -168,7 +168,7 @@ public class ClientStereoDistanceMeter extends CommunicationBasicActivity implem
     }
 
     @Override
-    public void sendFrame(Mat frame) {
+    public void processServerFrame(Mat frame) {
         f.filtr(frame);
         checkClientStatusAndSendMessage(mat2Byte(frame));
     }
@@ -253,7 +253,7 @@ public class ClientStereoDistanceMeter extends CommunicationBasicActivity implem
     }
 
     @Override
-    protected boolean processMessage(Message msg) {
+    protected boolean processMessageFromClient(Message msg) {
         return false;
     }
 

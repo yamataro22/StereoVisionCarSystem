@@ -8,6 +8,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -16,9 +17,10 @@ import com.example.stereovisioncarsystem.FilterCalibration.InternalMemoryDataMan
 
 public class SettingsActivity extends AppCompatActivity {
 
-    Button calibrationButton, loadCalibrationButton;
+    Button calibrationButton, loadCalibrationButton, saveButton;
     TextView calibrationTextView, deviceNameTextView;
     Spinner cameraSpinner;
+    EditText framesNbEditText;
     String deviceName = Build.MODEL;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +36,8 @@ public class SettingsActivity extends AppCompatActivity {
         }
         init();
         exqListeners();
+        loadPreviousSettings();
+
     }
 
     private void init() {
@@ -43,6 +47,8 @@ public class SettingsActivity extends AppCompatActivity {
         deviceNameTextView = findViewById(R.id.deviceNameTextView);
         deviceNameTextView.setText(deviceName);
         cameraSpinner = findViewById(R.id.camera_type_spinner);
+        saveButton = findViewById(R.id.save_button);
+        framesNbEditText = findViewById(R.id.nb_of_frames_edit_text);
     }
 
     private void exqListeners() {
@@ -59,6 +65,29 @@ public class SettingsActivity extends AppCompatActivity {
                 loadSavedCalibration();
             }
         });
+        saveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                InternalMemoryDataManager dataManager = new InternalMemoryDataManager(getApplicationContext());
+
+                try {
+                    dataManager.save(SavedParametersTags.NbOfStereoCalibrationFrames, framesNbEditText.getText().toString());
+                } catch (InternalMemoryDataManager.SavingException e) {
+                    e.printStackTrace();
+                    Toast.makeText(getApplicationContext(),"Saving failed",Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void loadPreviousSettings() {
+        InternalMemoryDataManager dataManager = new InternalMemoryDataManager(getApplicationContext());
+        try {
+            String quantity = dataManager.read(SavedParametersTags.NbOfStereoCalibrationFrames);
+            framesNbEditText.setText(quantity);
+        } catch (InternalMemoryDataManager.SavingException e) {
+            e.printStackTrace();
+        }
     }
 
     private void loadSavedCalibration()

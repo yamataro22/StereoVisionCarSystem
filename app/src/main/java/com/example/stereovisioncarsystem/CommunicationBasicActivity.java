@@ -131,7 +131,7 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
         messageHandler = new Handler(new Handler.Callback() {
             @Override
             public boolean handleMessage(Message msg) {
-                return processMessage(msg);
+                return processMessageFromClient(msg);
             }
         });
     }
@@ -188,7 +188,7 @@ public abstract class CommunicationBasicActivity extends AppCompatActivity {
         }
     }
 
-    protected abstract boolean processMessage(Message msg);
+    protected abstract boolean processMessageFromClient(Message msg);
     protected void onPeersListEmpty()
     {
         Toast.makeText(getApplicationContext(), "Nie ma żadnych peerów", Toast.LENGTH_SHORT).show();

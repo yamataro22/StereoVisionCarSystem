@@ -8,7 +8,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 
-import com.example.stereovisioncarsystem.FilterParameterTag;
+import com.example.stereovisioncarsystem.SavedParametersTags;
 import com.example.stereovisioncarsystem.R;
 
 public class FilterSettingsActivity extends Activity {
@@ -35,9 +35,9 @@ public class FilterSettingsActivity extends Activity {
         InternalMemoryDataManager dataManager = new InternalMemoryDataManager(getApplicationContext());
 
         try {
-            threshValue = Integer.parseInt(dataManager.read(FilterParameterTag.Thresh));
+            threshValue = Integer.parseInt(dataManager.read(SavedParametersTags.Thresh));
             threshEdittext.setText(threshValue+"");
-            gaussValue = Integer.parseInt(dataManager.read(FilterParameterTag.Gauss));
+            gaussValue = Integer.parseInt(dataManager.read(SavedParametersTags.Gauss));
             gaussSpinner.setSelection(getSpinnerIndex(gaussSpinner,gaussValue+""));
         } catch (InternalMemoryDataManager.SavingException e) {
             e.printStackTrace();
@@ -71,8 +71,8 @@ public class FilterSettingsActivity extends Activity {
             public void onClick(View v) {
                 InternalMemoryDataManager dataManager = new InternalMemoryDataManager(getApplicationContext());
                 try {
-                    dataManager.save(FilterParameterTag.Thresh, threshEdittext.getText().toString());
-                    dataManager.save(FilterParameterTag.Gauss, gaussSpinner.getSelectedItem().toString());
+                    dataManager.save(SavedParametersTags.Thresh, threshEdittext.getText().toString());
+                    dataManager.save(SavedParametersTags.Gauss, gaussSpinner.getSelectedItem().toString());
                 } catch (InternalMemoryDataManager.SavingException e) {
                     e.printStackTrace();
                 }
