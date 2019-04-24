@@ -123,10 +123,10 @@
         app:layout_constraintBottom_toTopOf="@+id/loadCalibrationButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/linearLayout2" />
+        app:layout_constraintTop_toBottomOf="@+id/stereo_settings_layout" />
 
     <LinearLayout
-        android:id="@+id/linearLayout2"
+        android:id="@+id/stereo_settings_layout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"

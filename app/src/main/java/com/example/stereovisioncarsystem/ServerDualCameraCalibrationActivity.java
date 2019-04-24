@@ -27,7 +27,7 @@ import org.opencv.core.Mat;
 public class ServerDualCameraCalibrationActivity extends CommunicationBasicActivity implements  ObservedCameraFramesCapturer.CameraFrameConnector {
 
     Button connectButton, skipFramesButton;
-    TextView statusTextView;
+    TextView connectionStatusTextView, calibrationStatusTextView;
     ImageView im,  disparityImageView;
     ObservedSingleCameraFramesCapturer capturer;
     protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
@@ -55,12 +55,15 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
 
     private void init() {
         connectButton = findViewById(R.id.connect_button);
+        connectButton.setEnabled(false);
         skipFramesButton = findViewById(R.id.skip_frames_button);
-        statusTextView = findViewById(R.id.connection_status_text_view);
+        connectionStatusTextView = findViewById(R.id.connection_status_text_view);
         im = findViewById(R.id.serwer_camera_view);
 
         mOpenCvCameraView = findViewById(R.id.self_server_camera_view);
         disparityImageView = findViewById(R.id.disparity_camera_view);
+        calibrationStatusTextView = findViewById(R.id.calib_status);
+
 
         matBuffer = new Mat();
         initCalibrator();
@@ -68,7 +71,10 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
 
     private void initCalibrator() {
         calibrator = new DualCameraCalibrator();
-        calibrator.setFramesQuantity(loadFramesQuantity());
+
+        int framesQuantity = loadFramesQuantity();
+        calibrationStatusTextView.setText(framesQuantity+"");
+        calibrator.setFramesQuantity(framesQuantity);
         loadSavedCalibration();
     }
 
@@ -162,6 +168,7 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
             case ServerHandlerMsg.CLIENT_READY_MSG:
             {
                 Log.d(TAG, "SerwerActivity, wysyłam zapytanie o macierze");
+                connectButton.setEnabled(true);
                 serverClass.sendMsgToClient(ClientServerMessages.GET_CAMERA_DATA);
                 break;
             }
@@ -185,8 +192,15 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
             ////Tools.makeToast(getApplicationContext(),"Not enough chessboards");
         } catch (Calibrator.ChessboardsNotOnAllPhotosException e) {
             e.printStackTrace();
-
             //Tools.makeToast(getApplicationContext(),"Chessboards not on all photos");
+        }finally {
+            final int framesRemaining = calibrator.getRemainingFrames();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    calibrationStatusTextView.setText(framesRemaining+"");
+                }
+            });
         }
     }
 
@@ -205,7 +219,7 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
     @Override
     protected void onServerConnected()
     {
-        statusTextView.setText("host");
+        connectionStatusTextView.setText("host");
         super.onServerConnected();
         initCamera();
         enableView();
@@ -221,17 +235,17 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
 
     @Override
     protected void onDiscoverPeersInitiationFailure() {
-        statusTextView.setText("Wykrywanie nieudane");
+        connectionStatusTextView.setText("Wykrywanie nieudane");
     }
 
     @Override
     protected void onDiscoverPeersInitiationSuccess() {
-        statusTextView.setText("Wykrywanie rozpoczęte");
+        connectionStatusTextView.setText("Wykrywanie rozpoczęte");
     }
 
     @Override
     protected void onConnectionFail() {
-        statusTextView.setText("Rozłączono");
+        connectionStatusTextView.setText("Rozłączono");
         super.onConnectionFail();
 
     }

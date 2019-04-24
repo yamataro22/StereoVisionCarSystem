@@ -37,27 +37,46 @@
 
                 <Button
                     android:id="@+id/connect_button"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_below="@id/skip_frames_button"
                     android:layout_alignParentRight="true"
                     android:layout_margin="1dp"
+                    android:layout_weight="1"
                     android:text="Cap" />
 
-                <TextView
-                    android:id="@+id/connection_status_text_view"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-                    android:text="no conn" />
+                    <TextView
+                        android:id="@+id/connection_status_text_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+
+                        android:layout_weight="1"
+                        android:text="no conn"
+                        android:textAlignment="center" />
+
+                    <TextView
+                        android:id="@+id/calib_status"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:text="stat"
+                        android:textAlignment="center" />
+                </LinearLayout>
 
                 <Button
                     android:id="@+id/skip_frames_button"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_alignParentTop="true"
                     android:layout_alignParentRight="true"
                     android:layout_margin="1dp"
+                    android:layout_weight="1"
                     android:text="Skip" />
 
             </LinearLayout>

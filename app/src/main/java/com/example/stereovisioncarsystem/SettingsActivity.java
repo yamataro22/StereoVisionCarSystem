@@ -5,6 +5,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Layout;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -44,6 +45,7 @@ public class SettingsActivity extends AppCompatActivity {
         exqListeners();
         loadPreviousSettings();
         updateClientServerSpinner();
+        hideUnnecessaryGUIinClientCase();
     }
 
     private void init() {
@@ -99,6 +101,17 @@ public class SettingsActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void hideUnnecessaryGUIinClientCase()
+    {
+        String deviceType = deviceTypeSpinner.getSelectedItem().toString();
+        if(deviceType.equalsIgnoreCase("client"))
+        {
+            View layout = findViewById(R.id.stereo_settings_layout);
+            layout.setVisibility(View.GONE);
+        }
+
     }
 
     private void createAndStartIntent(Class<?> cls)

@@ -26,7 +26,7 @@ import static org.opencv.core.CvType.CV_8U;
 public class DualCameraCalibrator extends Calibrator
 {
     private int framesQuantity = 5;
-
+    private int howManyCaptured = 0;
 
     private final Size patternSize = new Size(4, 11);
     private final int numSquares = (int)(patternSize.width * patternSize.height);
@@ -109,14 +109,19 @@ public class DualCameraCalibrator extends Calibrator
     }
 
     public void processFrames(Mat serverMat, Mat clientMat) throws NotEnoughChessboardsException, ChessboardsNotOnAllPhotosException {
-        addLeftFrame(serverMat);
-        addRightFrame(clientMat);
 
-        if(grayServerFrames.size()==framesQuantity)
+        if(howManyCaptured == framesQuantity)
         {
             performUndisortion();
         }
-        else if(grayServerFrames.size()>framesQuantity && isCalibrated)
+        else
+        {
+            addLeftFrame(serverMat);
+            addRightFrame(clientMat);
+            howManyCaptured++;
+        }
+
+        if(grayServerFrames.size()>framesQuantity && isCalibrated)
         {
             unrectified = new Mat();
             Imgproc.remap(colorServerFrames.get(colorServerFrames.size()-1), unrectified,
@@ -221,7 +226,7 @@ public class DualCameraCalibrator extends Calibrator
             colorServerFrames.remove((int)invalidImagesIndexes.get(index));
         }
         Log.d(TAG, "za delete, grayFramesQuantity "+grayClientFrames.size());
-        framesQuantity = grayClientFrames.size();
+        howManyCaptured = grayClientFrames.size();
     }
 
     protected void findChessboards() throws ChessboardsNotOnAllPhotosException, NotEnoughChessboardsException
@@ -264,7 +269,7 @@ public class DualCameraCalibrator extends Calibrator
                 invalidImagesIndexes.add(i);
             }
         }
-        if(howManyFound != framesQuantity)
+        if(howManyFound != howManyCaptured)
             throw new ChessboardsNotOnAllPhotosException();
     }
 
@@ -309,5 +314,9 @@ public class DualCameraCalibrator extends Calibrator
     public void setFramesQuantity(int i) {
         framesQuantity = i;
         Log.d(TAG, "frames quantity set to "+ i);
+    }
+
+    public int getRemainingFrames() {
+        return framesQuantity - howManyCaptured;
     }
 }
