@@ -14,6 +14,7 @@ class StereoPhotoParser {
 
     private Mat clientFrame;
     private Mat serverFrame;
+    private Mat qMat;
 
     public StereoPhotoParser() {
         init();
@@ -50,5 +51,9 @@ class StereoPhotoParser {
 
         Point3 point3 = new Point3(serverPoint.x, serverPoint.y, Math.abs(serverPoint.x - clientPoint.x));
         Log.d("DZIALA", "odległość w pixelach: " + point3.z);
+    }
+
+    public void setQMat(Mat QMat) {
+        this.qMat = QMat;
     }
 }

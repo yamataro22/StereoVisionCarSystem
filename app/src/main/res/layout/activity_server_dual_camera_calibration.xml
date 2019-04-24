@@ -38,6 +38,15 @@
             android:layout_margin="10dp"
             android:layout_weight="5" />
 
+        <Button
+            android:id="@+id/save_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="5"
+            android:text="Button"
+            android:visibility="gone"
+            tools:visibility="gone" />
+
 
     </LinearLayout>
 

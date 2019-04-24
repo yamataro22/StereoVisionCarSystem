@@ -2,6 +2,7 @@ package com.example.stereovisioncarsystem;
 
 import android.util.Log;
 
+import com.example.stereovisioncarsystem.FilterCalibration.InternalMemoryDataManager;
 import com.example.stereovisioncarsystem.Filtr.Filtr;
 import com.example.stereovisioncarsystem.Filtr.GrayFiltr;
 
@@ -25,6 +26,8 @@ import static org.opencv.core.CvType.CV_8U;
 
 public class DualCameraCalibrator extends Calibrator
 {
+    private OnStereoCalibrationresult resultListener;
+
     private int framesQuantity = 5;
     private int howManyCaptured = 0;
 
@@ -73,7 +76,8 @@ public class DualCameraCalibrator extends Calibrator
     public boolean isCalibrated = false;
 
 
-    public DualCameraCalibrator() {
+    public DualCameraCalibrator(OnStereoCalibrationresult listener) {
+        this.resultListener = listener;
         init();
     }
 
@@ -112,6 +116,9 @@ public class DualCameraCalibrator extends Calibrator
 
         if(howManyCaptured == framesQuantity)
         {
+            Log.d("dualCalibration", "powiadamiam serwer o rozpoczęciu komunikacji");
+            resultListener.onCalibrationStart();
+            Log.d("dualCalibration", "powiadamiłem, wróciłem, kalibruję");
             performUndisortion();
         }
         else
@@ -123,9 +130,9 @@ public class DualCameraCalibrator extends Calibrator
 
         if(grayServerFrames.size()>framesQuantity && isCalibrated)
         {
-            unrectified = new Mat();
-            Imgproc.remap(colorServerFrames.get(colorServerFrames.size()-1), unrectified,
-                    map1s,map2s, Imgproc.INTER_LINEAR);
+//            unrectified = new Mat();
+//            Imgproc.remap(colorServerFrames.get(colorServerFrames.size()-1), unrectified,
+//                    map1s,map2s, Imgproc.INTER_LINEAR);
         }
     }
 
@@ -168,6 +175,11 @@ public class DualCameraCalibrator extends Calibrator
 
     private void calculateCameraParameters()
     {
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         fillObjectPoints();
 
         double error = Calib3d.stereoCalibrate(objectPoints,clientImagePoints,serverImagePoints,
@@ -179,7 +191,16 @@ public class DualCameraCalibrator extends Calibrator
 
         Imgproc.initUndistortRectifyMap(serverCameraData.getCameraMatrixMat(),serverCameraData.getDistCoeffsMat(),R,P1,tempSavedImage.size(),CvType.CV_32FC1, map1s, map2s);
         isCalibrated = true;
-        
+
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
+
+
 
         Log.d(TAG, "R: \n" + R.dump());
         Log.d(TAG, "T: \n" + T.dump());
@@ -187,8 +208,9 @@ public class DualCameraCalibrator extends Calibrator
         Log.d(TAG, "F: \n" + F.dump());
         Log.d(TAG, "error " + error);
         Log.d(TAG, "Q \n" + qMatrix.dump());
-        Log.d(TAG, "map1s: \n" + map1s.dump());
-        Log.d(TAG, "map2s: \n" + map2s.dump());
+//        Log.d(TAG, "map1s: \n" + map1s.dump());
+//        Log.d(TAG, "map2s: \n" + map2s.dump());
+        resultListener.onCameraResulat(qMatrix,R1,R2,P1,P2);
     }
 
     private void fillObjectPoints() {
@@ -318,5 +340,14 @@ public class DualCameraCalibrator extends Calibrator
 
     public int getRemainingFrames() {
         return framesQuantity - howManyCaptured;
+    }
+
+    public Mat getQMartix() {
+        return qMatrix;
+    }
+
+    public interface OnStereoCalibrationresult {
+        public void onCameraResulat(Mat qMatrix, Mat R1, Mat R2, Mat P1, Mat P2);
+        void onCalibrationStart();
     }
 }

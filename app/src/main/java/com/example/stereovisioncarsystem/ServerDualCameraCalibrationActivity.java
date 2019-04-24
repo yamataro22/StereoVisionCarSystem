@@ -24,10 +24,10 @@ import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
-public class ServerDualCameraCalibrationActivity extends CommunicationBasicActivity implements  ObservedCameraFramesCapturer.CameraFrameConnector {
+public class ServerDualCameraCalibrationActivity extends CommunicationBasicActivity implements  ObservedCameraFramesCapturer.CameraFrameConnector, DualCameraCalibrator.OnStereoCalibrationresult {
 
-    Button connectButton, skipFramesButton;
-    TextView connectionStatusTextView, calibrationStatusTextView;
+    Button connectButton, skipFramesButton, saveButton;
+    TextView connectionStatusTextView, calibrationStatusTextView, qMartixTextView;
     ImageView im,  disparityImageView;
     ObservedSingleCameraFramesCapturer capturer;
     protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
@@ -63,14 +63,15 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
         mOpenCvCameraView = findViewById(R.id.self_server_camera_view);
         disparityImageView = findViewById(R.id.disparity_camera_view);
         calibrationStatusTextView = findViewById(R.id.calib_status);
-
+        qMartixTextView = findViewById(R.id.qMartixTextView);
+        saveButton = findViewById(R.id.save_button);
 
         matBuffer = new Mat();
         initCalibrator();
     }
 
     private void initCalibrator() {
-        calibrator = new DualCameraCalibrator();
+        calibrator = new DualCameraCalibrator(this);
 
         int framesQuantity = loadFramesQuantity();
         calibrationStatusTextView.setText(framesQuantity+"");
@@ -94,14 +95,14 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
         connectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(calibrator.isCalibrated)
-                {
-
-                    Mat mat = calibrator.showDisparity();
-                    Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
-                    Utils.matToBitmap(mat, btm);
-                    disparityImageView.setImageBitmap(btm);
-                }
+//                if(calibrator.isCalibrated)
+//                {
+//
+//                    Mat mat = calibrator.showDisparity();
+//                    Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
+//                    Utils.matToBitmap(mat, btm);
+//                    disparityImageView.setImageBitmap(btm);
+//                }
                 Log.d("actionEvents", "wysyłam wiadomośc do klienta");
                 capturer.getSingleFrameToBeProcessed();
             }
@@ -110,6 +111,20 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
             @Override
             public void onClick(View view) {
                 serverClass.sendMsgToClient(ClientServerMessages.SKIP_FRAMES);
+            }
+        });
+        saveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                InternalMemoryDataManager dataManager = new InternalMemoryDataManager(getApplicationContext());
+                try {
+                    Mat QMartix = calibrator.getQMartix();
+                    Log.d(TAG, "zapisuję: " + QMartix.dump());
+                    dataManager.save(SavedParametersTags.QMatrix,QMartix.dump());
+                    Tools.makeToast(getApplicationContext(), "zapisano:)");
+                } catch (InternalMemoryDataManager.SavingException e) {
+                    e.printStackTrace();
+                }
             }
         });
     }
@@ -145,6 +160,7 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
     private void disableView()
     {
         if(!isCameraViewDisabledOnClient) {
+            Log.d("dualCalibration", "wyłączam kamerkę");
             mOpenCvCameraView.disableView();
             isCameraViewDisabledOnClient = true;
         }
@@ -183,7 +199,7 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
     }
 
     @Override
-    public void processServerFrame(Mat frame) {
+    public void processServerFrame(final Mat frame) {
         Log.d("actionEvents", "wysyłam klatki do kalibratora");
         try {
             calibrator.processFrames(frame,matBuffer);
@@ -202,6 +218,28 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
                 }
             });
         }
+    }
+
+    @Override
+    public void onCameraResulat(final Mat qMatrix, Mat R1, Mat R2, Mat P1, Mat P2)
+    {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                qMartixTextView.setVisibility(View.VISIBLE);
+                saveButton.setVisibility(View.VISIBLE);
+                qMartixTextView.setText("Success!" + '\n' + "QMartix:" + '\n' + qMatrix.dump());
+            }
+        });
+
+
+    }
+
+    @Override
+    public void onCalibrationStart() {
+        Log.d("dualCalibration", "oncalibrationStart, wyłączam kamerkę");
+        //disableView();
+        //serverClass.sendMsgToClient(ClientServerMessages.CONNECTION_FINISHED);
     }
 
     @Override
@@ -299,4 +337,5 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
             }
         }
     }
+
 }

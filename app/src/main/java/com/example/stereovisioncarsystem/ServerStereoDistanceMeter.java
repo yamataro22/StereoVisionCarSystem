@@ -42,7 +42,7 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
     protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
     protected CameraBridgeViewBase mOpenCvCameraView;
     private boolean isCameraViewDisabledOnClient = true;
-    private DualCameraCalibrator calibrator;
+
     Mat matBuffer;
     public final static String TAG = "serverClientCom";
 
@@ -103,7 +103,6 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
         disparityImageView = findViewById(R.id.disparity_camera_view);
 
         matBuffer = new Mat();
-        calibrator = new DualCameraCalibrator();
         loadSavedCalibration();
 
         stereoPhotoParser = new StereoPhotoParser();
@@ -111,10 +110,13 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
 
     private void loadSavedCalibration()
     {
-        CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(),CameraFacing.Back);
+        CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext());
         try {
-            messager.read();
-            calibrator.setServerCameraParameters(messager.getCameraData());
+            Mat QMat;
+            messager.readQMartix();
+            QMat = messager.getQMat();
+            stereoPhotoParser.setQMat(QMat);
+            Log.d(TAG,QMat.dump());
         } catch (InternalMemoryDataManager.SavingException e) {
             Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
         }
@@ -233,7 +235,7 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
                 String cameraParameters = (String)msg.obj;
                 CameraData cameraData = new CameraData(cameraParameters);
                 Log.d(TAG,"ServerActivity, CameraData stworzony: \n" + cameraData.getCameraMatrix() + cameraData.getDistCoeffs());
-                calibrator.setClientCameraParameters(cameraData);
+//                calibrator.setClientCameraParameters(cameraData);
             }
         }
         return true;

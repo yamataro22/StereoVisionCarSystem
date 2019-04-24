@@ -16,16 +16,6 @@
         android:layout_alignParentLeft="true"
         />
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Disonnect"
-        android:id="@+id/disconnect_button"
-        android:layout_margin="10dp"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true"
-        />
-
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

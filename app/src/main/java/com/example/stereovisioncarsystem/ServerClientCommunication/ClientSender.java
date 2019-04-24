@@ -147,6 +147,9 @@ public class ClientSender extends Thread {
                     case ClientServerMessages.GET_CAMERA_DATA:
                         Log.i(TAG, "ClientAsyncReceive; otrzymano specjalną wiadomość: GET_CAMERA_DATA");
                         sendMessageToHandler(ClientHandlerMsg.SPECIAL_MSG, cameraData.toString());
+                        break;
+                    case ClientServerMessages.CONNECTION_FINISHED:
+                        clear();
                 }
 
 
