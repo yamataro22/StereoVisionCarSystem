@@ -33,10 +33,11 @@ import org.opencv.core.Mat;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ServerStereoDistanceMeter extends CommunicationBasicActivity implements View.OnTouchListener, ObservedCameraFramesCapturer.CameraFrameConnector {
+public class ServerStereoDistanceMeter extends CommunicationBasicActivity implements View.OnTouchListener, ObservedCameraFramesCapturer.CameraFrameConnector
+                                                                                    , StereoPhotoParser.DistanceListener {
 
     Button connectButton, skipFramesButton;
-    TextView statusTextView;
+    TextView statusTextView, distanceTextView;
     ImageView im,  disparityImageView;
     ObservedSingleCameraFramesCapturer capturer;
     protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
@@ -101,11 +102,13 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
         Log.d("serverLogs", "DualScreen, init");
         mOpenCvCameraView = findViewById(R.id.self_server_camera_view);
         disparityImageView = findViewById(R.id.disparity_camera_view);
+        distanceTextView = findViewById(R.id.distance_text_view);
 
         matBuffer = new Mat();
-        loadSavedCalibration();
 
-        stereoPhotoParser = new StereoPhotoParser();
+
+        stereoPhotoParser = new StereoPhotoParser(this);
+        loadSavedCalibration();
     }
 
     private void loadSavedCalibration()
@@ -283,23 +286,7 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
         disableView();
     }
 
-    @Override
-    public boolean onTouch(View view, MotionEvent motionEvent) {
-        if(motionEvent.getAction() == MotionEvent.ACTION_DOWN)
-        {
-//            if(calibrator.isCalibrated)
-//            {
-//
-//                Mat mat = calibrator.showDisparity();
-//                Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
-//                Utils.matToBitmap(mat, btm);
-//                disparityImageView.setImageBitmap(btm);
-//            }
-//            Log.d("actionEvents", "wysyłam wiadomośc do klienta");
-//            capturer.getSingleFrameToBeProcessed();
-        }
-        return true;
-    }
+
 
     @Override
     public void processServerFrame(Mat frame) {
@@ -315,6 +302,17 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
         setImage(disparityImageView,btm);
 
         //calibrator.processFrames(frame,matBuffer);
+    }
+
+    @Override
+    public void onDistanceCalculated(final double distanceInPixels,final double distanceInLength) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                distanceTextView.setText("pix: "+ distanceInPixels + '\n' + "; length: " + distanceInLength);
+            }
+        });
+
     }
 
     private void applyFilters(Mat frame) {
@@ -341,4 +339,8 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
     }
 
 
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        return false;
+    }
 }

@@ -67,6 +67,16 @@
                 android:layout_margin="10dp"
                 android:layout_weight="1" />
 
+            <TextView
+                android:id="@+id/distance_text_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#00070916"
+                android:focusableInTouchMode="false"
+                android:text="no dist"
+                android:textAlignment="center"
+                android:textAllCaps="false" />
+
             <ImageView
                 android:id="@+id/disparity_camera_view"
                 android:layout_width="match_parent"
