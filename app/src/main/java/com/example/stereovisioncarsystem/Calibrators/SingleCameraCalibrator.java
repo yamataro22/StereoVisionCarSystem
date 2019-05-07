@@ -1,8 +1,9 @@
-package com.example.stereovisioncarsystem;
+package com.example.stereovisioncarsystem.Calibrators;
 
 import android.graphics.Bitmap;
 import android.util.Log;
 
+import com.example.stereovisioncarsystem.Calibrators.Calibrator;
 import com.example.stereovisioncarsystem.Filtr.Filtr;
 import com.example.stereovisioncarsystem.Filtr.GrayFiltr;
 
@@ -19,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-class SingleCameraCalibrator extends Calibrator{
+public class SingleCameraCalibrator extends Calibrator {
     List<Mat> colorFrames;
     List<Mat> grayFrames;
     List<Mat> undistortedFrames;
@@ -29,7 +30,7 @@ class SingleCameraCalibrator extends Calibrator{
 
     private final Size patternSize = new Size(4, 11);
     private final int numSquares = (int)(patternSize.width * patternSize.height);
-    private double squareSize = 0.0181;
+    private double squareSize = 0.0175;
     private int flags;
 
     List<Integer> invalidImagesIndexes;
@@ -82,6 +83,7 @@ class SingleCameraCalibrator extends Calibrator{
         }
         corners.create(numSquares, 1, CvType.CV_32FC3);
         corners.put(0, 0, positions);
+        Log.d("Calibrator",corners.dump());
     }
 
 

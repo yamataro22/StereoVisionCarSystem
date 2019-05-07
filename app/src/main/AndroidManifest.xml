@@ -34,7 +34,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".ClientStereoDistanceMeter"></activity>
+        <activity android:name=".StereoMartixesVerificationActivity"></activity>
+        <activity android:name=".ClientStereoDistanceMeter" />
         <activity android:name=".ServerStereoDistanceMeter" />
         <activity android:name=".ServerDualCameraCalibrationActivity" />
         <activity android:name=".ExternalCalibrator.CameraCalibrationActivity2" />
@@ -50,7 +51,6 @@
         <activity android:name=".FilterCalibration.FilterSettingsActivity" />
         <activity android:name=".FilterCalibration.ThreshCalibrationActivity" />
         <activity android:name=".FilterCalibration.GaussCalibrationActivity" />
-
 
         <uses-library
             android:name="org.apache.http.legacy"

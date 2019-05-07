@@ -17,18 +17,30 @@ import org.opencv.core.Mat;
 
 public class ThreshCalibrationActivity extends FilterCalibrationActivity {
 
-    int threshValue;
+    private int threshValue;
+
     public static final String THRESH_1 = "m1";
     public static final String THRESH_2 = "m2";
+    public static final String THRESH_3 = "m3";
+
     Filtr gray = new GrayFiltr();
-    BinaryThreshFiltr threshBinary = new BinaryThreshFiltr();
+    BinaryThreshFiltr threshBinary;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        boolean isInverted;
+
         Intent intent = getIntent();
         threshValue = intent.getIntExtra(THRESH_1, 120);
+        isInverted = intent.getBooleanExtra(THRESH_3,false);
+
+
+        threshBinary = new BinaryThreshFiltr(threshValue,isInverted);
+        if(isInverted) threshBinary.makeInverted();
+
         final SeekBar sb = findViewById(R.id.seekBar);
         sb.setProgress(threshValue);
 
@@ -52,7 +64,6 @@ public class ThreshCalibrationActivity extends FilterCalibrationActivity {
                 threshValue = sb.getProgress();
                 TextView textView = findViewById(R.id.seekBarValue);
                 textView.setText(threshValue+"");
-                Log.i("wiadomosc", "xD");
             }
         });
     }

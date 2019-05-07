@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Spinner;
 
@@ -16,9 +17,11 @@ public class FilterSettingsActivity extends Activity {
     EditText threshEdittext;
     Spinner gaussSpinner;
     Button saveButton;
+    CheckBox isInvertedCheckBox;
 
     private int threshValue = 120;
     private int gaussValue = 3;
+    private boolean isThreshInverted = false;
 
     private final String TAG = "dataIO";
     @Override
@@ -39,10 +42,14 @@ public class FilterSettingsActivity extends Activity {
             threshEdittext.setText(threshValue+"");
             gaussValue = Integer.parseInt(dataManager.read(SavedParametersTags.Gauss));
             gaussSpinner.setSelection(getSpinnerIndex(gaussSpinner,gaussValue+""));
+            isThreshInverted = Boolean.parseBoolean(dataManager.read(SavedParametersTags.IsThreshInverted));
+            isInvertedCheckBox.setChecked(isThreshInverted);
+
         } catch (InternalMemoryDataManager.SavingException e) {
             e.printStackTrace();
             threshEdittext.setText(threshValue+"");
             gaussSpinner.setSelection(getSpinnerIndex(gaussSpinner,gaussValue+""));
+            isInvertedCheckBox.setChecked(false);
         }
 
     }
@@ -59,13 +66,13 @@ public class FilterSettingsActivity extends Activity {
     private void init() {
         threshEdittext = findViewById(R.id.threshEditText);
         threshEdittext.setText(threshValue+"");
-
         gaussSpinner = findViewById(R.id.gaussSpinner);
-
         saveButton = findViewById(R.id.save_settings_button);
+        isInvertedCheckBox = findViewById(R.id.is_inverted_checkbox);
     }
 
     private void exqListeners() {
+
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -73,6 +80,7 @@ public class FilterSettingsActivity extends Activity {
                 try {
                     dataManager.save(SavedParametersTags.Thresh, threshEdittext.getText().toString());
                     dataManager.save(SavedParametersTags.Gauss, gaussSpinner.getSelectedItem().toString());
+                    dataManager.save(SavedParametersTags.IsThreshInverted, isInvertedCheckBox.isChecked()+"");
                 } catch (InternalMemoryDataManager.SavingException e) {
                     e.printStackTrace();
                 }
@@ -83,8 +91,12 @@ public class FilterSettingsActivity extends Activity {
     public void onClickCalibrateThresh(View v)
     {
         threshValue = Integer.parseInt(threshEdittext.getText().toString());
+        isThreshInverted = isInvertedCheckBox.isChecked();
+
         Intent intent = new Intent(this, ThreshCalibrationActivity.class);
         intent.putExtra(ThreshCalibrationActivity.THRESH_1, threshValue);
+        intent.putExtra(ThreshCalibrationActivity.THRESH_3,isThreshInverted);
+
         int requestCode = 1;
         startActivityForResult(intent, requestCode);
     }

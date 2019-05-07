@@ -39,6 +39,11 @@
         android:orderInCategory="20"
         android:title="Filters calibration"
         ></item>
+    <item
+        android:id="@+id/stereo_parameters_verification"
+        android:orderInCategory="20"
+        android:title="Stereo params verify"
+        ></item>
 
 
 

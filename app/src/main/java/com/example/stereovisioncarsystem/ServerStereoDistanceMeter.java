@@ -47,8 +47,11 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
     Mat matBuffer;
     public final static String TAG = "serverClientCom";
 
-    int threshVal = 120;
-    int gaussVal = 3;
+    private int threshVal = 120;
+    private int gaussVal = 3;
+    private boolean isThreshInverted;
+
+
     StereoPhotoParser stereoPhotoParser;
 
 
@@ -68,11 +71,14 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
         exqListeners();
     }
 
+
+
     private void readParametersFromMemory() {
         InternalMemoryDataManager dataManager = new InternalMemoryDataManager(getApplicationContext());
         try {
             threshVal = Integer.parseInt(dataManager.read(SavedParametersTags.Thresh));
             gaussVal = Integer.parseInt(dataManager.read(SavedParametersTags.Gauss));
+            isThreshInverted = Boolean.parseBoolean(dataManager.read(SavedParametersTags.IsThreshInverted));
         } catch (InternalMemoryDataManager.SavingException e) {
             e.printStackTrace();
             Toast.makeText(this, "Nie udało się odczytać z pamięci", Toast.LENGTH_SHORT).show();
@@ -316,12 +322,12 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
     }
 
     private void applyFilters(Mat frame) {
+
         List<Filtr> filters = new ArrayList<>();
         if(frame.channels() > 1) filters.add(new GrayFiltr());
         filters.add(new GBlurFiltr(gaussVal));
-        filters.add(new BinaryThreshFiltr(threshVal));
+        filters.add(new BinaryThreshFiltr(threshVal,isThreshInverted));
         filters.add(new CannyFiltr());
-
 
         for(Filtr f : filters)
         {

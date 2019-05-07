@@ -20,8 +20,12 @@ import java.util.List;
 
 
 public class CameraScreenTestingActivity extends CameraBasicActivity {
-    int threshVal = 120;
-    int gaussVal = 27;
+
+    private int threshVal = 120;
+    private int gaussVal = 27;
+    private boolean isInverted = false;
+
+    private List<Filtr> filtrs;
 
 
     @Override
@@ -32,16 +36,7 @@ public class CameraScreenTestingActivity extends CameraBasicActivity {
 
         initCamera();
         readSavedValues();
-    }
-
-    private void readSavedValues() {
-        InternalMemoryDataManager dataManager = new InternalMemoryDataManager(getApplicationContext());
-        try {
-            threshVal = Integer.parseInt(dataManager.read(SavedParametersTags.Thresh));
-            gaussVal = Integer.parseInt(dataManager.read(SavedParametersTags.Gauss));
-        } catch (InternalMemoryDataManager.SavingException e) {
-            e.printStackTrace();
-        }
+        initFilters();
     }
 
     private void initCamera() {
@@ -52,6 +47,27 @@ public class CameraScreenTestingActivity extends CameraBasicActivity {
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCameraIndex(0);
         mOpenCvCameraView.setCvCameraViewListener(this);
+
+    }
+
+    private void readSavedValues() {
+        InternalMemoryDataManager dataManager = new InternalMemoryDataManager(getApplicationContext());
+        try {
+            threshVal = Integer.parseInt(dataManager.read(SavedParametersTags.Thresh));
+            gaussVal = Integer.parseInt(dataManager.read(SavedParametersTags.Gauss));
+            isInverted = Boolean.parseBoolean(dataManager.read(SavedParametersTags.IsThreshInverted));
+        } catch (InternalMemoryDataManager.SavingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void initFilters()
+    {
+        filtrs = new ArrayList<>();
+        filtrs.add(new GrayFiltr());
+        filtrs.add(new GBlurFiltr(gaussVal));
+        filtrs.add(new BinaryThreshFiltr(threshVal, isInverted));
+        filtrs.add(new CannyFiltr());
 
     }
 
@@ -68,12 +84,6 @@ public class CameraScreenTestingActivity extends CameraBasicActivity {
 
     @Override
     public Mat onCameraFrame(Mat inputFrame) {
-        Log.d("resolution", inputFrame.size().toString());
-        List<Filtr> filtrs = new ArrayList<>();
-        filtrs.add(new GrayFiltr());
-        filtrs.add(new GBlurFiltr(27));
-        filtrs.add(new BinaryThreshFiltr(120));
-        filtrs.add(new CannyFiltr());
 
         for(Filtr filtr : filtrs)
         {
@@ -89,14 +99,12 @@ public class CameraScreenTestingActivity extends CameraBasicActivity {
     @Override
     public void onPause()
     {
-        Log.i("filtry", "jestem w OnPause");
         super.onPause();
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
     }
     public void onDestroy() {
         super.onDestroy();
-        Log.i("filtry", "jestem w onDestroy");
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
     }

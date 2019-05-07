@@ -92,6 +92,37 @@ class CameraParametersMessager {
         return QMartixMat;
     }
 
+    public Mat readStereoCalibMatrix(SavedParametersTags tag) throws InternalMemoryDataManager.SavingException {
+
+        Mat calibMat = new Mat(3,3, CvType.CV_64FC1);
+
+        String calibString = dataManager.read(tag);
+        Pattern pattern = Pattern.compile("-?[0-9]{1,5}(\\.[0-9]*)?");
+        Matcher m = pattern.matcher(calibString);
+        List<Double> dataList = new ArrayList<>();
+
+        while(m.find())
+        {
+            dataList.add(Double.parseDouble(m.group(0)));
+        }
+
+        int k = 0;
+        Log.d("matchingRegex", dataList.toString());
+
+
+        for(int i = 0; i < 3; i++)
+        {
+            for(int j = 0; j < 3; j++)
+            {
+                calibMat.put(i,j,dataList.get(k++));
+            }
+        }
+        return calibMat;
+
+    }
+
+
+
 
 
     private String createFilename() {

@@ -80,6 +80,9 @@ public class MainActivity extends AppCompatActivity {
         else if(id == R.id.filters_parameters_calibration) {
             createAndStartIntent(FilterSettingsActivity.class);
         }
+        else if(id == R.id.stereo_parameters_verification) {
+            createAndStartIntent(StereoMartixesVerificationActivity.class);
+        }
         return super.onOptionsItemSelected(item);
     }
 

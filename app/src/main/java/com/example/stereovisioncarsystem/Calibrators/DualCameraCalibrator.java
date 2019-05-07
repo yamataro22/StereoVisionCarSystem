@@ -1,19 +1,16 @@
-package com.example.stereovisioncarsystem;
+package com.example.stereovisioncarsystem.Calibrators;
 
 import android.util.Log;
 
-import com.example.stereovisioncarsystem.FilterCalibration.InternalMemoryDataManager;
+import com.example.stereovisioncarsystem.Calibrators.Calibrator;
+import com.example.stereovisioncarsystem.CameraData;
 import com.example.stereovisioncarsystem.Filtr.Filtr;
 import com.example.stereovisioncarsystem.Filtr.GrayFiltr;
 
 import org.opencv.calib3d.Calib3d;
-import org.opencv.calib3d.StereoBM;
-import org.opencv.calib3d.StereoMatcher;
-import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.Point3;
 import org.opencv.core.Size;
 import org.opencv.core.TermCriteria;
 import org.opencv.imgproc.Imgproc;
@@ -22,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.opencv.core.CvType.CV_64F;
-import static org.opencv.core.CvType.CV_8U;
 
 public class DualCameraCalibrator extends Calibrator
 {
@@ -33,7 +29,7 @@ public class DualCameraCalibrator extends Calibrator
 
     private final Size patternSize = new Size(4, 11);
     private final int numSquares = (int)(patternSize.width * patternSize.height);
-    private double squareSize = 0.0181;
+    private double squareSize = 0.0175;
 
     private int flags;
 
