@@ -92,9 +92,9 @@ class CameraParametersMessager {
         return QMartixMat;
     }
 
-    public Mat readStereoCalibMatrix(SavedParametersTags tag) throws InternalMemoryDataManager.SavingException {
+    public Mat readStereoMatrixBySize(SavedParametersTags tag, int rows, int cols) throws InternalMemoryDataManager.SavingException {
 
-        Mat calibMat = new Mat(3,3, CvType.CV_64FC1);
+        Mat calibMat = new Mat(rows,cols, CvType.CV_64FC1);
 
         String calibString = dataManager.read(tag);
         Pattern pattern = Pattern.compile("-?[0-9]{1,5}(\\.[0-9]*)?");
@@ -110,9 +110,9 @@ class CameraParametersMessager {
         Log.d("matchingRegex", dataList.toString());
 
 
-        for(int i = 0; i < 3; i++)
+        for(int i = 0; i < rows; i++)
         {
-            for(int j = 0; j < 3; j++)
+            for(int j = 0; j < cols; j++)
             {
                 calibMat.put(i,j,dataList.get(k++));
             }
@@ -123,6 +123,54 @@ class CameraParametersMessager {
 
 
 
+
+
+    public Mat readStereoRMatrix(SavedParametersTags tag) throws InternalMemoryDataManager.SavingException {
+        return readStereoMatrixBySize(tag,3,3);
+    }
+
+    public Mat readStereoPMatrix(SavedParametersTags tag) throws InternalMemoryDataManager.SavingException {
+        return readStereoMatrixBySize(tag,3,4);
+    }
+
+    public Mat readStereoTMatrix(SavedParametersTags tag) throws InternalMemoryDataManager.SavingException {
+        return readStereoMatrixBySize(tag,3,1);
+    }
+
+    public Mat readFMatrix(SavedParametersTags tag) throws InternalMemoryDataManager.SavingException
+    {
+        return readStereoMatrixBySizeAndType(tag,3,3,6);
+    }
+
+    public Mat readStereoMatrixBySizeAndType(SavedParametersTags tag, int rows, int cols, int type) throws InternalMemoryDataManager.SavingException {
+
+        Mat calibMat = new Mat(rows,cols, type);
+
+        String calibString = dataManager.read(tag);
+        Log.d("odczytF",calibString);
+        Pattern pattern = Pattern.compile("-?[0-9]{1,5}(\\.[0-9]*)?");
+        Matcher m = pattern.matcher(calibString);
+        List<Double> dataList = new ArrayList<>();
+
+        while(m.find())
+        {
+            dataList.add(Double.parseDouble(m.group(0)));
+        }
+
+        int k = 0;
+        Log.d("matchingRegex", dataList.toString());
+
+
+        for(int i = 0; i < rows; i++)
+        {
+            for(int j = 0; j < cols; j++)
+            {
+                calibMat.put(i,j,dataList.get(k++));
+            }
+        }
+        return calibMat;
+
+    }
 
 
     private String createFilename() {

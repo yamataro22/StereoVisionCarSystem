@@ -2,10 +2,10 @@ package com.example.stereovisioncarsystem.Calibrators;
 
 import android.util.Log;
 
-import com.example.stereovisioncarsystem.Calibrators.Calibrator;
 import com.example.stereovisioncarsystem.CameraData;
 import com.example.stereovisioncarsystem.Filtr.Filtr;
 import com.example.stereovisioncarsystem.Filtr.GrayFiltr;
+import com.example.stereovisioncarsystem.Tools;
 
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.CvType;
@@ -54,10 +54,30 @@ public class DualCameraCalibrator extends Calibrator
     private CameraData clientCameraData;
 
 
-    private Mat R = new Mat();
-    private Mat T = new Mat();
-    private Mat E = new Mat();
-    private Mat F = new Mat();
+
+
+    private Mat R;
+    private Mat T;
+    private Mat E;
+    private Mat F;
+
+
+
+    public Mat getR1() {
+        return R1;
+    }
+
+    public Mat getR2() {
+        return R2;
+    }
+
+    public Mat getP1() {
+        return P1;
+    }
+
+    public Mat getP2() {
+        return P2;
+    }
 
     Mat R1 = new Mat(3, 3, CV_64F);
     Mat R2 = new Mat(3, 3, CV_64F);
@@ -183,9 +203,9 @@ public class DualCameraCalibrator extends Calibrator
                         tempSavedImage.size(), R, T, E, F, Calib3d.CALIB_FIX_INTRINSIC|Calib3d.CALIB_FIX_PRINCIPAL_POINT);
 
         Calib3d.stereoRectify(serverCameraData.getCameraMatrixMat(),serverCameraData.getDistCoeffsMat(),clientCameraData.getCameraMatrixMat(),clientCameraData.getDistCoeffsMat(),
-                                tempSavedImage.size(),R,T,R1,R2,P1,P2,qMatrix, Calib3d.CALIB_ZERO_DISPARITY);
+                                tempSavedImage.size(),R,T,R1,R2, P1, P2,qMatrix, Calib3d.CALIB_ZERO_DISPARITY);
 
-        Imgproc.initUndistortRectifyMap(serverCameraData.getCameraMatrixMat(),serverCameraData.getDistCoeffsMat(),R,P1,tempSavedImage.size(),CvType.CV_32FC1, map1s, map2s);
+        Imgproc.initUndistortRectifyMap(serverCameraData.getCameraMatrixMat(),serverCameraData.getDistCoeffsMat(),R1, P1,tempSavedImage.size(),CvType.CV_32FC1, map1s, map2s);
         isCalibrated = true;
 
         try {
@@ -202,11 +222,18 @@ public class DualCameraCalibrator extends Calibrator
         Log.d(TAG, "T: \n" + T.dump());
         Log.d(TAG, "E: \n" + E.dump());
         Log.d(TAG, "F: \n" + F.dump());
+        Log.d(TAG, "F type:" + F.type());
+        Log.d(TAG, "R1: \n" + R1.dump());
+        Log.d(TAG, "R2: \n" + R2.dump());
+        Log.d(TAG, "P1: \n" + P1.dump());
+        Log.d(TAG, "P2: \n" + P2.dump());
         Log.d(TAG, "error " + error);
         Log.d(TAG, "Q \n" + qMatrix.dump());
-//        Log.d(TAG, "map1s: \n" + map1s.dump());
-//        Log.d(TAG, "map2s: \n" + map2s.dump());
-        resultListener.onCameraResulat(qMatrix,R1,R2,P1,P2);
+
+        Log.d(TAG, "map1s type:" + map1s.type());
+        Log.d(TAG, "map1s size:" + map1s.size());
+
+        resultListener.onCameraResulat(qMatrix,R1,R2, P1, P2);
     }
 
     private void fillObjectPoints() {
@@ -342,8 +369,40 @@ public class DualCameraCalibrator extends Calibrator
         return qMatrix;
     }
 
+
+
+
+
+
     public interface OnStereoCalibrationresult {
         public void onCameraResulat(Mat qMatrix, Mat R1, Mat R2, Mat P1, Mat P2);
         void onCalibrationStart();
+    }
+
+    public Mat getR() {
+        return R;
+    }
+
+    public Mat getT() {
+        return T;
+    }
+
+    public Mat getE() {
+        return E;
+    }
+
+    public Mat normalizeAndGetF() {
+
+        for(int i = 0; i < F.rows(); i++)
+        {
+            for(int j = 0; j < F.cols(); j++)
+            {
+                F.put(i,j, Tools.round(F.get(i,j)[0],5));
+            }
+        }
+
+
+
+        return F;
     }
 }

@@ -4,6 +4,9 @@ import android.content.Context;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 public class Tools {
 
     public static void makeToast(Context context, String message)
@@ -25,4 +28,11 @@ public class Tools {
         return 0;
     }
 
+    public static double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        BigDecimal bid = new BigDecimal(value);
+        bid = bid.setScale(places, RoundingMode.HALF_UP);
+        return bid.doubleValue();
+    }
 }

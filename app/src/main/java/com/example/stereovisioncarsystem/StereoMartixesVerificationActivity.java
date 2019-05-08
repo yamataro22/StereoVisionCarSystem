@@ -2,39 +2,34 @@ package com.example.stereovisioncarsystem;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.Toast;
 
 import com.example.stereovisioncarsystem.FilterCalibration.InternalMemoryDataManager;
 
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.Size;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.regex.Pattern;
 
 public class StereoMartixesVerificationActivity extends AppCompatActivity {
     private final int ROWS = 4;
     private final int COLS = 4;
-    EditText e00,e01,e02,e03,e10,e11,e12,e13,e20,e21,e22,e23,e30,e31,e32,e33;
+    private final int ROUND = 5;
+
     EditText[][] editTextMatrix;
 
 
     Button loadButton, saveButton, editButton;
     RadioButton r1Button, r2Button, t1Button, t2Button, qButton;
+    RadioButton rButton, tButton, eButton, fButton;
     RadioGroup radioGroup;
-    enum Edits{t1,t2,r1,r2,q};
+
+    enum Edits{t1,t2,r1,r2,q,r,t,e,f}
+
     Edits currentlyEdited;
 
-
-    Mat R1, R2, T1, T2, Q;
+    Mat R1, R2, T1, T2, Q, Rmat, T, E, F;
     boolean areEditable = false;
 
     @Override
@@ -60,6 +55,10 @@ public class StereoMartixesVerificationActivity extends AppCompatActivity {
         t1Button = findViewById(R.id.t1_button);
         t2Button = findViewById(R.id.t2_button);
         qButton = findViewById(R.id.q_button);
+        rButton = findViewById(R.id.r_button);
+        tButton = findViewById(R.id.t_button);
+        eButton = findViewById(R.id.e_button);
+        fButton = findViewById(R.id.f_button);
         radioGroup = findViewById(R.id.radioGroup);
     }
 
@@ -103,10 +102,10 @@ public class StereoMartixesVerificationActivity extends AppCompatActivity {
                 {
                     areEditable = false;
                     setParametersEditable(false);
-                    if(areAnyChanges(currentlyEdited))
+                    if(isPosMatChanged(getCurrentlyEditedMat()))
                     {
                         Tools.makeToast(getApplicationContext(),"there are changes..");
-                        updateMatrix(currentlyEdited);
+                        updateMat(getCurrentlyEditedMat());
                     }
                     else
                     {
@@ -143,6 +142,22 @@ public class StereoMartixesVerificationActivity extends AppCompatActivity {
                         currentlyEdited = Edits.q;
                         loadMartixIntoTable(Q);
                         break;
+                    case R.id.r_button:
+                        currentlyEdited = Edits.r;
+                        loadMartixIntoTable(Rmat);
+                        break;
+                    case R.id.t_button:
+                        currentlyEdited = Edits.t;
+                        loadMartixIntoTable(T);
+                        break;
+                    case R.id.e_button:
+                        currentlyEdited = Edits.e;
+                        loadMartixIntoTable(E);
+                        break;
+                    case R.id.f_button:
+                        currentlyEdited = Edits.f;
+                        loadMartixIntoTable(F);
+                        break;
                 }
             }
         });
@@ -158,11 +173,15 @@ public class StereoMartixesVerificationActivity extends AppCompatActivity {
                     dataManager.save(SavedParametersTags.T1,T1.dump());
                     dataManager.save(SavedParametersTags.T2,T2.dump());
 
+                    dataManager.save(SavedParametersTags.R,Rmat.dump());
+                    dataManager.save(SavedParametersTags.T,T.dump());
+                    dataManager.save(SavedParametersTags.E,E.dump());
+                    //dataManager.save(SavedParametersTags.F,F.dump());
+
                     Tools.makeToast(getApplicationContext(), "zapisano:)");
                 } catch (InternalMemoryDataManager.SavingException e) {
                     e.printStackTrace();
                 }
-
             }
         });
     }
@@ -170,10 +189,14 @@ public class StereoMartixesVerificationActivity extends AppCompatActivity {
     private void loadMatrixes() {
         CameraParametersMessager cameraMessager = new CameraParametersMessager(getApplicationContext());
         try {
-            R1 = cameraMessager.readStereoCalibMatrix(SavedParametersTags.R1);
-            R2 = cameraMessager.readStereoCalibMatrix(SavedParametersTags.R2);
-            T1 = cameraMessager.readStereoCalibMatrix(SavedParametersTags.T1);
-            T2 = cameraMessager.readStereoCalibMatrix(SavedParametersTags.T2);
+            R1 = cameraMessager.readStereoRMatrix(SavedParametersTags.R1);
+            R2 = cameraMessager.readStereoRMatrix(SavedParametersTags.R2);
+            T1 = cameraMessager.readStereoPMatrix(SavedParametersTags.T1);
+            T2 = cameraMessager.readStereoPMatrix(SavedParametersTags.T2);
+            Rmat = cameraMessager.readStereoRMatrix(SavedParametersTags.R);
+            T = cameraMessager.readStereoTMatrix(SavedParametersTags.T);
+            E = cameraMessager.readStereoRMatrix(SavedParametersTags.E);
+            F = cameraMessager.readFMatrix(SavedParametersTags.F);
 
             cameraMessager.readQMartix();
             Q = cameraMessager.getQMat();
@@ -186,27 +209,32 @@ public class StereoMartixesVerificationActivity extends AppCompatActivity {
         }
     }
 
-    private boolean areAnyChanges(Edits currentlyEdited) {
-        boolean isChanged = false;
-        switch (currentlyEdited)
+
+    private Mat getCurrentlyEditedMat()
+    {
+        switch(currentlyEdited)
         {
             case q:
-                isChanged = isPosMatChanged(Q);
-                break;
+                return Q;
             case r1:
-                isChanged = isPosMatChanged(R1);
-                break;
+                return R1;
             case r2:
-                isChanged = isPosMatChanged(R2);
-                break;
+                return R2;
             case t1:
-                isChanged = isPosMatChanged(T1);
-                break;
+                return T1;
             case t2:
-                isChanged = isPosMatChanged(T2);
-                break;
+                return T2;
+            case r:
+                return Rmat;
+            case t:
+                return T;
+            case e:
+                return E;
+            case f:
+                return F;
+            default:
+                return null;
         }
-        return isChanged;
     }
 
     private boolean isPosMatChanged(Mat mat)
@@ -214,7 +242,7 @@ public class StereoMartixesVerificationActivity extends AppCompatActivity {
 
         for (int rows = 0; rows < mat.rows(); rows++) {
             for (int cols = 0; cols < mat.cols(); cols++) {
-                double m = round(mat.get(0,0)[0],2);
+                double m = Tools.round(mat.get(0,0)[0], ROUND);
                 if (checkField(m, editTextMatrix[rows][cols])) return true;
             }
         }
@@ -226,35 +254,12 @@ public class StereoMartixesVerificationActivity extends AppCompatActivity {
         return false;
     }
 
-    private void updateMatrix(Edits currentlyEdited) {
-        switch (currentlyEdited)
-        {
-            case q:
-                updateMat(Q);
-                break;
-            case r1:
-                updateMat(R1);
-                break;
-            case r2:
-                updateMat(R2);
-                break;
-            case t1:
-                updateMat(T1);
-                break;
-            case t2:
-                updateMat(T2);
-                break;
-        }
-
-    }
-
     private void updateMat(Mat mat)
     {
         for(int rows = 0; rows < mat.rows(); rows++)
         {
             for(int cols = 0; cols < mat.cols(); cols++)
             {
-                Log.d("updateMat", "rows:"+rows +" cols:"+cols);
                 mat.put(rows,cols,Double.parseDouble(editTextMatrix[rows][cols].getText().toString()));
             }
         }
@@ -272,49 +277,30 @@ public class StereoMartixesVerificationActivity extends AppCompatActivity {
 
     private void loadMartixIntoTable(Mat mat) {
 
-        if(mat.rows()==4)
-            setTableSizeOf4();
-        else
-            setTableSizeOf3();
-
+        adjustTableSize(mat.rows(), mat.cols());
         updateTableValues(mat);
+
+    }
+
+    private void adjustTableSize(int p_rows, int p_cols) {
+
+        for (int rows = 0; rows < ROWS; rows++) {
+            for (int cols = 0; cols < COLS; cols++) {
+                if(rows < p_rows && cols < p_cols)
+                    editTextMatrix[rows][cols].setVisibility(View.VISIBLE);
+                else
+                    editTextMatrix[rows][cols].setVisibility(View.GONE);
+            }
+        }
     }
 
     private void updateTableValues(Mat mat) {
         for (int rows = 0; rows < mat.rows(); rows++) {
             for (int cols = 0; cols < mat.cols(); cols++) {
-                editTextMatrix[rows][cols].setText(round(mat.get(rows, cols)[0], 2) + "");
+                editTextMatrix[rows][cols].setText(Tools.round(mat.get(rows, cols)[0], ROUND) + "");
             }
         }
     }
-
-    private void setTableSizeOf3() {
-        setBoundaryMatrixElemetsVisibility(View.GONE);
-    }
-
-    private void setTableSizeOf4()
-    {
-        setBoundaryMatrixElemetsVisibility(View.VISIBLE);
-    }
-
-    private void setBoundaryMatrixElemetsVisibility(int gone) {
-        for (int rows = 0; rows < ROWS; rows++) {
-            for (int cols = 0; cols < COLS; cols++) {
-                if (rows == 3 || cols == 3)
-                    editTextMatrix[rows][cols].setVisibility(gone);
-            }
-        }
-    }
-
-    public static double round(double value, int places) {
-        if (places < 0) throw new IllegalArgumentException();
-
-        BigDecimal bid = new BigDecimal(value);
-        bid = bid.setScale(places, RoundingMode.HALF_UP);
-        return bid.doubleValue();
-    }
-
-
 
 
 }

@@ -123,6 +123,20 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
                     Mat QMartix = calibrator.getQMartix();
                     Log.d(TAG, "zapisuję: " + QMartix.dump());
                     dataManager.save(SavedParametersTags.QMatrix,QMartix.dump());
+                    dataManager.save(SavedParametersTags.R1,calibrator.getR1().dump());
+                    dataManager.save(SavedParametersTags.R2,calibrator.getR2().dump());
+                    dataManager.save(SavedParametersTags.T1,calibrator.getP1().dump());
+                    dataManager.save(SavedParametersTags.T2,calibrator.getP2().dump());
+                    dataManager.save(SavedParametersTags.QMatrix,QMartix.dump());
+                    dataManager.save(SavedParametersTags.T,calibrator.getT().dump());
+                    dataManager.save(SavedParametersTags.E,calibrator.getE().dump());
+                    dataManager.save(SavedParametersTags.R,calibrator.getR().dump());
+
+                    dataManager.save(SavedParametersTags.F,calibrator.normalizeAndGetF().dump());
+
+
+
+
                     Tools.makeToast(getApplicationContext(), "zapisano:)");
                 } catch (InternalMemoryDataManager.SavingException e) {
                     e.printStackTrace();
