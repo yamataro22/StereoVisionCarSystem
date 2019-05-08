@@ -21,8 +21,12 @@ import java.math.RoundingMode;
 import java.util.regex.Pattern;
 
 public class StereoMartixesVerificationActivity extends AppCompatActivity {
-
+    private final int ROWS = 4;
+    private final int COLS = 4;
     EditText e00,e01,e02,e03,e10,e11,e12,e13,e20,e21,e22,e23,e30,e31,e32,e33;
+    EditText[][] editTextMatrix;
+
+
     Button loadButton, saveButton, editButton;
     RadioButton r1Button, r2Button, t1Button, t2Button, qButton;
     RadioGroup radioGroup;
@@ -43,22 +47,9 @@ public class StereoMartixesVerificationActivity extends AppCompatActivity {
     }
 
     private void init() {
-        e00 = findViewById(R.id.et_00);
-        e01 = findViewById(R.id.et_01);
-        e02 = findViewById(R.id.et_02);
-        e03 = findViewById(R.id.et_03);
-        e10 = findViewById(R.id.et_10);
-        e11 = findViewById(R.id.et_11);
-        e12 = findViewById(R.id.et_12);
-        e13 = findViewById(R.id.et_13);
-        e20 = findViewById(R.id.et_20);
-        e21 = findViewById(R.id.et_21);
-        e22 = findViewById(R.id.et_22);
-        e23 = findViewById(R.id.et_23);
-        e30 = findViewById(R.id.et_30);
-        e31 = findViewById(R.id.et_31);
-        e32 = findViewById(R.id.et_32);
-        e33 = findViewById(R.id.et_33);
+        editTextMatrix = new EditText[ROWS][COLS];
+        fillEditTextMatrixReferences();
+
 
         loadButton = findViewById(R.id.load_button);
         saveButton = findViewById(R.id.save_button);
@@ -70,6 +61,25 @@ public class StereoMartixesVerificationActivity extends AppCompatActivity {
         t2Button = findViewById(R.id.t2_button);
         qButton = findViewById(R.id.q_button);
         radioGroup = findViewById(R.id.radioGroup);
+    }
+
+    private void fillEditTextMatrixReferences() {
+        editTextMatrix[0][0] = findViewById(R.id.et_00);
+        editTextMatrix[0][1] = findViewById(R.id.et_01);
+        editTextMatrix[0][2] = findViewById(R.id.et_02);
+        editTextMatrix[0][3] = findViewById(R.id.et_03);
+        editTextMatrix[1][0] = findViewById(R.id.et_10);
+        editTextMatrix[1][1] = findViewById(R.id.et_11);
+        editTextMatrix[1][2] = findViewById(R.id.et_12);
+        editTextMatrix[1][3] = findViewById(R.id.et_13);
+        editTextMatrix[2][0] = findViewById(R.id.et_20);
+        editTextMatrix[2][1] = findViewById(R.id.et_21);
+        editTextMatrix[2][2] = findViewById(R.id.et_22);
+        editTextMatrix[2][3] = findViewById(R.id.et_23);
+        editTextMatrix[3][0] = findViewById(R.id.et_30);
+        editTextMatrix[3][1] = findViewById(R.id.et_31);
+        editTextMatrix[3][2] = findViewById(R.id.et_32);
+        editTextMatrix[3][3] = findViewById(R.id.et_33);
     }
 
     private void exqListeners() {
@@ -181,7 +191,7 @@ public class StereoMartixesVerificationActivity extends AppCompatActivity {
         switch (currentlyEdited)
         {
             case q:
-                isChanged = isQMatChanged();
+                isChanged = isPosMatChanged(Q);
                 break;
             case r1:
                 isChanged = isPosMatChanged(R1);
@@ -201,63 +211,13 @@ public class StereoMartixesVerificationActivity extends AppCompatActivity {
 
     private boolean isPosMatChanged(Mat mat)
     {
-        double m = round(mat.get(0,0)[0],2);
-        if (checkField(m, e00)) return true;
-        m = round(mat.get(0,1)[0],2);
-        if (checkField(m, e01)) return true;
-        m = round(mat.get(0,2)[0],2);
-        if (checkField(m, e02)) return true;
-        m = round(mat.get(1,0)[0],2);
-        if (checkField(m, e10)) return true;
-        m = round(mat.get(1,1)[0],2);
-        if (checkField(m, e11)) return true;
-        m = round(mat.get(1,2)[0],2);
-        if (checkField(m, e12)) return true;
-        m = round(mat.get(2,0)[0],2);
-        if (checkField(m, e20)) return true;
-        m = round(mat.get(2,1)[0],2);
-        if (checkField(m, e21)) return true;
-        m = round(mat.get(2,2)[0],2);
-        if (checkField(m, e22)) return true;
 
-        return false;
-    }
-
-    private boolean isQMatChanged() {
-
-        double m = round(Q.get(0,0)[0],2);
-        if (checkField(m, e00)) return true;
-        m = round(Q.get(0,1)[0],2);
-        if (checkField(m, e01)) return true;
-        m = round(Q.get(0,2)[0],2);
-        if (checkField(m, e02)) return true;
-        m = round(Q.get(0,3)[0],2);
-        if (checkField(m, e03)) return true;
-        m = round(Q.get(1,0)[0],2);
-        if (checkField(m, e10)) return true;
-        m = round(Q.get(1,1)[0],2);
-        if (checkField(m, e11)) return true;
-        m = round(Q.get(1,2)[0],2);
-        if (checkField(m, e12)) return true;
-        m = round(Q.get(1,3)[0],2);
-        if (checkField(m, e13)) return true;
-        m = round(Q.get(2,0)[0],2);
-        if (checkField(m, e20)) return true;
-        m = round(Q.get(2,1)[0],2);
-        if (checkField(m, e21)) return true;
-        m = round(Q.get(2,2)[0],2);
-        if (checkField(m, e22)) return true;
-        m = round(Q.get(2,3)[0],2);
-        if (checkField(m, e23)) return true;
-        m = round(Q.get(3,0)[0],2);
-        if (checkField(m, e30)) return true;
-        m = round(Q.get(3,1)[0],2);
-        if (checkField(m, e31)) return true;
-        m = round(Q.get(3,2)[0],2);
-        if (checkField(m, e32)) return true;
-        m = round(Q.get(3,3)[0],2);
-        if (checkField(m, e33)) return true;
-
+        for (int rows = 0; rows < mat.rows(); rows++) {
+            for (int cols = 0; cols < mat.cols(); cols++) {
+                double m = round(mat.get(0,0)[0],2);
+                if (checkField(m, editTextMatrix[rows][cols])) return true;
+            }
+        }
         return false;
     }
 
@@ -270,7 +230,7 @@ public class StereoMartixesVerificationActivity extends AppCompatActivity {
         switch (currentlyEdited)
         {
             case q:
-                updateQMat();
+                updateMat(Q);
                 break;
             case r1:
                 updateMat(R1);
@@ -290,113 +250,60 @@ public class StereoMartixesVerificationActivity extends AppCompatActivity {
 
     private void updateMat(Mat mat)
     {
-        mat.put(0,0,Double.parseDouble(e00.getText().toString()));
-        mat.put(0,1,Double.parseDouble(e01.getText().toString()));
-        mat.put(0,2,Double.parseDouble(e02.getText().toString()));
-        mat.put(1,0,Double.parseDouble(e10.getText().toString()));
-        mat.put(1,1,Double.parseDouble(e11.getText().toString()));
-        mat.put(1,2,Double.parseDouble(e12.getText().toString()));
-        mat.put(2,0,Double.parseDouble(e20.getText().toString()));
-        mat.put(2,1,Double.parseDouble(e21.getText().toString()));
-        mat.put(2,2,Double.parseDouble(e22.getText().toString()));
+        for(int rows = 0; rows < mat.rows(); rows++)
+        {
+            for(int cols = 0; cols < mat.cols(); cols++)
+            {
+                Log.d("updateMat", "rows:"+rows +" cols:"+cols);
+                mat.put(rows,cols,Double.parseDouble(editTextMatrix[rows][cols].getText().toString()));
+            }
+        }
     }
-
-    private void updateQMat()
-    {
-        Q.put(0,0,Double.parseDouble(e00.getText().toString()));
-        Q.put(0,1,Double.parseDouble(e01.getText().toString()));
-        Q.put(0,2,Double.parseDouble(e02.getText().toString()));
-        Q.put(0,3,Double.parseDouble(e03.getText().toString()));
-        Q.put(1,0,Double.parseDouble(e10.getText().toString()));
-        Q.put(1,1,Double.parseDouble(e11.getText().toString()));
-        Q.put(1,2,Double.parseDouble(e12.getText().toString()));
-        Q.put(1,3,Double.parseDouble(e13.getText().toString()));
-        Q.put(2,0,Double.parseDouble(e20.getText().toString()));
-        Q.put(2,1,Double.parseDouble(e21.getText().toString()));
-        Q.put(2,2,Double.parseDouble(e22.getText().toString()));
-        Q.put(2,3,Double.parseDouble(e23.getText().toString()));
-        Q.put(3,0,Double.parseDouble(e30.getText().toString()));
-        Q.put(3,1,Double.parseDouble(e31.getText().toString()));
-        Q.put(3,2,Double.parseDouble(e32.getText().toString()));
-        Q.put(3,3,Double.parseDouble(e33.getText().toString()));
-    }
-
 
     private void setParametersEditable(boolean b) {
-        e00.setEnabled(b);
-        e01.setEnabled(b);
-        e02.setEnabled(b);
-        e03.setEnabled(b);
-        e10.setEnabled(b);
-        e11.setEnabled(b);
-        e12.setEnabled(b);
-        e13.setEnabled(b);
-        e20.setEnabled(b);
-        e21.setEnabled(b);
-        e22.setEnabled(b);
-        e23.setEnabled(b);
-        e30.setEnabled(b);
-        e31.setEnabled(b);
-        e32.setEnabled(b);
-        e33.setEnabled(b);
+        for(int rows = 0; rows < ROWS; rows++)
+        {
+            for(int cols = 0; cols < COLS; cols++)
+            {
+                editTextMatrix[rows][cols].setEnabled(b);
+            }
+        }
     }
 
-
     private void loadMartixIntoTable(Mat mat) {
+
         if(mat.rows()==4)
-        {
             setTableSizeOf4();
-            e00.setText(round(mat.get(0,0)[0],2)+"");
-            e01.setText(round(mat.get(0,1)[0],2)+"");
-            e02.setText(round(mat.get(0,2)[0],2)+"");
-            e03.setText(round(mat.get(0,3)[0],2)+"");
-            e10.setText(round(mat.get(1,0)[0],2)+"");
-            e11.setText(round(mat.get(1,1)[0],2)+"");
-            e12.setText(round(mat.get(1,2)[0],2)+"");
-            e13.setText(round(mat.get(1,3)[0],2)+"");
-            e20.setText(round(mat.get(2,0)[0],2)+"");
-            e21.setText(round(mat.get(2,1)[0],2)+"");
-            e22.setText(round(mat.get(2,2)[0],2)+"");
-            e23.setText(round(mat.get(2,3)[0],2)+"");
-            e30.setText(round(mat.get(3,0)[0],2)+"");
-            e31.setText(round(mat.get(3,1)[0],2)+"");
-            e32.setText(round(mat.get(3,2)[0],2)+"");
-            e33.setText(round(mat.get(3,3)[0],2)+"");
-        }
         else
-        {
             setTableSizeOf3();
-            e00.setText(round(mat.get(0,0)[0],2)+"");
-            e01.setText(round(mat.get(0,1)[0],2)+"");
-            e02.setText(round(mat.get(0,2)[0],2)+"");
-            e10.setText(round(mat.get(1,0)[0],2)+"");
-            e11.setText(round(mat.get(1,1)[0],2)+"");
-            e12.setText(round(mat.get(1,2)[0],2)+"");
-            e20.setText(round(mat.get(2,0)[0],2)+"");
-            e21.setText(round(mat.get(2,1)[0],2)+"");
-            e22.setText(round(mat.get(2,2)[0],2)+"");
+
+        updateTableValues(mat);
+    }
+
+    private void updateTableValues(Mat mat) {
+        for (int rows = 0; rows < mat.rows(); rows++) {
+            for (int cols = 0; cols < mat.cols(); cols++) {
+                editTextMatrix[rows][cols].setText(round(mat.get(rows, cols)[0], 2) + "");
+            }
         }
     }
 
     private void setTableSizeOf3() {
-        e03.setVisibility(View.GONE);
-        e13.setVisibility(View.GONE);
-        e23.setVisibility(View.GONE);
-        e33.setVisibility(View.GONE);
-        e30.setVisibility(View.GONE);
-        e31.setVisibility(View.GONE);
-        e32.setVisibility(View.GONE);
+        setBoundaryMatrixElemetsVisibility(View.GONE);
     }
 
     private void setTableSizeOf4()
     {
-        e03.setVisibility(View.VISIBLE);
-        e13.setVisibility(View.VISIBLE);
-        e23.setVisibility(View.VISIBLE);
-        e33.setVisibility(View.VISIBLE);
-        e30.setVisibility(View.VISIBLE);
-        e31.setVisibility(View.VISIBLE);
-        e32.setVisibility(View.VISIBLE);
+        setBoundaryMatrixElemetsVisibility(View.VISIBLE);
+    }
+
+    private void setBoundaryMatrixElemetsVisibility(int gone) {
+        for (int rows = 0; rows < ROWS; rows++) {
+            for (int cols = 0; cols < COLS; cols++) {
+                if (rows == 3 || cols == 3)
+                    editTextMatrix[rows][cols].setVisibility(gone);
+            }
+        }
     }
 
     public static double round(double value, int places) {
