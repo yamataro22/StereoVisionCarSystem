@@ -148,7 +148,7 @@ public class CalibrationActivity extends AppCompatActivity implements ObservedCa
         CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(), getChosenCameraFacing());
         try
         {
-            messager.save(singleCameraCalibrator.getFormattedCameraMatrix(), singleCameraCalibrator.getFromatedDiffParams());
+            messager.saveServer(singleCameraCalibrator.getFormattedCameraMatrix(), singleCameraCalibrator.getFromatedDiffParams());
         }
         catch (InternalMemoryDataManager.SavingException e)
         {

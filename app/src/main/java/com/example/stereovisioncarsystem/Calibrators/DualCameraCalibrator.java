@@ -198,14 +198,15 @@ public class DualCameraCalibrator extends Calibrator
         }
         fillObjectPoints();
 
-        double error = Calib3d.stereoCalibrate(objectPoints,clientImagePoints,serverImagePoints,
+        double error = Calib3d.stereoCalibrate(objectPoints,serverImagePoints,clientImagePoints,
                         serverCameraData.getCameraMatrixMat(),serverCameraData.getDistCoeffsMat(),clientCameraData.getCameraMatrixMat(),clientCameraData.getDistCoeffsMat(),
-                        tempSavedImage.size(), R, T, E, F, Calib3d.CALIB_FIX_INTRINSIC|Calib3d.CALIB_FIX_PRINCIPAL_POINT);
+                        tempSavedImage.size(), R, T, E, F, Calib3d.CALIB_FIX_INTRINSIC|Calib3d.CALIB_FIX_PRINCIPAL_POINT|Calib3d.CALIB_ZERO_TANGENT_DIST,
+                        new TermCriteria(TermCriteria.COUNT+TermCriteria.EPS, 100, 1e-5));
 
         Calib3d.stereoRectify(serverCameraData.getCameraMatrixMat(),serverCameraData.getDistCoeffsMat(),clientCameraData.getCameraMatrixMat(),clientCameraData.getDistCoeffsMat(),
                                 tempSavedImage.size(),R,T,R1,R2, P1, P2,qMatrix, Calib3d.CALIB_ZERO_DISPARITY);
 
-        Imgproc.initUndistortRectifyMap(serverCameraData.getCameraMatrixMat(),serverCameraData.getDistCoeffsMat(),R1, P1,tempSavedImage.size(),CvType.CV_32FC1, map1s, map2s);
+        //Imgproc.initUndistortRectifyMap(serverCameraData.getCameraMatrixMat(),serverCameraData.getDistCoeffsMat(),R1, P1,tempSavedImage.size(),CvType.CV_32FC1, map1s, map2s);
         isCalibrated = true;
 
         try {
@@ -222,6 +223,10 @@ public class DualCameraCalibrator extends Calibrator
         Log.d(TAG, "T: \n" + T.dump());
         Log.d(TAG, "E: \n" + E.dump());
         Log.d(TAG, "F: \n" + F.dump());
+
+        Log.d(TAG, "F normalized: \n" + Tools.getNonScientificMatValues(F));
+
+
         Log.d(TAG, "F type:" + F.type());
         Log.d(TAG, "R1: \n" + R1.dump());
         Log.d(TAG, "R2: \n" + R2.dump());
@@ -375,7 +380,7 @@ public class DualCameraCalibrator extends Calibrator
 
 
     public interface OnStereoCalibrationresult {
-        public void onCameraResulat(Mat qMatrix, Mat R1, Mat R2, Mat P1, Mat P2);
+        void onCameraResulat(Mat qMatrix, Mat R1, Mat R2, Mat P1, Mat P2);
         void onCalibrationStart();
     }
 
@@ -392,17 +397,19 @@ public class DualCameraCalibrator extends Calibrator
     }
 
     public Mat normalizeAndGetF() {
-
+        Mat fNormalized = new Mat(F.rows(), F.cols(), F.type());
         for(int i = 0; i < F.rows(); i++)
         {
             for(int j = 0; j < F.cols(); j++)
             {
-                F.put(i,j, Tools.round(F.get(i,j)[0],5));
+                fNormalized.put(i,j, Tools.round(F.get(i,j)[0],5));
             }
         }
+        return fNormalized;
+    }
 
-
-
+    public Mat getF()
+    {
         return F;
     }
 }

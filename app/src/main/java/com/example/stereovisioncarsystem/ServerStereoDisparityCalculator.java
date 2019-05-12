@@ -3,8 +3,8 @@ package com.example.stereovisioncarsystem;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.os.Message;
 import android.os.Bundle;
+import android.os.Message;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
@@ -25,8 +25,8 @@ import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
-public class ServerStereoDistanceMeter extends CommunicationBasicActivity implements View.OnTouchListener, ObservedCameraFramesCapturer.CameraFrameConnector
-                                                                                    , StereoPhotoParser.DistanceListener {
+public class ServerStereoDisparityCalculator extends CommunicationBasicActivity implements View.OnTouchListener, ObservedCameraFramesCapturer.CameraFrameConnector
+        , StereoPhotoParser.DistanceListener {
 
     private Button connectButton, skipFramesButton;
     private TextView statusTextView, distanceTextView;
@@ -336,7 +336,7 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
 
 
     private void setImage(final ImageView image,final Bitmap btm){
-            runOnUiThread(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 image.setImageBitmap(btm);

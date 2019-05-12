@@ -2,6 +2,7 @@ package com.example.stereovisioncarsystem;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -176,7 +177,7 @@ public class StereoMartixesVerificationActivity extends AppCompatActivity {
                     dataManager.save(SavedParametersTags.R,Rmat.dump());
                     dataManager.save(SavedParametersTags.T,T.dump());
                     dataManager.save(SavedParametersTags.E,E.dump());
-                    //dataManager.save(SavedParametersTags.F,F.dump());
+                    dataManager.save(SavedParametersTags.F,F);
 
                     Tools.makeToast(getApplicationContext(), "zapisano:)");
                 } catch (InternalMemoryDataManager.SavingException e) {

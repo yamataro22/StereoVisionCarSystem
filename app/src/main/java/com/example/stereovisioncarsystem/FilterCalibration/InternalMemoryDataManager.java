@@ -6,6 +6,9 @@ import android.widget.Toast;
 
 
 import com.example.stereovisioncarsystem.SavedParametersTags;
+import com.example.stereovisioncarsystem.Tools;
+
+import org.opencv.core.Mat;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -63,6 +66,77 @@ public class InternalMemoryDataManager
         }
     }
 
+    public void save(SavedParametersTags tag, Mat data) throws SavingException
+    {
+        FileOutputStream fileOutputStream = null;
+        try {
+            String fileTag = tag.name() + "_" + "value";
+            fileOutputStream = context.openFileOutput(fileTag, Context.MODE_PRIVATE);
+            String mat = Tools.getNonScientificMatValues(data);
+            fileOutputStream.write(mat.getBytes());
+            Toast.makeText(context,"Saved to " + context.getFilesDir(), Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+
+            e.printStackTrace();
+            throwException();
+        } finally {
+            try {
+                if(fileOutputStream == null) throwException();
+                fileOutputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+                throwException();
+            }
+        }
+    }
+
+    public void saveInt(SavedParametersTags tag, int data) throws SavingException
+    {
+        FileOutputStream fileOutputStream = null;
+        try {
+            String fileTag = tag.name() + "_" + "value";
+            fileOutputStream = context.openFileOutput(fileTag, Context.MODE_PRIVATE);
+            fileOutputStream.write((data+"").getBytes());
+            Toast.makeText(context,"Saved to " + context.getFilesDir(), Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+
+            e.printStackTrace();
+            throwException();
+        } finally {
+            try {
+                if(fileOutputStream == null) throwException();
+                fileOutputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+                throwException();
+            }
+        }
+    }
+
+    public void saveDouble(SavedParametersTags tag, double data) throws SavingException
+    {
+        FileOutputStream fileOutputStream = null;
+        try {
+            String fileTag = tag.name() + "_" + "value";
+            fileOutputStream = context.openFileOutput(fileTag, Context.MODE_PRIVATE);
+            fileOutputStream.write((data+"").getBytes());
+            Toast.makeText(context,"Saved to " + context.getFilesDir(), Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+
+            e.printStackTrace();
+            throwException();
+        } finally {
+            try {
+                if(fileOutputStream == null) throwException();
+                fileOutputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+                throwException();
+            }
+        }
+    }
+
+
     public String read(SavedParametersTags tag) throws SavingException {
         FileInputStream fileInputStream = null;
         try {
@@ -79,7 +153,7 @@ public class InternalMemoryDataManager
             return data;
 
         } catch (Exception e) {
-            Log.d(TAG, "Otrzymano exception wewnątrz read");
+            Log.d(TAG, "Otrzymano exception wewnątrz readServerParams");
             throwException();
             e.printStackTrace();
 
@@ -95,6 +169,71 @@ public class InternalMemoryDataManager
         return "";
     }
 
+    public int readInt(SavedParametersTags tag) throws SavingException {
+        FileInputStream fileInputStream = null;
+        try {
+            String fileTag = tag.name() + "_" + "value";
+            fileInputStream = context.openFileInput(fileTag);
+            int read;
+            StringBuffer buffer = new StringBuffer();
+            while((read=fileInputStream.read())!=-1)
+            {
+                buffer.append((char)read);
+            }
+            String data = buffer.toString();
+            Log.d(TAG, "Otrzymano dane: " + data);
+            return Integer.parseInt(data);
+
+        } catch (Exception e) {
+            Log.d(TAG, "Otrzymano exception wewnątrz readServerParams");
+            throwException();
+            e.printStackTrace();
+
+        } finally {
+            try {
+                if(fileInputStream== null) throwException();
+                fileInputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+                throwException();
+            }
+        }
+        return 0;
+    }
+
+    public double readDouble(SavedParametersTags tag) throws SavingException {
+        FileInputStream fileInputStream = null;
+        try {
+            String fileTag = tag.name() + "_" + "value";
+            fileInputStream = context.openFileInput(fileTag);
+            int read;
+            StringBuffer buffer = new StringBuffer();
+            while((read=fileInputStream.read())!=-1)
+            {
+                buffer.append((char)read);
+            }
+            String data = buffer.toString();
+            Log.d(TAG, "Otrzymano dane: " + data);
+            return Double.parseDouble(data);
+
+        } catch (Exception e) {
+            Log.d(TAG, "Otrzymano exception wewnątrz readServerParams");
+            throwException();
+            e.printStackTrace();
+
+        } finally {
+            try {
+                if(fileInputStream== null) throwException();
+                fileInputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+                throwException();
+            }
+        }
+        return 0;
+    }
+
+
     public String read(String filename) throws SavingException {
         FileInputStream fileInputStream = null;
         try {
@@ -108,7 +247,7 @@ public class InternalMemoryDataManager
             return buffer.toString();
 
         } catch (Exception e) {
-            Log.d(TAG, "Otrzymano exception wewnątrz read");
+            Log.d(TAG, "Otrzymano exception wewnątrz readServerParams");
             throwException();
             e.printStackTrace();
 

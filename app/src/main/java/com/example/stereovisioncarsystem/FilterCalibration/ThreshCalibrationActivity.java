@@ -37,7 +37,6 @@ public class ThreshCalibrationActivity extends FilterCalibrationActivity {
         threshValue = intent.getIntExtra(THRESH_1, 120);
         isInverted = intent.getBooleanExtra(THRESH_3,false);
 
-
         threshBinary = new BinaryThreshFiltr(threshValue,isInverted);
         if(isInverted) threshBinary.makeInverted();
 

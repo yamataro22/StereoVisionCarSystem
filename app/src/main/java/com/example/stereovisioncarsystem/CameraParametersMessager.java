@@ -2,18 +2,13 @@ package com.example.stereovisioncarsystem;
 
 import android.content.Context;
 import android.os.Build;
-import android.service.autofill.FieldClassification;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.example.stereovisioncarsystem.FilterCalibration.InternalMemoryDataManager;
 
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -25,6 +20,11 @@ class CameraParametersMessager {
 
     String cameraMatrix;
     String distCoeffs;
+
+    String clientCameraMatrix;
+    String clientDistCoeffs;
+
+
     String qMartix;
     InternalMemoryDataManager dataManager;
 
@@ -43,20 +43,35 @@ class CameraParametersMessager {
         dataManager = new InternalMemoryDataManager(appContext);
     }
 
-    public void save(String formattedCameraMatrix, String fromatedDiffParams) throws InternalMemoryDataManager.SavingException {
+    public void saveServer(String formattedCameraMatrix, String fromatedDiffParams) throws InternalMemoryDataManager.SavingException {
 
-        String savingDir = createFilename();
+        String savingDir = createServerFilename();
+        String dataToSave = formattedCameraMatrix + "%" + fromatedDiffParams;
+        dataManager.save(savingDir, dataToSave);
+    }
+
+    public void saveClientParams(String formattedCameraMatrix, String fromatedDiffParams) throws InternalMemoryDataManager.SavingException {
+
+        String savingDir = createClientFilename();
         String dataToSave = formattedCameraMatrix + "%" + fromatedDiffParams;
         dataManager.save(savingDir, dataToSave);
     }
 
 
-    public void read() throws InternalMemoryDataManager.SavingException {
+    public void readServerParams() throws InternalMemoryDataManager.SavingException {
 
-        String data = dataManager.read(createFilename());
+        String data = dataManager.read(createServerFilename());
         String[] pos = data.split("%");
         cameraMatrix = pos[0];
         distCoeffs = pos[1];
+    }
+
+    public void readClientParams() throws InternalMemoryDataManager.SavingException {
+
+        String data = dataManager.read(createClientFilename());
+        String[] pos = data.split("%");
+        clientCameraMatrix = pos[0];
+        clientDistCoeffs = pos[1];
     }
 
     public void readQMartix() throws InternalMemoryDataManager.SavingException {
@@ -148,7 +163,7 @@ class CameraParametersMessager {
 
         String calibString = dataManager.read(tag);
         Log.d("odczytF",calibString);
-        Pattern pattern = Pattern.compile("-?[0-9]{1,5}(\\.[0-9]*)?");
+        Pattern pattern = Pattern.compile("-?[0-9]+(\\.[0-9]*)?");
         Matcher m = pattern.matcher(calibString);
         List<Double> dataList = new ArrayList<>();
 
@@ -173,9 +188,14 @@ class CameraParametersMessager {
     }
 
 
-    private String createFilename() {
+    private String createServerFilename() {
         return Build.MODEL+"_"+facing;
     }
+
+    private String createClientFilename() {
+        return "client"+"_"+facing;
+    }
+
 
     public CameraData getCameraData()
     {
@@ -183,6 +203,10 @@ class CameraParametersMessager {
     }
 
 
+    public CameraData getClientCameraData()
+    {
+        return new CameraData(clientCameraMatrix,clientDistCoeffs);
+    }
 
 
 

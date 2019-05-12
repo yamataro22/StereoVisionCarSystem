@@ -49,4 +49,42 @@ public class CameraData
     public String toString() {
         return cameraMatrix + separator + distCoeffs;
     }
+
+    public String getFormattedCameraMatrix()
+    {
+        Mat cameraFormatted = getCameraMatrixMat();
+        String output = "";
+        Double c00 = cameraFormatted.get(0,0)[0];
+        Double c01 = cameraFormatted.get(0,1)[0];
+        Double c02 = cameraFormatted.get(0,2)[0];
+        Double c10 = cameraFormatted.get(1,0)[0];
+        Double c11 = cameraFormatted.get(1,1)[0];
+        Double c12 = cameraFormatted.get(1,2)[0];
+        Double c20 = cameraFormatted.get(2,0)[0];
+        Double c21 = cameraFormatted.get(2,1)[0];
+        Double c22 = cameraFormatted.get(2,2)[0];
+
+        output += String.format("[%07.2f   %07.2f   %07.2f,\n", c00,c01,c02);
+        output += String.format(" %07.2f   %07.2f   %07.2f,\n", c10,c11,c12);
+        output += String.format(" %07.2f   %07.2f   %07.2f]\n", c20,c21,c22);
+
+        return output;
+    }
+
+    public String getFromatedDiffParams()
+    {
+        Mat distFormatted = getDistCoeffsMat();
+        String output;
+
+        Double c00 = distFormatted.get(0,0)[0];
+        Double c01 = distFormatted.get(0,1)[0];
+        Double c02 = distFormatted.get(0,2)[0];
+        Double c03 = distFormatted.get(0,3)[0];
+        Double c04 = distFormatted.get(0,4)[0];
+
+        output = String.format("[%04.2f, %04.2f, %03.2f, %03.2f, %03.2f]", c00,c01,c02,c03,c04);
+        return output;
+    }
+
+
 }

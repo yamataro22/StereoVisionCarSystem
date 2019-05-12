@@ -5,17 +5,16 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.Layout;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
-import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.stereovisioncarsystem.FilterCalibration.InternalMemoryDataManager;
+import com.example.stereovisioncarsystem.FilterCalibration.ThreshCalibrationActivity;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -152,7 +151,7 @@ public class SettingsActivity extends AppCompatActivity {
         String facing = cameraSpinner.getSelectedItem().toString();
         CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(),CameraFacing.getCameraFacing(facing));
         try {
-            messager.read();
+            messager.readServerParams();
             CameraData cameraData = messager.getCameraData();
             calibrationTextView.setText(cameraData.getCameraMatrix() + "\n\n" + cameraData.getDistCoeffs());
         } catch (InternalMemoryDataManager.SavingException e) {

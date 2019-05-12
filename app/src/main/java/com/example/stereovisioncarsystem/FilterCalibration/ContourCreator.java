@@ -31,6 +31,11 @@ public class ContourCreator {
     private List<Shape> shapesToDraw;
     private RectangularShape objectShape;
 
+    private int maxArea = 100000;
+    private int minArea = 10000;
+    private double maxRatio = 1.5;
+    private double minRatio = 1;
+
 
     public ContourCreator(Mat src)
     {
@@ -41,10 +46,28 @@ public class ContourCreator {
 
     }
 
+    public ContourCreator()
+    {
+        shapesToDraw = new ArrayList<>();
+        contours = new ArrayList<>();
+    }
+    public void processFrameDuringCalibration(Mat frame)
+    {
+        this.src = frame;
+        minRect = null;
+        shapesToDraw.clear();
+        contours.clear();
+        objectShape = null;
+        findContours();
+        findAndDrawObject(frame);
+    }
+
+
     private void findContours()
     {
         Imgproc.findContours(src, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
-        filterContours(200000,10000,3.5, 7);
+        //filterContours(200000,10000,3.5, 7);
+        filterContours(maxArea,minArea,minRatio, maxRatio);
     }
 
     private void filterContours(double maxArea, double minArea, double minRatio, double maxRatio) {
@@ -232,5 +255,12 @@ public class ContourCreator {
 
     public boolean isEmpty() {
         return objectShape == null ? true : false;
+    }
+
+    public void setConstrains(int minArea, int maxArea, double minRatio, double maxRatio) {
+        this.maxArea = maxArea;
+        this.minArea = minArea;
+        this.maxRatio = maxRatio;
+        this.minRatio = minRatio;
     }
 }

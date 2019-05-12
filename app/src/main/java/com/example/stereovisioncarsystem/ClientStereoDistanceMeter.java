@@ -5,7 +5,6 @@ import android.content.pm.PackageManager;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.os.Message;
 import android.os.SystemClock;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceView;
@@ -22,8 +21,6 @@ import com.example.stereovisioncarsystem.ServerClientCommunication.ClientHandler
 
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.core.Mat;
-
-import java.io.FilterReader;
 
 public class ClientStereoDistanceMeter extends CommunicationBasicActivity implements ObservedRotatedCameraFramesCapturer.CameraFrameConnector {
     protected Button connectButton, captureButton, startCapturingButton;
@@ -59,7 +56,7 @@ public class ClientStereoDistanceMeter extends CommunicationBasicActivity implem
     {
         CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(),CameraFacing.Back);
         try {
-            messager.read();
+            messager.readServerParams();
             cameraData = messager.getCameraData();
             Log.d("camMatrixSender", "odczytano macierz: " + cameraData);
         } catch (InternalMemoryDataManager.SavingException e) {

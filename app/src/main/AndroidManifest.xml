@@ -34,7 +34,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".StereoMartixesVerificationActivity"></activity>
+        <activity android:name=".FilterCalibration.ContourFilterCalibrationActivity"></activity>
+        <activity android:name=".StereoMartixesVerificationActivity" />
         <activity android:name=".ClientStereoDistanceMeter" />
         <activity android:name=".ServerStereoDistanceMeter" />
         <activity android:name=".ServerDualCameraCalibrationActivity" />

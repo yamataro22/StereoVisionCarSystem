@@ -13,7 +13,6 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.example.stereovisioncarsystem.CameraCapturers.ObservedRotatedCameraFramesCapturer;
-import com.example.stereovisioncarsystem.CameraCapturers.ObservedSingleCameraFramesCapturer;
 import com.example.stereovisioncarsystem.FilterCalibration.InternalMemoryDataManager;
 import com.example.stereovisioncarsystem.ServerClientCommunication.ClientHandlerMsg;
 
@@ -52,7 +51,7 @@ public class ClientDualCameraActivity extends CommunicationBasicActivity impleme
     {
         CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(),CameraFacing.Back);
         try {
-            messager.read();
+            messager.readServerParams();
             cameraData = messager.getCameraData();
             Log.d("camMatrixSender", "odczytano macierz: " + cameraData);
         } catch (InternalMemoryDataManager.SavingException e) {

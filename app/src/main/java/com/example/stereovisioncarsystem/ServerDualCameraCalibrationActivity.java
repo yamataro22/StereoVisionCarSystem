@@ -27,6 +27,8 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
 public class ServerDualCameraCalibrationActivity extends CommunicationBasicActivity implements  ObservedCameraFramesCapturer.CameraFrameConnector, DualCameraCalibrator.OnStereoCalibrationresult {
+    public final static String TAG = "serverClientCom";
+    public static final String FRAMES_QUANTITY = "fq";
 
     Button connectButton, skipFramesButton, saveButton;
     TextView connectionStatusTextView, calibrationStatusTextView, qMartixTextView;
@@ -38,8 +40,9 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
     private DualCameraCalibrator calibrator;
     Mat matBuffer;
 
-    public final static String TAG = "serverClientCom";
 
+
+    CameraData serverCameraData,clientCameraData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +50,11 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
         setContentView(R.layout.activity_server_dual_camera_calibration);
         capturer = new ObservedSingleCameraFramesCapturer(this);
 
+
+        if(savedInstanceState != null)
+        {
+            savedInstanceState.getInt(FRAMES_QUANTITY, 25);
+        }
         enableWiFi();
 
         checkPermissions();
@@ -131,13 +139,16 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
                     dataManager.save(SavedParametersTags.T,calibrator.getT().dump());
                     dataManager.save(SavedParametersTags.E,calibrator.getE().dump());
                     dataManager.save(SavedParametersTags.R,calibrator.getR().dump());
-
-                    dataManager.save(SavedParametersTags.F,calibrator.normalizeAndGetF().dump());
-
-
-
-
+                    dataManager.save(SavedParametersTags.F,calibrator.getF());
+                    dataManager.save(SavedParametersTags.clientCameraMatrix, clientCameraData.getCameraMatrix());
+                    dataManager.save(SavedParametersTags.clientCameraMatrix, clientCameraData.getDistCoeffs());
                     Tools.makeToast(getApplicationContext(), "zapisano:)");
+                } catch (InternalMemoryDataManager.SavingException e) {
+                    e.printStackTrace();
+                }
+                CameraParametersMessager cameraParametersMessager = new CameraParametersMessager(getApplicationContext());
+                try {
+                    cameraParametersMessager.saveClientParams(clientCameraData.getFormattedCameraMatrix(), clientCameraData.getFromatedDiffParams());
                 } catch (InternalMemoryDataManager.SavingException e) {
                     e.printStackTrace();
                 }
@@ -149,8 +160,9 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
     {
         CameraParametersMessager messager = new CameraParametersMessager(getApplicationContext(),CameraFacing.Back);
         try {
-            messager.read();
-            calibrator.setServerCameraParameters(messager.getCameraData());
+            messager.readServerParams();
+            serverCameraData = messager.getCameraData();
+            calibrator.setServerCameraParameters(serverCameraData);
         } catch (InternalMemoryDataManager.SavingException e) {
             Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
         }
@@ -207,8 +219,8 @@ public class ServerDualCameraCalibrationActivity extends CommunicationBasicActiv
             case ServerHandlerMsg.CAMERA_DATA_RECEIVED_MSG:
             {
                 String cameraParameters = (String)msg.obj;
-                CameraData cameraData = new CameraData(cameraParameters);
-                calibrator.setClientCameraParameters(cameraData);
+                clientCameraData = new CameraData(cameraParameters);
+                calibrator.setClientCameraParameters(clientCameraData);
             }
         }
         return true;
