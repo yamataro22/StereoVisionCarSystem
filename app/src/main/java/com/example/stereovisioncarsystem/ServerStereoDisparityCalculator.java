@@ -333,6 +333,10 @@ public class ServerStereoDisparityCalculator extends CommunicationBasicActivity 
 
     }
 
+    @Override
+    public void onDisparityCalculated(Mat disparityMap, Mat disparity8) {
+
+    }
 
 
     private void setImage(final ImageView image,final Bitmap btm){

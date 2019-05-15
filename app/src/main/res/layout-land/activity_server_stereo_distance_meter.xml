@@ -8,9 +8,11 @@
     android:id="@+id/server_stereo_xml">
 
     <LinearLayout
+        android:id="@+id/length_measurement_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        tools:visibility="visible">
 
         <org.opencv.android.JavaCameraView
             android:id="@+id/self_server_camera_view"
@@ -25,7 +27,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="50"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            tools:visibility="visible">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -84,6 +87,76 @@
                 android:layout_margin="10dp"
                 android:layout_weight="1" />
         </LinearLayout>
+
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/disparity_image_view"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_gravity="center"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:layout_weight="20"
+        android:visibility="gone"
+        opencv:layout_constraintBottom_toBottomOf="parent"
+        opencv:layout_constraintEnd_toStartOf="@+id/linearLayout6"
+        opencv:layout_constraintStart_toStartOf="parent"
+        opencv:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/linearLayout6"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="16dp"
+        android:layout_weight="3"
+        android:orientation="vertical"
+        opencv:layout_constraintBottom_toBottomOf="parent"
+        opencv:layout_constraintEnd_toEndOf="parent"
+        opencv:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/disparity_text_view"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="xxx"
+            android:textAlignment="center"
+            android:textSize="18sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/length_text_view"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:text="xxx"
+            android:textAlignment="center"
+            android:textSize="18sp"
+            android:gravity="center"
+            android:visibility="gone"/>
+
+        <Button
+            android:id="@+id/switch_image_button"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="3"
+            android:text="Switch image"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/hide_view_button"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_gravity="bottom"
+            android:layout_weight="3"
+            android:text="Hide view"
+            android:visibility="gone" />
 
     </LinearLayout>
 

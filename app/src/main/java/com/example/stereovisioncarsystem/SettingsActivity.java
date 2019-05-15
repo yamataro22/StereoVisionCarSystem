@@ -81,6 +81,7 @@ public class SettingsActivity extends AppCompatActivity {
 
                 try {
                     dataManager.save(SavedParametersTags.NbOfStereoCalibrationFrames, framesNbEditText.getText().toString());
+                    dataManager.saveDeviceType("Server");
                 } catch (InternalMemoryDataManager.SavingException e) {
                     e.printStackTrace();
                     Toast.makeText(getApplicationContext(),"Saving failed",Toast.LENGTH_SHORT).show();

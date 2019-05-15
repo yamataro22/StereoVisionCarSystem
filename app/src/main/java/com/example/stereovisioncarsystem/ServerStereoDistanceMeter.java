@@ -1,10 +1,13 @@
 package com.example.stereovisioncarsystem;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.os.Message;
+import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.os.Bundle;
+import android.os.Message;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
@@ -29,18 +32,28 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
                                                                                     , StereoPhotoParser.DistanceListener {
 
     private Button connectButton, skipFramesButton;
-    private TextView statusTextView, distanceTextView;
+    private TextView statusTextView, distanceTextView, disparityTextView, lengthTextView;
     private ImageView im,  disparityImageView;
+    private Button switchViewButton, hideViewButton;
+    private ImageView verificationImageView;
+
     private ObservedSingleCameraFramesCapturer capturer;
     protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
     protected CameraBridgeViewBase mOpenCvCameraView;
     private boolean isCameraViewDisabledOnClient = true;
+    private StereoPhotoParser stereoPhotoParser;
+    private CameraData serverCameraData, clientCameraData;
+
+
+    private boolean isFilteredImageVisible = false;
+    private Bitmap filteredDisparityImageBitmap;
+    private Bitmap disparityImageBitmap;
+
 
     Mat matBuffer;
     public final static String TAG = "serverClientCom";
 
-    private StereoPhotoParser stereoPhotoParser;
-    private CameraData serverCameraData, clientCameraData;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +85,6 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
         }
     }
 
-
     private void init() {
         connectButton = findViewById(R.id.connect_button);
         skipFramesButton = findViewById(R.id.skip_frames_button);
@@ -81,10 +93,42 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
         mOpenCvCameraView = findViewById(R.id.self_server_camera_view);
         disparityImageView = findViewById(R.id.disparity_camera_view);
         distanceTextView = findViewById(R.id.distance_text_view);
-
         matBuffer = new Mat();
+        hideViewButton = findViewById(R.id.hide_view_button);
+        switchViewButton = findViewById(R.id.switch_image_button);
+        verificationImageView = findViewById(R.id.disparity_image_view);
+        disparityTextView = findViewById(R.id.disparity_text_view);
+        lengthTextView = findViewById(R.id.length_text_view);
+    }
 
+    private void showVerificationGUI() {
+        disableView();
+        setStandardGUIVisibility(View.GONE);
+        setVerificationGUIVisibility(View.VISIBLE);
+    }
 
+    private void hideVerificationGUI() {
+        setVerificationGUIVisibility(View.GONE);
+        setStandardGUIVisibility(View.VISIBLE);
+        enableView();
+    }
+
+    private void setStandardGUIVisibility(int visibility) {
+        connectButton.setVisibility(visibility);
+        skipFramesButton.setVisibility(visibility);
+        statusTextView.setVisibility(visibility);
+        im.setVisibility(visibility);
+        mOpenCvCameraView.setVisibility(visibility);
+        disparityImageView.setVisibility(visibility);
+        distanceTextView.setVisibility(visibility);
+    }
+
+    private void setVerificationGUIVisibility(int visible) {
+        hideViewButton.setVisibility(visible);
+        switchViewButton.setVisibility(visible);
+        verificationImageView.setVisibility(visible);
+        disparityTextView.setVisibility(visible);
+        lengthTextView.setVisibility(visible);
     }
 
     private void initParser() {
@@ -126,8 +170,7 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
         stereoPhotoParser.setFilterParams(threshVal,gaussVal,isThreshInverted);
     }
 
-    private void loadSavedCalibration()
-    {
+    private void loadSavedCalibration() {
         loadCameraParameters();
         loadContourFilterParameters();
     }
@@ -160,7 +203,6 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
             P1 = messager.readStereoPMatrix(SavedParametersTags.T1);
             P2 = messager.readStereoPMatrix(SavedParametersTags.T2);
 
-
             stereoPhotoParser.setQMat(QMat);
             stereoPhotoParser.setRectificationParams(R1, R2, P1, P2);
             Log.d(TAG,QMat.dump());
@@ -169,6 +211,7 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
         }
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private void exqListeners() {
         connectButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -183,6 +226,57 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
                 serverClass.sendMsgToClient(ClientServerMessages.SKIP_FRAMES);
             }
         });
+
+        switchViewButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switchVerificationFrame();
+            }
+        });
+
+        hideViewButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                hideVerificationGUI();
+            }
+        });
+
+        verificationImageView.setOnTouchListener(new View.OnTouchListener() {
+            Matrix inverse = new Matrix();
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                final int index = event.getActionIndex();
+                final float[] coords = new float[] { event.getX(index), event.getY(index) };
+
+                verificationImageView.getImageMatrix().invert(inverse);
+                inverse.postTranslate(v.getScrollX(), v.getScrollY());
+                inverse.mapPoints(coords);
+
+                int x = (int) Math.floor(coords[0]);
+                int y = (int) Math.floor(coords[1]);
+                double disp = stereoPhotoParser.retreiveDisparity(x,y);
+                disparityTextView.setText(disp+"");
+
+                double length = stereoPhotoParser.calculateLenghtFromDisparity(x,y);
+                lengthTextView.setText(length+"");
+
+                Log.d("TouchLocation", "onTouch x: " + x + ", y: " + y);
+                return false;
+            }
+        });
+    }
+
+    private void switchVerificationFrame() {
+        if(isFilteredImageVisible)
+        {
+            isFilteredImageVisible = false;
+            verificationImageView.setImageBitmap(disparityImageBitmap);
+        }
+        else
+        {
+            isFilteredImageVisible = true;
+            verificationImageView.setImageBitmap(filteredDisparityImageBitmap);
+        }
     }
 
     private void initCamera()
@@ -193,6 +287,7 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(capturer);
     }
+
     private void enableView()
     {
         if(isCameraViewDisabledOnClient) {
@@ -261,7 +356,7 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
 
 
                 stereoPhotoParser.addClientFrame(mat);
-                stereoPhotoParser.drawObjectOnClientFrame(mat);
+                //stereoPhotoParser.drawObjectOnClientFrame(mat);
 
                 Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
                 Utils.matToBitmap(mat, btm);
@@ -312,13 +407,12 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
     public void processServerFrame(Mat frame) {
         Log.d("actionEvents", "wysyłam klatki do kalibratora");
         stereoPhotoParser.addServerFrame(frame);
-        stereoPhotoParser.drawObjectOnServerFrame(frame);
-        stereoPhotoParser.findDistanceBetweenObjects();
-
-        Bitmap btm = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
-        Utils.matToBitmap(frame, btm);
-        setImage(disparityImageView,btm);
-
+        //stereoPhotoParser.drawObjectOnServerFrame(frame);
+        //stereoPhotoParser.findDistanceBetweenObjects();
+        stereoPhotoParser.computeDisparityMap();
+//        Bitmap btm = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
+//        Utils.matToBitmap(frame, btm);
+//        setImage(disparityImageView,btm);
         //calibrator.processFrames(frame,matBuffer);
     }
 
@@ -333,6 +427,20 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
 
     }
 
+    @Override
+    public void onDisparityCalculated(final Mat disparityMap, final Mat disparity8) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                showVerificationGUI();
+                filteredDisparityImageBitmap = Bitmap.createBitmap(disparityMap.cols(), disparityMap.rows(), Bitmap.Config.ARGB_8888);
+                disparityImageBitmap = Bitmap.createBitmap(disparity8.cols(), disparity8.rows(), Bitmap.Config.ARGB_8888);
+                Utils.matToBitmap(disparityMap, filteredDisparityImageBitmap);
+                Utils.matToBitmap(disparity8, disparityImageBitmap);
+                setImage(verificationImageView,filteredDisparityImageBitmap);
+            }
+        });
+    }
 
 
     private void setImage(final ImageView image,final Bitmap btm){
@@ -347,8 +455,11 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        return false;
+
+
+        return true;
     }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode,

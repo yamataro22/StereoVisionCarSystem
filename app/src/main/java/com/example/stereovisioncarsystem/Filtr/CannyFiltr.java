@@ -27,7 +27,7 @@ public class CannyFiltr extends Filtr {
 
     private void makeCanny(CannyParams params, Mat src, Mat dst)
     {
-        Imgproc.Canny(src, dst, params.cannyThresh, params.cannyThresh*params.cannyRatio, params.cannyKernel);
+        //Imgproc.Canny(src, dst, params.cannyThresh, params.cannyThresh*params.cannyRatio, params.cannyKernel);
     }
 
     public class CannyParams

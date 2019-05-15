@@ -92,34 +92,22 @@ public class InternalMemoryDataManager
 
     public void saveInt(SavedParametersTags tag, int data) throws SavingException
     {
-        FileOutputStream fileOutputStream = null;
-        try {
-            String fileTag = tag.name() + "_" + "value";
-            fileOutputStream = context.openFileOutput(fileTag, Context.MODE_PRIVATE);
-            fileOutputStream.write((data+"").getBytes());
-            Toast.makeText(context,"Saved to " + context.getFilesDir(), Toast.LENGTH_LONG).show();
-        } catch (Exception e) {
-
-            e.printStackTrace();
-            throwException();
-        } finally {
-            try {
-                if(fileOutputStream == null) throwException();
-                fileOutputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-                throwException();
-            }
-        }
+        String fileTag = tag.name() + "_" + "value";
+        saveBytes((data+"").getBytes(), fileTag);
     }
 
     public void saveDouble(SavedParametersTags tag, double data) throws SavingException
     {
+        String fileTag = tag.name() + "_" + "value";
+        saveBytes((data+"").getBytes(), fileTag);
+    }
+
+    private void saveBytes(byte[] data, String fileTag) throws SavingException {
         FileOutputStream fileOutputStream = null;
         try {
-            String fileTag = tag.name() + "_" + "value";
+
             fileOutputStream = context.openFileOutput(fileTag, Context.MODE_PRIVATE);
-            fileOutputStream.write((data+"").getBytes());
+            fileOutputStream.write(data);
             Toast.makeText(context,"Saved to " + context.getFilesDir(), Toast.LENGTH_LONG).show();
         } catch (Exception e) {
 
@@ -261,6 +249,14 @@ public class InternalMemoryDataManager
             }
         }
         return "";
+    }
+
+    public void saveDeviceType(String deviceType) {
+
+    }
+
+    public SavedParametersTags readDeviceType(String server) {
+
     }
 
     public class SavingException extends Exception {
