@@ -1,7 +1,5 @@
 package com.example.stereovisioncarsystem;
 
-public abstract class StereoPhotoParser {
-
-
-
+public enum DeviceTypes {
+    SERVER, CLIENT
 }

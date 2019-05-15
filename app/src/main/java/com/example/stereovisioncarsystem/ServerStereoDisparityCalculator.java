@@ -26,7 +26,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
 public class ServerStereoDisparityCalculator extends CommunicationBasicActivity implements View.OnTouchListener, ObservedCameraFramesCapturer.CameraFrameConnector
-        , StereoPhotoParser.DistanceListener {
+        , DisparityPhotoParser.DistanceListener {
 
     private Button connectButton, skipFramesButton;
     private TextView statusTextView, distanceTextView;
@@ -39,7 +39,7 @@ public class ServerStereoDisparityCalculator extends CommunicationBasicActivity 
     Mat matBuffer;
     public final static String TAG = "serverClientCom";
 
-    private StereoPhotoParser stereoPhotoParser;
+    private DisparityPhotoParser disparityPhotoParser;
     private CameraData serverCameraData, clientCameraData;
 
     @Override
@@ -88,7 +88,7 @@ public class ServerStereoDisparityCalculator extends CommunicationBasicActivity 
     }
 
     private void initParser() {
-        stereoPhotoParser = new StereoPhotoParser(this);
+        disparityPhotoParser = new DisparityPhotoParser(this);
         loadSavedCalibration();
         loadFilterParameters();
         loadCameraData();
@@ -103,7 +103,7 @@ public class ServerStereoDisparityCalculator extends CommunicationBasicActivity 
             serverCameraData = cameraMessanger.getCameraData();
             clientCameraData = cameraMessanger.getClientCameraData();
             Log.d("clientData", clientCameraData.getFormattedCameraMatrix()+"\n"+clientCameraData.getFromatedDiffParams());
-            stereoPhotoParser.setCameraData(clientCameraData,serverCameraData);
+            disparityPhotoParser.setCameraData(clientCameraData,serverCameraData);
         } catch (InternalMemoryDataManager.SavingException e) {
             e.printStackTrace();
         }
@@ -123,7 +123,7 @@ public class ServerStereoDisparityCalculator extends CommunicationBasicActivity 
             e.printStackTrace();
             Toast.makeText(this, "Nie udało się odczytać z pamięci", Toast.LENGTH_SHORT).show();
         }
-        stereoPhotoParser.setFilterParams(threshVal,gaussVal,isThreshInverted);
+        disparityPhotoParser.setFilterParams(threshVal,gaussVal,isThreshInverted);
     }
 
     private void loadSavedCalibration()
@@ -139,7 +139,7 @@ public class ServerStereoDisparityCalculator extends CommunicationBasicActivity 
             int maxArea = messanger.readInt(SavedParametersTags.maxArea);
             double minRatio = messanger.readDouble(SavedParametersTags.minRatio);
             double maxRatio = messanger.readDouble(SavedParametersTags.maxRatio);
-            stereoPhotoParser.setConstrins(minArea,maxArea,minRatio,maxRatio);
+            disparityPhotoParser.setConstrins(minArea,maxArea,minRatio,maxRatio);
         } catch (InternalMemoryDataManager.SavingException e) {
             e.printStackTrace();
         }
@@ -161,8 +161,8 @@ public class ServerStereoDisparityCalculator extends CommunicationBasicActivity 
             P2 = messager.readStereoPMatrix(SavedParametersTags.T2);
 
 
-            stereoPhotoParser.setQMat(QMat);
-            stereoPhotoParser.setRectificationParams(R1, R2, P1, P2);
+            disparityPhotoParser.setQMat(QMat);
+            disparityPhotoParser.setRectificationParams(R1, R2, P1, P2);
             Log.d(TAG,QMat.dump());
         } catch (InternalMemoryDataManager.SavingException e) {
             Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
@@ -260,8 +260,8 @@ public class ServerStereoDisparityCalculator extends CommunicationBasicActivity 
                 mat.put(0, 0, readBuffer);
 
 
-                stereoPhotoParser.addClientFrame(mat);
-                stereoPhotoParser.drawObjectOnClientFrame(mat);
+                disparityPhotoParser.addClientFrame(mat);
+                disparityPhotoParser.drawObjectOnClientFrame(mat);
 
                 Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
                 Utils.matToBitmap(mat, btm);
@@ -311,9 +311,9 @@ public class ServerStereoDisparityCalculator extends CommunicationBasicActivity 
     @Override
     public void processServerFrame(Mat frame) {
         Log.d("actionEvents", "wysyłam klatki do kalibratora");
-        stereoPhotoParser.addServerFrame(frame);
-        stereoPhotoParser.drawObjectOnServerFrame(frame);
-        stereoPhotoParser.findDistanceBetweenObjects();
+        disparityPhotoParser.addServerFrame(frame);
+        disparityPhotoParser.drawObjectOnServerFrame(frame);
+        disparityPhotoParser.findDistanceBetweenObjects();
 
         Bitmap btm = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(frame, btm);

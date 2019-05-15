@@ -5,8 +5,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
@@ -14,13 +16,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.stereovisioncarsystem.FilterCalibration.InternalMemoryDataManager;
-import com.example.stereovisioncarsystem.FilterCalibration.ThreshCalibrationActivity;
 
 public class SettingsActivity extends AppCompatActivity {
-
-    private final String serverDeviceName = "ONEPLUS A6013";
-    private final String clientDeviceName = "GRACE";
-
 
     Button calibrationButton, loadCalibrationButton, saveButton;
     Button stereoCalibrationButton;
@@ -28,6 +25,7 @@ public class SettingsActivity extends AppCompatActivity {
     Spinner cameraSpinner, deviceTypeSpinner;
     EditText framesNbEditText;
     String deviceName = Build.MODEL;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,11 +38,11 @@ public class SettingsActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
+        Log.d("debuggingSaving", "SettingsActivity on Create");
         init();
         exqListeners();
         loadPreviousSettings();
-        updateClientServerSpinner();
-        hideUnnecessaryGUIinClientCase();
+
     }
 
     private void init() {
@@ -81,7 +79,7 @@ public class SettingsActivity extends AppCompatActivity {
 
                 try {
                     dataManager.save(SavedParametersTags.NbOfStereoCalibrationFrames, framesNbEditText.getText().toString());
-                    dataManager.saveDeviceType("Server");
+                    dataManager.saveDeviceType(getDeviceType());
                 } catch (InternalMemoryDataManager.SavingException e) {
                     e.printStackTrace();
                     Toast.makeText(getApplicationContext(),"Saving failed",Toast.LENGTH_SHORT).show();
@@ -101,17 +99,35 @@ public class SettingsActivity extends AppCompatActivity {
                 }
             }
         });
+        deviceTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                updateGUIVisibility();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
     }
 
-    private void hideUnnecessaryGUIinClientCase()
+    private DeviceTypes getDeviceType() {
+        String device = deviceTypeSpinner.getSelectedItem().toString();
+
+        if(device.equalsIgnoreCase("Server"))
+            return DeviceTypes.SERVER;
+        else
+            return DeviceTypes.CLIENT;
+
+    }
+
+    private void updateGUIVisibility()
     {
         String deviceType = deviceTypeSpinner.getSelectedItem().toString();
-        if(deviceType.equalsIgnoreCase("client"))
-        {
-            View layout = findViewById(R.id.stereo_settings_layout);
-            layout.setVisibility(View.GONE);
-        }
-
+        View layout = findViewById(R.id.stereo_settings_layout);
+        final int visibility = deviceType.equalsIgnoreCase("client") ? View.GONE : View.VISIBLE;
+        layout.setVisibility(visibility);
     }
 
     private void createAndStartIntent(Class<?> cls)
@@ -119,23 +135,6 @@ public class SettingsActivity extends AppCompatActivity {
         Intent intent = new Intent(this,cls);
         startActivity(intent);
     }
-
-    private void updateClientServerSpinner()
-    {
-        int pos = 0;
-        if(deviceName.equalsIgnoreCase(serverDeviceName))
-        {
-            pos = Tools.getSpinnerIndex(deviceTypeSpinner, "server");
-
-        }
-        else if(deviceName.equalsIgnoreCase(clientDeviceName))
-        {
-            pos = Tools.getSpinnerIndex(deviceTypeSpinner, "client");
-        }
-
-        deviceTypeSpinner.setSelection(pos);
-    }
-
 
     private void loadPreviousSettings() {
         InternalMemoryDataManager dataManager = new InternalMemoryDataManager(getApplicationContext());
@@ -145,6 +144,31 @@ public class SettingsActivity extends AppCompatActivity {
         } catch (InternalMemoryDataManager.SavingException e) {
             e.printStackTrace();
         }
+        try {
+            setDeviceType(dataManager.readDeviceType());
+        } catch (InternalMemoryDataManager.SavingException e) {
+            e.printStackTrace();
+            Tools.makeToast(getApplicationContext(), "No device type in memory");
+            setDeviceType(DeviceTypes.SERVER);
+        }
+        updateGUIVisibility();
+    }
+
+    private void setDeviceType(DeviceTypes deviceTypes) {
+
+        int pos;
+
+        if(deviceTypes == DeviceTypes.SERVER)
+        {
+            pos = Tools.getSpinnerIndex(deviceTypeSpinner, "server");
+
+        }
+        else
+        {
+            pos = Tools.getSpinnerIndex(deviceTypeSpinner, "client");
+        }
+
+        deviceTypeSpinner.setSelection(pos);
     }
 
     private void loadSavedCalibration()
@@ -159,8 +183,6 @@ public class SettingsActivity extends AppCompatActivity {
             Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
         }
     }
-
-
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

@@ -7,25 +7,29 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-
-import org.opencv.android.OpenCVLoader;
+import android.view.View;
+import android.widget.Button;
 
 import com.example.stereovisioncarsystem.ExternalCalibrator.CameraCalibrationActivity2;
 import com.example.stereovisioncarsystem.FilterCalibration.ContourFilterCalibrationActivity;
 import com.example.stereovisioncarsystem.FilterCalibration.FilterSettingsActivity;
+import com.example.stereovisioncarsystem.FilterCalibration.InternalMemoryDataManager;
+
+import org.opencv.android.OpenCVLoader;
 
 public class MainActivity extends AppCompatActivity {
+
+    Button featureMeasurementButton, disparityMeasurementButton;
+    DeviceTypes deviceType;
+
 
     static {
         if (!OpenCVLoader.initDebug()) {
             // Handle initialization error
         }
     }
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +48,59 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
-        Log.d("receiveTask", "jestem w jebanym on create");
+
+
+        init();
+        exqListeners();
+    }
+
+    private void init() {
+        featureMeasurementButton = findViewById(R.id.feature_distance_measurement_button);
+        disparityMeasurementButton = findViewById(R.id.disparity_based_distance_measurement_button);
+    }
+
+    private void loadDeviceType() {
+        InternalMemoryDataManager dataManager = new InternalMemoryDataManager(getApplicationContext());
+        try {
+            deviceType = dataManager.readDeviceType();
+        } catch (InternalMemoryDataManager.SavingException e) {
+            e.printStackTrace();
+            Tools.makeToast(getApplicationContext(), "No device type in memory");
+            deviceType = DeviceTypes.CLIENT;
+        }
+    }
+
+
+    @Override
+    protected void onResume() {
+        loadDeviceType();
+        super.onResume();
+    }
+
+    private void exqListeners() {
+        featureMeasurementButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+
+        disparityMeasurementButton.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                switch (deviceType)
+                {
+                    case SERVER:
+                        createAndStartIntent(ServerDisparityBasedDistanceMeter.class);
+                        break;
+                    case CLIENT:
+                        createAndStartIntent(ClientStereoDistanceMeter.class);
+                        break;
+
+                }
+            }
+        });
     }
 
     @Override
@@ -71,12 +127,6 @@ public class MainActivity extends AppCompatActivity {
         }
         else if(id == R.id.opencvcalib) {
             createAndStartIntent(CameraCalibrationActivity2.class);
-        }
-        else if(id == R.id.action_client_stereo_distance_meter) {
-            createAndStartIntent(ClientStereoDistanceMeter.class);
-        }
-        else if(id == R.id.action_server_stereo_distance_meter) {
-            createAndStartIntent(ServerStereoDistanceMeter.class);
         }
         else if(id == R.id.filters_parameters_calibration) {
             createAndStartIntent(FilterSettingsActivity.class);

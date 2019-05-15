@@ -5,7 +5,6 @@ import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
-import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
@@ -28,8 +27,8 @@ import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
-public class ServerStereoDistanceMeter extends CommunicationBasicActivity implements View.OnTouchListener, ObservedCameraFramesCapturer.CameraFrameConnector
-                                                                                    , StereoPhotoParser.DistanceListener {
+public class ServerDisparityBasedDistanceMeter extends CommunicationBasicActivity implements View.OnTouchListener, ObservedCameraFramesCapturer.CameraFrameConnector
+                                                                                    , DisparityPhotoParser.DistanceListener {
 
     private Button connectButton, skipFramesButton;
     private TextView statusTextView, distanceTextView, disparityTextView, lengthTextView;
@@ -41,7 +40,7 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
     protected static final int  MY_PERMISSIONS_REQUEST_CAMERA =1;
     protected CameraBridgeViewBase mOpenCvCameraView;
     private boolean isCameraViewDisabledOnClient = true;
-    private StereoPhotoParser stereoPhotoParser;
+    private DisparityPhotoParser disparityPhotoParser;
     private CameraData serverCameraData, clientCameraData;
 
 
@@ -132,7 +131,7 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
     }
 
     private void initParser() {
-        stereoPhotoParser = new StereoPhotoParser(this);
+        disparityPhotoParser = new DisparityPhotoParser(this);
         loadSavedCalibration();
         loadFilterParameters();
         loadCameraData();
@@ -146,8 +145,7 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
 
             serverCameraData = cameraMessanger.getCameraData();
             clientCameraData = cameraMessanger.getClientCameraData();
-            Log.d("clientData", clientCameraData.getFormattedCameraMatrix()+"\n"+clientCameraData.getFromatedDiffParams());
-            stereoPhotoParser.setCameraData(clientCameraData,serverCameraData);
+            disparityPhotoParser.setCameraData(clientCameraData,serverCameraData);
         } catch (InternalMemoryDataManager.SavingException e) {
             e.printStackTrace();
         }
@@ -167,7 +165,7 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
             e.printStackTrace();
             Toast.makeText(this, "Nie udało się odczytać z pamięci", Toast.LENGTH_SHORT).show();
         }
-        stereoPhotoParser.setFilterParams(threshVal,gaussVal,isThreshInverted);
+        disparityPhotoParser.setFilterParams(threshVal,gaussVal,isThreshInverted);
     }
 
     private void loadSavedCalibration() {
@@ -182,7 +180,7 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
             int maxArea = messanger.readInt(SavedParametersTags.maxArea);
             double minRatio = messanger.readDouble(SavedParametersTags.minRatio);
             double maxRatio = messanger.readDouble(SavedParametersTags.maxRatio);
-            stereoPhotoParser.setConstrins(minArea,maxArea,minRatio,maxRatio);
+            disparityPhotoParser.setConstrins(minArea,maxArea,minRatio,maxRatio);
         } catch (InternalMemoryDataManager.SavingException e) {
             e.printStackTrace();
         }
@@ -203,8 +201,8 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
             P1 = messager.readStereoPMatrix(SavedParametersTags.T1);
             P2 = messager.readStereoPMatrix(SavedParametersTags.T2);
 
-            stereoPhotoParser.setQMat(QMat);
-            stereoPhotoParser.setRectificationParams(R1, R2, P1, P2);
+            disparityPhotoParser.setQMat(QMat);
+            disparityPhotoParser.setRectificationParams(R1, R2, P1, P2);
             Log.d(TAG,QMat.dump());
         } catch (InternalMemoryDataManager.SavingException e) {
             Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
@@ -254,10 +252,10 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
 
                 int x = (int) Math.floor(coords[0]);
                 int y = (int) Math.floor(coords[1]);
-                double disp = stereoPhotoParser.retreiveDisparity(x,y);
+                double disp = disparityPhotoParser.retreiveDisparity(x,y);
                 disparityTextView.setText(disp+"");
 
-                double length = stereoPhotoParser.calculateLenghtFromDisparity(x,y);
+                double length = disparityPhotoParser.calculateLenghtFromDisparity(x,y);
                 lengthTextView.setText(length+"");
 
                 Log.d("TouchLocation", "onTouch x: " + x + ", y: " + y);
@@ -355,8 +353,8 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
                 mat.put(0, 0, readBuffer);
 
 
-                stereoPhotoParser.addClientFrame(mat);
-                //stereoPhotoParser.drawObjectOnClientFrame(mat);
+                disparityPhotoParser.addClientFrame(mat);
+                //disparityPhotoParser.drawObjectOnClientFrame(mat);
 
                 Bitmap btm = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
                 Utils.matToBitmap(mat, btm);
@@ -369,13 +367,6 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
                 Log.d(TAG, "SerwerActivity, wysyłam zapytanie o macierze");
                 serverClass.sendMsgToClient(ClientServerMessages.GET_CAMERA_DATA);
                 break;
-            }
-            case ServerHandlerMsg.CAMERA_DATA_RECEIVED_MSG:
-            {
-                String cameraParameters = (String)msg.obj;
-                CameraData cameraData = new CameraData(cameraParameters);
-                Log.d(TAG,"ServerActivity, CameraData stworzony: \n" + cameraData.getCameraMatrix() + cameraData.getDistCoeffs());
-//                calibrator.setClientCameraParameters(cameraData);
             }
         }
         return true;
@@ -406,10 +397,10 @@ public class ServerStereoDistanceMeter extends CommunicationBasicActivity implem
     @Override
     public void processServerFrame(Mat frame) {
         Log.d("actionEvents", "wysyłam klatki do kalibratora");
-        stereoPhotoParser.addServerFrame(frame);
-        //stereoPhotoParser.drawObjectOnServerFrame(frame);
-        //stereoPhotoParser.findDistanceBetweenObjects();
-        stereoPhotoParser.computeDisparityMap();
+        disparityPhotoParser.addServerFrame(frame);
+        //disparityPhotoParser.drawObjectOnServerFrame(frame);
+        //disparityPhotoParser.findDistanceBetweenObjects();
+        disparityPhotoParser.computeDisparityMap();
 //        Bitmap btm = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
 //        Utils.matToBitmap(frame, btm);
 //        setImage(disparityImageView,btm);

@@ -37,14 +37,15 @@
         <activity android:name=".FilterCalibration.ContourFilterCalibrationActivity"></activity>
         <activity android:name=".StereoMartixesVerificationActivity" />
         <activity android:name=".ClientStereoDistanceMeter" />
-        <activity android:name=".ServerStereoDistanceMeter" />
+        <activity android:name=".ServerDisparityBasedDistanceMeter"
+            android:screenOrientation="sensorLandscape" />
         <activity android:name=".ServerDualCameraCalibrationActivity" />
         <activity android:name=".ExternalCalibrator.CameraCalibrationActivity2" />
         <activity
             android:name=".CameraCalibrationActivity"
             android:configChanges="keyboardHidden|orientation"
             android:label="@string/app_name"
-            android:screenOrientation="landscape" />
+            android:screenOrientation="sensorLandscape" />
         <activity android:name=".CalibrationActivity" />
         <activity android:name=".ClientDualCameraActivity" />
         <activity android:name=".ServerDualCameraActivity" />
