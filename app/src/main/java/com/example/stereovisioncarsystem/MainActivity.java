@@ -78,13 +78,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void exqListeners() {
-        featureMeasurementButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
-
         disparityMeasurementButton.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -93,6 +86,22 @@ public class MainActivity extends AppCompatActivity {
                 {
                     case SERVER:
                         createAndStartIntent(ServerDisparityBasedDistanceMeter.class);
+                        break;
+                    case CLIENT:
+                        createAndStartIntent(ClientStereoDistanceMeter.class);
+                        break;
+
+                }
+            }
+        });
+
+        featureMeasurementButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switch (deviceType)
+                {
+                    case SERVER:
+                        createAndStartIntent(ServerFeatureBasedDistanceMater.class);
                         break;
                     case CLIENT:
                         createAndStartIntent(ClientStereoDistanceMeter.class);
@@ -115,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
 
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
+
         if (id == R.id.action_settings) {
             createAndStartIntent(SettingsActivity.class);
         }

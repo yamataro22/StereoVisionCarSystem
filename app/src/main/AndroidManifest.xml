@@ -34,10 +34,13 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".FilterCalibration.ContourFilterCalibrationActivity"></activity>
+        <activity android:name=".ServerFeatureBasedDistanceMater"
+            android:screenOrientation="sensorLandscape"/>
+        <activity android:name=".FilterCalibration.ContourFilterCalibrationActivity" />
         <activity android:name=".StereoMartixesVerificationActivity" />
         <activity android:name=".ClientStereoDistanceMeter" />
-        <activity android:name=".ServerDisparityBasedDistanceMeter"
+        <activity
+            android:name=".ServerDisparityBasedDistanceMeter"
             android:screenOrientation="sensorLandscape" />
         <activity android:name=".ServerDualCameraCalibrationActivity" />
         <activity android:name=".ExternalCalibrator.CameraCalibrationActivity2" />
